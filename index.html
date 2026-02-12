@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wolvesville API Dashboard</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body>
+    <div class="app-container">
+        
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <button class="hamburger-btn">
+                    <span class="material-icons">menu</span>
+                </button>
+            </div>
+            <nav>
+                <ul>
+                    <li>
+                        <a href="#" class="nav-link" data-page="dashboard">
+                            <span class="material-icons">dashboard</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="player-search">
+                            <span class="material-icons">search</span>
+                            <span class="nav-text">ค้นหาผู้เล่น</span>
+                        </a>
+                    </li>
+                    <!-- เมนูใหม่: จัดการแคลน -->
+                    <li>
+                        <a href="#" class="nav-link" data-page="clan-manager">
+                            <span class="material-icons">shield</span>
+                            <span class="nav-text">จัดการแคลน</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="settings">
+                            <span class="material-icons">settings</span>
+                            <span class="nav-text">ตั้งค่า</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            
+            <!-- DASHBOARD PAGE -->
+            <section id="dashboard" class="page-content">
+                <h2>ภาพรวม API</h2>
+                <div class="stats-grid stats-grid-row1">
+                    <div class="stat-card api-today-card">
+                        <span class="material-icons">trending_up</span>
+                        <div class="stat-info">
+                            <p class="stat-label">API Requests Today</p>
+                            <h3 class="stat-value" id="requests-today-only">0</h3> 
+                        </div>
+                    </div>
+                    <div class="stat-card item-card">
+                        <span class="material-icons">inventory</span>
+                        <div class="stat-info">
+                            <p class="stat-label">ไอเทมในเกม (จาก API)</p>
+                            <h3 class="stat-value" id="available-items">...</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card api-status-card">
+                        <span class="material-icons">link</span>
+                        <div class="stat-info">
+                            <p class="stat-label">สถานะการเชื่อมต่อ API</p>
+                            <div class="status-indicator">
+                                <span id="api-status-dot" class="status-dot"></span>
+                                <span id="api-status-text">กำลังเชื่อมต่อ...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid stats-grid-row2"> 
+                    <div class="stat-card full-usage-card api-usage-full-card">
+                        <div class="usage-header">
+                            <span class="material-icons">insights</span>
+                            <h3>API Usage Stats</h3>
+                        </div>
+                        <div class="usage-detail"><p>Today</p><h4 id="requests-full-today">0</h4></div>
+                        <div class="usage-detail"><p>Month</p><h4 id="requests-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p>Year</p><h4 id="requests-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p>Lifetime</p><h4 id="requests-full-lifetime">0</h4></div> 
+                    </div>
+                    <div class="stat-card full-usage-card visitors-full-card">
+                        <div class="usage-header">
+                            <span class="material-icons">public</span>
+                            <h3>Visitors</h3>
+                        </div>
+                        <div class="usage-detail"><p>Today</p><h4 id="visitors-full-today">0</h4></div>
+                        <div class="usage-detail"><p>Month</p><h4 id="visitors-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p>Year</p><h4 id="visitors-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p>Lifetime</p><h4 id="visitors-full-lifetime">0</h4></div> 
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PLAYER SEARCH PAGE -->
+            <section id="player-search" class="page-content">
+                <h2>ค้นหาข้อมูลผู้เล่น</h2>
+                <div class="search-container">
+                    <input type="text" id="username-input" placeholder="ชื่อผู้ใช้ หรือ Player ID...">
+                    <button id="search-player-btn">ค้นหา</button>
+                </div>
+                <div id="player-profile-container">
+                    <div style="text-align:center; color:#888; margin-top:40px;">
+                        <span class="material-icons" style="font-size:48px; display:block; margin-bottom:10px;">search</span>
+                        กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW: CLAN MANAGER PAGE -->
+            <section id="clan-manager" class="page-content">
+                <h2>จัดการแคลน (Clan Manager)</h2>
+                <div class="search-container">
+                    <input type="text" id="clan-name-input" placeholder="ชื่อแคลน (หรือกดปุ่ม 'แคลนของฉัน')...">
+                    <button id="search-clan-btn">ค้นหา</button>
+                    <button id="my-clan-btn" style="background:#eab308; margin-left:10px;">⭐ แคลนของฉัน</button>
+                </div>
+                <div id="clan-content-container">
+                    <!-- Clan info will be rendered here -->
+                    <div style="text-align:center; color:#888; margin-top:40px;">
+                        <span class="material-icons" style="font-size:48px; display:block; margin-bottom:10px;">shield</span>
+                        ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล
+                    </div>
+                </div>
+            </section>
+
+            <!-- SETTINGS PAGE -->
+            <section id="settings" class="page-content">
+                <h2>ตั้งค่า</h2>
+                <div class="settings-group">
+                    <h3>Wolvesville API Key</h3>
+                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
+                    <input type="text" id="api-key-input" placeholder="Paste your API Key here...">
+                    <button id="save-api-key-btn">บันทึก Key</button>
+                    <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="script.js"></script> 
+</body>
+</html>
