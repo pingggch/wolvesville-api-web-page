@@ -1545,39 +1545,116 @@ async function searchClan() {
     await fetchClanData(searchRes[0].id, false);
 }
 
+// [UPDATED] Sequential Loading Function
 async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
+    // Helper to update loading text
+    const updateLoading = (text) => {
+        if(!isBackground) {
+            clanContentContainer.innerHTML = `<div style="text-align:center; padding:30px;">⏳ ${text}</div>`;
+        }
+    };
+
     if(!isBackground) {
-        clanContentContainer.innerHTML = '<div style="text-align:center; padding:30px;">⏳ Loading Clan Data...</div>';
+        updateLoading('Loading Clan Info...');
         isFirstRender = true;
     }
     
     await fetchAndCacheEmojis();
     
-    const promises = [
-        fetchData(`/clans/${clanId}/info`),
-        fetchData(`/clans/${clanId}/members`), 
-        fetchData(`/clans/${clanId}/quests/active`),
-        fetchData(`/clans/${clanId}/chat`),
-        fetchData(`/clans/${clanId}/logs`),
-        fetchData(`/clans/${clanId}/ledger`),
-        fetchData(`/clans/${clanId}/quests/history`),
-        fetchData(`/clans/${clanId}/announcements`)
-    ];
-
-    if(isMyClan) {
-        promises.push(fetchData(`/clans/${clanId}/blocklist`));
-        promises.push(fetchData(`/clans/${clanId}/quests/available`));
-        promises.push(fetchData(`/clans/${clanId}/quests/votes`));
+    // 1. Info
+    const info = await fetchData(`/clans/${clanId}/info`);
+    if (info.error) {
+        if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
+        return;
     }
 
-    const results = await Promise.all(promises);
-    const [info, membersRaw, quests, chat, logs, ledger, history, announcements] = results;
+    // 2. Members
+    updateLoading('Loading Members...');
+    const membersRaw = await fetchData(`/clans/${clanId}/members`);
     
+    // 3. Active Quests
+    updateLoading('Loading Quests...');
+    const quests = await fetchData(`/clans/${clanId}/quests/active`);
+
+    // 4. Chat
+    updateLoading('Loading Chat...');
+    const chat = await fetchData(`/clans/${clanId}/chat`);
+
+    // 5. Logs
+    updateLoading('Loading Logs...');
+    const logs = await fetchData(`/clans/${clanId}/logs`);
+
+    // 6. Ledger
+    updateLoading('Loading Ledger...');
+    const ledger = await fetchData(`/clans/${clanId}/ledger`);
+
+    // 7. History
+    updateLoading('Loading History...');
+    const history = await fetchData(`/clans/${clanId}/quests/history`);
+
+    // 8. Announcements
+    updateLoading('Loading Announcements...');
+    const announcements = await fetchData(`/clans/${clanId}/announcements`);
+
+    let blockedMembers = { error: true };
+    let availableQuests = { error: true };
+    let votesData = { error: true };
+
+    if(isMyClan) {
+        updateLoading('Loading Blocklist...');
+        const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
+
+        // Handle Blocklist Logic (Moved from original array access)
+        if (!blocklistRes.error && Array.isArray(blocklistRes)) {
+            const extractId = (item) => {
+                if (typeof item === 'string') return item;
+                return item.playerId || item.id || item.targetPlayerId;
+            };
+            
+            const playersData = [];
+            // Update loading for blocklist processing
+            updateLoading('Processing Blocklist...');
+            for (const item of blocklistRes.slice(0, 50)) {
+                const pid = extractId(item);
+                if (pid) {
+                    const pData = await fetchData(`/players/${pid}`);
+                    playersData.push(pData);
+                } else {
+                    playersData.push({ error: true });
+                }
+            }
+            
+            blockedMembers = playersData.map((p, idx) => {
+                const originalItem = blocklistRes[idx];
+                const originalId = extractId(originalItem) || 'Unknown ID';
+                if (p.error) return { id: originalId, username: 'Unknown ID', error: true };
+                return p;
+            });
+        } else {
+             blockedMembers = blocklistRes;
+        }
+
+        updateLoading('Loading Available Quests...');
+        availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
+        // Cache Available Quests
+        if (Array.isArray(availableQuests)) {
+            availableQuests.forEach(q => questDetailsCache.set(q.id, q));
+        }
+
+        updateLoading('Loading Votes...');
+        votesData = await fetchData(`/clans/${clanId}/quests/votes`);
+        clanVotesCache = votesData;
+    }
+
+    // Process Members (Heavy lifting)
     let members = membersRaw;
     if (!membersRaw.error && Array.isArray(membersRaw)) {
-        // SEQUENTIAL FETCHING to avoid rate limits
+        updateLoading(`Processing Members (${membersRaw.length})...`);
         const membersList = [];
         for (const m of membersRaw) {
+            // Update UI occasionally for large clans
+            // if (membersList.length % 5 === 0) updateLoading(`Processing Members (${membersList.length}/${membersRaw.length})...`);
+            
             if (playerAvatarCache.has(m.playerId)) {
                 membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
             } else {
@@ -1606,64 +1683,9 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     }
     currentParticipatingCount = participatingMemberCount;
 
-    let blockedMembers = { error: true };
-    let availableQuests = { error: true };
-    let votesData = { error: true }; 
-
-    if(isMyClan && results.length > 8) {
-        const blocklistRes = results[8];
-        if (!blocklistRes.error && Array.isArray(blocklistRes)) {
-            const extractId = (item) => {
-                if (typeof item === 'string') return item;
-                return item.playerId || item.id || item.targetPlayerId;
-            };
-            
-            // SEQUENTIAL FETCHING for blocklist
-            const playersData = [];
-            for (const item of blocklistRes.slice(0, 50)) {
-                const pid = extractId(item);
-                if (pid) {
-                    const pData = await fetchData(`/players/${pid}`);
-                    playersData.push(pData);
-                } else {
-                    playersData.push({ error: true });
-                }
-            }
-            
-            blockedMembers = playersData.map((p, idx) => {
-                const originalItem = blocklistRes[idx];
-                const originalId = extractId(originalItem) || 'Unknown ID';
-                if (p.error) return { id: originalId, username: 'Unknown ID', error: true };
-                return p;
-            });
-        } else {
-             blockedMembers = blocklistRes;
-        }
-
-        if (results.length > 9) {
-            availableQuests = results[9];
-            // Cache Available Quests
-            if (Array.isArray(availableQuests)) {
-                availableQuests.forEach(q => questDetailsCache.set(q.id, q));
-            }
-        }
-        
-        if (results.length > 10) {
-            votesData = results[10];
-            clanVotesCache = votesData; // Update global cache
-        }
-    }
-    
-    if (info.error) {
-        if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
-        return;
-    }
-    
     if(quests) console.log('[ActiveQuest Data]', quests);
-    
-    const activeQuests = Array.isArray(quests) ? quests : [];
 
-    // FIX: Pass correct variable names (isMyClan -> canEdit)
+    // Final Render
     renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
 }
 
@@ -2395,7 +2417,16 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <button onclick="window.manualAddToBlocklist('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Block ID</button>
             </div>
             <div class="blocklist-container">
-                ${blocklistHtml}
+                <div class="blocklist-item-wrapper" style="color:#ccc; font-style:italic;">
+                    ${blockedMembers.length > 0 && !blockedMembers.error 
+                        ? blockedMembers.map(m => `
+                            <div class="blocked-item">
+                                <span><strong>${m.username}</strong></span>
+                                <button class="btn-unblock" onclick="window.unblockMember('${clanId}', '${m.id}')">Unblock</button>
+                            </div>
+                          `).join('') 
+                        : 'No blocked members loaded'}
+                </div>
             </div>
         </div>
         ` : ''}
