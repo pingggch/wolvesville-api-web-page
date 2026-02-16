@@ -1299,7 +1299,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         
         const progress = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
         const target = qData.xpPerReward || qInfo.xpPerReward || 1;
-        const percent = Math.min(100, Math.round((progress / target) * 100));
+        // const percent = Math.min(100, Math.round((progress / target) * 100)); // Old calculation
         const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
         const activeParticipants = members.filter(m => m.participateInClanQuests).length;
         const actionCost = 300 + (30 * activeParticipants);
@@ -1307,11 +1307,22 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         // --- BATTLE PASS TRACK (UNIFIED) ---
         let rewardsTrackHtml = '';
         if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
+            const currentTierIndex = (qData.tier || 0);
+            
+            // [FIXED] PROGRESS BAR LOGIC
+            const totalSegments = Math.max(1, qInfo.rewards.length - 1);
+            let relativeProgress = 0;
+            // Only show progress bar if we have completed at least 1 tier (Tier 1 completed -> moving to Tier 2)
+            if (currentTierIndex > 0) {
+                 relativeProgress = (currentTierIndex - 1) + (progress / target);
+            }
+            const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
+
             rewardsTrackHtml = `
                 <div class="battle-pass-hub">
                     <!-- The Progress Bar is now inside the Track Hub -->
                     <div class="xp-progress-wrapper">
-                        <div class="xp-progress-fill" style="width:${percent}%;"></div>
+                        <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
                     </div>
 
                     <div class="battle-pass-track">
@@ -1322,7 +1333,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 if(r.type === 'AVATAR_ITEM') imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                 else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
                 
-                const currentTierIndex = (qData.tier || 0);
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
                 else if (idx === currentTierIndex) statusClass = 'active-tier';
@@ -1331,7 +1341,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div class="reward-step ${statusClass}">
                         <div class="reward-icon-box">
                             ${idx === currentTierIndex ? `<div class="xp-label-floating">${progress.toLocaleString()} / ${target.toLocaleString()} XP</div>` : ''}
-                            <img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/60?text=Item'">
+                            <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="background:#f1f5f9; border-radius:10px;">
                             ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
                         </div>
                         <div class="tier-label">Tier ${idx + 1}</div>
@@ -1364,7 +1374,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div class="active-quest-container">
                 <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
                     <div class="active-quest-overlay">
-                        <h2 class="active-quest-title-lg">${qInfo.title || 'Active Clan Quest'} (Tier ${tier})</h2>
+                        <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">${qInfo.title || 'Active Clan Quest'} (Tier ${tier})</h2>
                         <div class="active-quest-meta-lg">
                             <span class="material-icons" style="font-size:16px;">schedule</span> Ends: ${formatDateThai(qData.tierEndTime || qInfo.tierEndTime)}
                         </div>
