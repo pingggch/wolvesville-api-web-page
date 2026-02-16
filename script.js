@@ -206,23 +206,23 @@ modalStyle.textContent = `
 /* Battle Pass Style Progress Bar */
 .xp-progress-wrapper {
     position: relative;
-    height: 32px;
-    background: #1e293b;
-    border-radius: 16px;
+    height: 24px;
+    background: #e2e8f0;
+    border-radius: 12px;
     overflow: hidden;
-    margin: 15px 0 25px 0;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-    border: 1px solid #334155;
+    margin: 5px 0 15px 0; /* Adjusted margin */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #cbd5e1;
 }
 .xp-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #f59e0b, #fbbf24);
     width: 0%;
     transition: width 1s ease-out;
-    border-radius: 16px;
+    border-radius: 12px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
 }
 .xp-progress-fill::after {
     content: "";
@@ -230,7 +230,7 @@ modalStyle.textContent = `
     top: 0; left: 0; bottom: 0; right: 0;
     background-image: linear-gradient(-45deg,rgba(255,255,255,.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.2) 75%,transparent 75%,transparent);
     z-index: 1;
-    background-size: 50px 50px;
+    background-size: 30px 30px;
     animation: move 2s linear infinite;
 }
 .xp-text {
@@ -241,10 +241,10 @@ modalStyle.textContent = `
     align-items: center;
     justify-content: center;
     top: 0; left: 0;
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
     z-index: 2;
     letter-spacing: 0.5px;
 }
@@ -256,7 +256,7 @@ modalStyle.textContent = `
     justify-content: space-between;
     position: relative;
     padding: 20px 10px;
-    margin-top: 10px;
+    margin-top: 5px;
     overflow-x: auto;
 }
 /* Connecting Line */
@@ -1348,27 +1348,7 @@ async function fetchAndDisplayStatsOnly() {
 // 7. DASHBOARD & PLAYER LOGIC
 // **********************************************
 
-window.refreshItemStats = async (btn) => {
-    if(btn) { 
-        btn.style.animation = 'spin 1s infinite linear'; 
-        btn.style.pointerEvents = 'none'; 
-    }
-    itemDataCache = null; 
-    await fetchAndDisplayData(); 
-};
-
-window.refreshActiveQuests = async (clanId, btn) => {
-    if(btn) { 
-        btn.style.animation = 'spin 1s infinite linear'; 
-        btn.style.pointerEvents = 'none'; 
-    }
-    console.log('[Manual Refresh] Active Quests...');
-    await fetchClanData(clanId, true, true);
-    if(btn) {
-        btn.style.animation = '';
-        btn.style.pointerEvents = 'auto';
-    }
-};
+// REMOVED REFRESH FUNCTIONS as requested
 
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
@@ -1385,7 +1365,7 @@ async function fetchAndDisplayData() {
         if(availableItems) {
              availableItems.innerHTML = `
                 ${items.error ? 'Error' : items.count.toLocaleString()}
-                <span class="material-icons" style="font-size:16px; cursor:pointer; vertical-align:middle; color:var(--primary-color); margin-left:5px;" onclick="window.refreshItemStats(this)" title="Refresh Item Count">refresh</span>
+                <!-- Removed Refresh Button -->
              `;
         }
     } else {
@@ -1895,16 +1875,18 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 
                 <div class="active-quest-body">
-                    <!-- Battle Pass Progress Bar -->
-                    <div class="xp-progress-wrapper">
-                        <div class="xp-progress-fill" style="width:${percent}%;"></div>
-                        <div class="xp-text">${progress.toLocaleString()} / ${target.toLocaleString()} XP (${percent}%)</div>
-                    </div>
                     
-                    <h4 style="margin:0 0 10px 0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
+                    <h4 style="margin:0 0 5px 0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> 
                         Quest Rewards Progression
                     </h4>
+
+                    <!-- MOVED: Battle Pass Progress Bar to be under the header -->
+                    <div class="xp-progress-wrapper" style="margin-bottom: 5px;">
+                        <div class="xp-progress-fill" style="width:${percent}%;"></div>
+                        <div class="xp-text">${progress.toLocaleString()} / ${target.toLocaleString()} XP (${percent}%)</div>
+                    </div>
+
                     ${rewardsTrackHtml}
                     
                     ${actionsHtml}
@@ -1913,8 +1895,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         `;
     } 
 
-    // ... (Rest of the rendering logic remains the same) ...
-    // Note: I will include the rest of the original function logic below to ensure it compiles correctly in the single file block.
+    // ... (rest of the code below) ...
 
     // 2. AVAILABLE QUESTS
     let availableQuestsHtml = '';
@@ -2244,7 +2225,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         }
     }
 
-    // Background Refresh Logic
     if (isBackground && isFirstRender === false) {
         
         const chatContainer = document.getElementById('clan-chat-container');
@@ -2296,7 +2276,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     isFirstRender = false;
     
-    // Main HTML Construction
     const profileHeader = `
         <div class="profile-header-card" style="border-left-color:#eab308;">
             <div class="profile-avatar-wrapper" style="display:flex; justify-content:center; align-items:center; width:100px; height:100px; background:#fefce8; border-radius:50%; font-size:50px; border:4px solid #eab308;">
@@ -2335,7 +2314,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div>
                 <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span><span class="material-icons">flag</span> Active Quests</span>
-                    <span class="material-icons" style="cursor:pointer; font-size:18px; color:#94a3b8;" onclick="window.refreshActiveQuests('${clanId}', this)" title="Force Refresh">refresh</span>
+                    <!-- REMOVED REFRESH BUTTON HERE -->
                 </h3>
                 <div id="clan-quests-container">
                     ${questsHtml}
