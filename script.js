@@ -219,7 +219,7 @@ window.showQuestModal = (questId) => {
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
     
-    // Rewards - Updated Layout to Grid (2 Columns)
+    // Rewards - Updated Layout to Horizontal Grid (Calculated Columns for 2 Rows)
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
@@ -237,30 +237,33 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
-                subLabel = `<span style="font-family:monospace; font-size:0.75rem; color:#64748b;">${itemId}</span>`;
+                // ID Removed as requested
             } else if (r.type === 'GOLD') {
                 imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
                 imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
             }
 
-            // Card Style for Grid
+            // Card Style for Grid - SWAPPED (Text Left, Image Right)
             return `
-                <div style="display:flex; align-items:center; background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #e2e8f0; position:relative; overflow:hidden;">
-                    <div style="margin-right:12px; min-width:48px; position:relative;">
-                        <span style="position:absolute; top:-8px; left:-8px; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-right-radius:6px; font-weight:bold;">T${idx+1}</span>
-                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain;">
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 10px; border-radius:10px; border:1px solid #e2e8f0; position:relative; overflow:hidden;">
                     <div style="overflow:hidden; flex:1;">
-                        <div style="font-weight:bold; font-size:0.85rem; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${label}">${label}</div>
-                        <div style="font-size:0.85rem; font-weight:600; color:#475569;">${subLabel}</div>
+                        <div style="font-weight:bold; font-size:0.8rem; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${label}">${label}</div>
+                        ${subLabel && r.amount > 1 ? `<div style="font-size:0.75rem; font-weight:600; color:#475569;">${subLabel}</div>` : ''}
+                    </div>
+                    <div style="margin-left:8px; min-width:40px; position:relative;">
+                        <span style="position:absolute; top:-8px; right:-8px; background:#64748b; color:white; font-size:0.6rem; padding:1px 5px; border-bottom-left-radius:6px; font-weight:bold;">T${idx+1}</span>
+                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:40px; height:40px; object-fit:contain;">
                     </div>
                 </div>
             `;
         }).join('');
 
-        // Grid Layout: 2 Columns, Gap
-        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:5px;">${rewardsList}</div>`;
+        // Grid Layout: Calculate columns to force approximately 2 rows
+        // e.g. 6 items / 2 = 3 columns. 8 items / 2 = 4 columns.
+        const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
+        
+        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
     // Votes
