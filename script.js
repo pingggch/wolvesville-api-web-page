@@ -230,8 +230,7 @@ window.showQuestModal = (questId) => {
                 let imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
                 const cachedItem = avatarItemsCache.get(itemId);
                 if (cachedItem && cachedItem.imageUrl) {
-                    // Use API imageUrl if available (though 256x PNG is often preferred for transparency)
-                    // We stick to 256x png for consistency with game UI
+                    imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
 
                 itemInfo = `
@@ -1363,9 +1362,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     // Try to get from cache first
                     const item = avatarItemsCache.get(r.avatarItemId);
                     if (item && item.imageUrl) {
-                        // Use the image URL from API if available (though typically .store.png is low res)
-                        // If you prefer high-res, we stick to constructed URL:
-                        imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                        imgUrl = item.imageUrl; // Use the image URL from API
                     } else {
                         imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                     }
