@@ -10,6 +10,7 @@ let isFetchingItems = false;
 let globalEmojiMap = new Map(); // Cache for Emoji URLs (Preview + Animation)
 let avatarItemsCache = new Map(); // NEW: Cache for Avatar Items from API
 let playerAvatarCache = new Map(); // Cache for player avatars
+let clanMembersDetailedMap = new Map(); // NEW: Cache for Detailed Member Data
 
 // Global Cache for Quest Details & Votes
 let questDetailsCache = new Map();
@@ -173,6 +174,16 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // 4. GLOBAL FUNCTIONS
 // **********************************************
 
+// Helper for navigation
+window.goToPlayerSearch = (username) => {
+    const input = document.getElementById('username-input');
+    if(input) {
+        input.value = username;
+        document.querySelector('.nav-link[data-page="player"]')?.click();
+        searchAndDisplayPlayer();
+    }
+};
+
 async function fetchAndCacheEmojis() {
     if (globalEmojiMap.size > 0) return; 
     
@@ -231,6 +242,9 @@ function showMemberModal(data) {
     if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
     else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
     
+    // Join Message
+    const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
+
     // Helper for formatting numbers
     const fmt = (n) => (n || 0).toLocaleString();
 
@@ -249,6 +263,7 @@ function showMemberModal(data) {
                 <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">LVL ${data.level || 0}</span>
                 ${data.isCoLeader ? '<span style="background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">CO-LEADER</span>' : ''}
             </div>
+            ${joinMsg}
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
@@ -766,43 +781,58 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 async function fetchMemberDetails(clanId, playerId, canEdit) {
     if (!playerId) return;
 
-    // Show initial loading modal
-    showCustomInfoModal(
-        'Loading Member...', 
-        '<div style="text-align:center; padding:20px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching details...</div>'
-    );
-    
-    try {
-        // Parallel Fetch: Detailed list + specific player (for safety)
-        const [detailedRes, playerRes] = await Promise.all([
-            fetchData(`/clans/${clanId}/members/detailed`),
-            fetchData(`/players/${playerId}`)
-        ]);
+    // Check Cache first to see if we already have detailed info (e.g. from fetchClanData)
+    let memberData = clanMembersDetailedMap.get(playerId) || {};
+    // If we have 'donated' field, it means we have detailed info.
+    const hasDetailedInfo = memberData.donated !== undefined;
 
-        let memberData = {};
-
-        // If detailed list works, find the member
-        if (!detailedRes.error && Array.isArray(detailedRes)) {
-            const found = detailedRes.find(m => m.playerId === playerId);
-            if (found) memberData = found;
-        }
-
-        // Merge with player profile (playerRes usually has equippedAvatar if detailedRes doesn't)
-        if (!playerRes.error) {
-            memberData = { ...playerRes, ...memberData };
-        }
-
-        // Close loading modal (remove last overlay)
-        const overlays = document.querySelectorAll('.modal-overlay');
-        if (overlays.length > 0) overlays[overlays.length - 1].remove();
+    if (!hasDetailedInfo) {
+        // Show initial loading modal if we don't have detailed info yet
+        showCustomInfoModal(
+            'Loading Member...', 
+            '<div style="text-align:center; padding:20px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching details...</div>'
+        );
         
-        // Show actual data
-        showMemberModal(memberData);
+        try {
+            // Parallel Fetch: Detailed list (to find one) + specific player (for avatar/status)
+            // Note: API doesn't support fetching one detailed member, so we fetch list or assume we are bot.
+            const [detailedRes, playerRes] = await Promise.all([
+                fetchData(`/clans/${clanId}/members/detailed`),
+                fetchData(`/players/${playerId}`)
+            ]);
 
-    } catch (e) {
-        console.error('[MemberDetails] Error:', e);
-        showCustomAlert('Error', 'Failed to load member details.');
+            // If detailed list works, find the member
+            if (!detailedRes.error && Array.isArray(detailedRes)) {
+                const found = detailedRes.find(m => m.playerId === playerId);
+                if (found) memberData = found;
+            }
+
+            // Merge with player profile (playerRes usually has equippedAvatar if detailedRes doesn't)
+            if (!playerRes.error) {
+                memberData = { ...playerRes, ...memberData };
+            }
+
+            // Close loading modal (remove last overlay)
+            const overlays = document.querySelectorAll('.modal-overlay');
+            if (overlays.length > 0) overlays[overlays.length - 1].remove();
+        } catch (e) {
+             console.error('[MemberDetails] Error:', e);
+             showCustomAlert('Error', 'Failed to load member details.');
+             return;
+        }
+    } else {
+        // We have detailed info, but let's do a quick fetch of player profile to ensure online status/avatar is fresh
+        // without blocking the UI
+        try {
+             const playerRes = await fetchData(`/players/${playerId}`);
+             if (!playerRes.error) {
+                 memberData = { ...memberData, ...playerRes };
+             }
+        } catch(e) { console.error('Background player fetch failed', e); }
     }
+    
+    // Show actual data
+    showMemberModal(memberData);
 }
 
 // **********************************************
@@ -1319,9 +1349,24 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         return;
     }
 
-    // 2. Members
+    // 2. Members (Updated to try Detailed fetch first)
     updateProgress('Fetching Members List...');
-    const membersRaw = await fetchData(`/clans/${clanId}/members`);
+    // Try detailed fetch first (available for bots)
+    let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
+    
+    if (membersRaw.error) {
+         console.log('[Clan] Detailed members fetch failed (likely not a bot), falling back to standard.');
+         // Fallback to standard members list
+         membersRaw = await fetchData(`/clans/${clanId}/members`);
+    } else {
+         console.log('[Clan] Detailed members fetched successfully.');
+    }
+    
+    // Update Detailed Cache
+    if (!membersRaw.error && Array.isArray(membersRaw)) {
+        clanMembersDetailedMap.clear();
+        membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
+    }
     
     // 3. Active Quests
     updateProgress('Fetching Active Quests...');
@@ -1436,18 +1481,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     setTimeout(() => {
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
-}
-
-async function fetchMemberDetails(clanId, playerId, canEdit) {
-    if (!playerId) return;
-    const modalId = 'member-modal';
-    let modal = document.getElementById(modalId);
-    if (modal) modal.remove();
-
-    const mem = (await fetchData(`/players/${playerId}`)) || {};
-    
-    // Basic modal construction (simplified for this context)
-    window.goToPlayerSearch(mem.username);
 }
 
 function renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, canEdit = false, isBackground = false, participatingMemberCount = 0) { 
