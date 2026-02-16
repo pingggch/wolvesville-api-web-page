@@ -221,7 +221,7 @@ function showMemberModal(data) {
     const creationDate = formatDateThai(data.creationTime);
     const lastOnline = formatDateThai(data.lastOnline);
     
-    // Donation Stats
+    // Donation Stats (Handle structure from API)
     const don = data.donated || {};
     const xpDur = data.xpDurations || {};
     
@@ -231,10 +231,13 @@ function showMemberModal(data) {
     if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
     else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
     
+    // Helper for formatting numbers
+    const fmt = (n) => (n || 0).toLocaleString();
+
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
-            <!-- Clickable Name -->
+            <!-- Clickable Name to Search -->
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${data.username}')"
                 title="Click to view full profile">
@@ -260,32 +263,46 @@ function showMemberModal(data) {
         </div>
 
         <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">💰 Donations</h4>
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; text-align:center; margin-bottom:15px;">
-            <div style="font-size:0.7rem; color:#94a3b8;">Period</div>
-            <div style="font-size:0.7rem; color:#94a3b8;">Week</div>
-            <div style="font-size:0.7rem; color:#94a3b8;">Month</div>
-            <div style="font-size:0.7rem; color:#94a3b8;">All Time</div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; text-align:center; margin-bottom:15px; font-size:0.85rem;">
+            <div style="font-weight:bold; color:#64748b; font-size:0.75rem;">Period</div>
+            <div style="font-weight:bold; color:#d97706;">Gold</div>
+            <div style="font-weight:bold; color:#9333ea;">Gems</div>
             
-            <div style="font-weight:bold; color:#d97706; font-size:0.8rem;">Gold</div>
-            <div style="font-size:0.85rem;">${(don.gold?.week||0).toLocaleString()}</div>
-            <div style="font-size:0.85rem;">${(don.gold?.month||0).toLocaleString()}</div>
-            <div style="font-size:0.85rem;">${(don.gold?.allTime||0).toLocaleString()}</div>
+            <!-- Week -->
+            <div style="color:#64748b;">Week</div>
+            <div style="color:#d97706;">${fmt(don.gold?.week)}</div>
+            <div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
 
-            <div style="font-weight:bold; color:#9333ea; font-size:0.8rem;">Gems</div>
-            <div style="font-size:0.85rem;">${(don.gems?.week||0).toLocaleString()}</div>
-            <div style="font-size:0.85rem;">${(don.gems?.month||0).toLocaleString()}</div>
-            <div style="font-size:0.85rem;">${(don.gems?.allTime||0).toLocaleString()}</div>
+            <!-- Month -->
+            <div style="color:#64748b;">Month</div>
+            <div style="color:#d97706;">${fmt(don.gold?.month)}</div>
+            <div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
+
+            <!-- All Time -->
+            <div style="color:#64748b;">All Time</div>
+            <div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div>
+            <div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
         </div>
 
         <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">⚔️ Activity</h4>
-        <div style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
-             <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span style="color:#166534; font-size:0.9rem;">XP (Week/Month)</span>
-                <strong>${(xpDur.week||0).toLocaleString()} / ${(xpDur.month||0).toLocaleString()}</strong>
-             </div>
-             <div style="display:flex; justify-content:space-between;">
-                <span style="color:#166534; font-size:0.9rem;">Quests (Gold/Gem)</span>
-                <strong>${data.goldQuests||0} / ${data.gemQuests||0}</strong>
+        <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
+             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Week)</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.week)}</div>
+                 </div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div>
+                 </div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.goldQuests)}</div>
+                 </div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gem Quests</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.gemQuests)}</div>
+                 </div>
              </div>
         </div>
         
@@ -322,7 +339,8 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
-                subLabel = ''; // ID Removed as requested
+                // subLabel = ''; // Show just count or nothing
+                if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
                 imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
@@ -331,9 +349,9 @@ window.showQuestModal = (questId) => {
 
             // Card Style for Grid - Image Centered, No Label Text
             return `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;">
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" title="${label}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
                     ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
