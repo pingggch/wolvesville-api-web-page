@@ -219,34 +219,48 @@ window.showQuestModal = (questId) => {
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
     
-    // Rewards
+    // Rewards - Updated Layout to Grid (2 Columns)
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
-        rewardsHtml = quest.rewards.map(r => {
+        const rewardsList = quest.rewards.map((r, idx) => {
             let itemInfo = '';
+            let imgUrl = 'https://via.placeholder.com/60?text=?';
+            let label = r.type.replace(/_/g, ' ');
+            let subLabel = `x${r.amount}`;
+
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
                 // Use Cached Item or Default Construction
-                let imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
+                imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
                 const cachedItem = avatarItemsCache.get(itemId);
                 if (cachedItem && cachedItem.imageUrl) {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
-
-                itemInfo = `
-                    <div class="reward-item">
-                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:40px; height:40px; object-fit:contain;">
-                        <div>
-                            <strong>Avatar Item</strong><br>
-                            <span style="font-family:monospace; color:#475569;">ID: ${itemId}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                itemInfo = `<div class="reward-item"><strong>${r.type.replace('_', ' ')}</strong> x${r.amount}</div>`;
+                label = 'Avatar Item';
+                subLabel = `<span style="font-family:monospace; font-size:0.75rem; color:#64748b;">${itemId}</span>`;
+            } else if (r.type === 'GOLD') {
+                imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
+            } else if (r.type === 'GEM' || r.type === 'GEMS') {
+                imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
             }
-            return itemInfo;
+
+            // Card Style for Grid
+            return `
+                <div style="display:flex; align-items:center; background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #e2e8f0; position:relative; overflow:hidden;">
+                    <div style="margin-right:12px; min-width:48px; position:relative;">
+                        <span style="position:absolute; top:-8px; left:-8px; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-right-radius:6px; font-weight:bold;">T${idx+1}</span>
+                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain;">
+                    </div>
+                    <div style="overflow:hidden; flex:1;">
+                        <div style="font-weight:bold; font-size:0.85rem; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${label}">${label}</div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#475569;">${subLabel}</div>
+                    </div>
+                </div>
+            `;
         }).join('');
+
+        // Grid Layout: 2 Columns, Gap
+        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:5px;">${rewardsList}</div>`;
     }
 
     // Votes
