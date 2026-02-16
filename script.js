@@ -240,7 +240,7 @@ function showMemberModal(data) {
             <!-- Clickable Name to Search -->
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${data.username}')"
-                title="Click to view full profile">
+                title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
                 ${data.username}
             </h2>
             <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
@@ -1712,7 +1712,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             let statusText = m.playerStatus || m.status || 'OFFLINE';
             if (statusText === 'ONLINE' || statusText === 'DEFAULT') { statusColor = 'var(--success)'; statusText = 'DEFAULT'; }
             else if (statusText === 'PLAY') { statusColor = '#1e40af'; statusText = 'PLAY'; }
-            else if (statusText === 'DND' || statusText === 'DO_NOT_DISTURB') { statusColor = '#ef4444'; statusText = 'DO NOT DISTURB'; }
+            else if (statusText === 'DND' || statusText === 'DO_NOT_DISTURB') { statusColor = '#ef444'; statusText = 'DO NOT DISTURB'; }
             else if (statusText === 'OFFLINE') { statusColor = '#ccc'; statusText = 'INVISIBLE'; }
 
             const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
