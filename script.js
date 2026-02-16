@@ -8,6 +8,7 @@ const localServerUrl = window.location.origin;
 let itemDataCache = null; 
 let isFetchingItems = false; 
 let globalEmojiMap = new Map(); // Cache for Emoji URLs (Preview + Animation)
+let avatarItemsCache = new Map(); // NEW: Cache for Avatar Items from API
 let playerAvatarCache = new Map(); // Cache for player avatars
 
 // Global Cache for Quest Details & Votes
@@ -191,6 +192,25 @@ async function fetchAndCacheEmojis() {
     }
 }
 
+// NEW: Fetch Avatar Items from API
+async function fetchAndCacheAvatarItems() {
+    if (avatarItemsCache.size > 0) return;
+    
+    console.log('[Items] Fetching avatar items list...');
+    // This fetches the list of all avatar items to map ID to Image URL
+    const res = await fetchData('/items/avatarItems', false, false);
+    
+    if (!res.error && Array.isArray(res)) {
+        res.forEach(item => {
+            // Store item details in cache
+            avatarItemsCache.set(item.id, item);
+        });
+        console.log(`[Items] Cached ${avatarItemsCache.size} avatar items.`);
+    } else {
+        console.error('[Items] Failed to fetch avatar items:', res);
+    }
+}
+
 // NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
@@ -206,11 +226,17 @@ window.showQuestModal = (questId) => {
             let itemInfo = '';
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
-                // Assuming URL structure based on ID
-                const imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
+                // Use Cached Item or Default Construction
+                let imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
+                const cachedItem = avatarItemsCache.get(itemId);
+                if (cachedItem && cachedItem.imageUrl) {
+                    // Use API imageUrl if available (though 256x PNG is often preferred for transparency)
+                    // We stick to 256x png for consistency with game UI
+                }
+
                 itemInfo = `
                     <div class="reward-item">
-                        <img src="${imgUrl}" onerror="this.style.display='none'">
+                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:40px; height:40px; object-fit:contain;">
                         <div>
                             <strong>Avatar Item</strong><br>
                             <span style="font-family:monospace; color:#475569;">ID: ${itemId}</span>
@@ -1139,7 +1165,11 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         updateProgress('Initializing...');
     }
     
-    await fetchAndCacheEmojis();
+    // Parallel fetching for assets
+    await Promise.all([
+        fetchAndCacheEmojis(),
+        fetchAndCacheAvatarItems() // NEW: Fetch Avatar Items
+    ]);
     
     // 1. Info
     updateProgress('Fetching Clan Info...');
@@ -1309,9 +1339,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const currentTierIndex = (qData.tier || 0);
             
             // [FIXED] PROGRESS BAR LOGIC
-            // The track connects rewards. We map current tier progress to the segments.
-            // If there are N rewards, there are N-1 segments.
-            // Tier 0 (Index 0) -> Progress fills segment 0 (Reward 1 -> Reward 2)
             const totalSegments = Math.max(1, qInfo.rewards.length - 1);
             let relativeProgress = currentTierIndex + (progress / target);
             
@@ -1332,8 +1359,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             
             qInfo.rewards.forEach((r, idx) => {
                 let imgUrl = 'https://via.placeholder.com/60?text=?';
-                if(r.type === 'AVATAR_ITEM') imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                if(r.type === 'AVATAR_ITEM') {
+                    // Try to get from cache first
+                    const item = avatarItemsCache.get(r.avatarItemId);
+                    if (item && item.imageUrl) {
+                        // Use the image URL from API if available (though typically .store.png is low res)
+                        // If you prefer high-res, we stick to constructed URL:
+                        imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                    } else {
+                        imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                    }
+                }
                 else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
+                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
