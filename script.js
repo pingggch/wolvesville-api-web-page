@@ -1299,7 +1299,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         
         const progress = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
         const target = qData.xpPerReward || qInfo.xpPerReward || 1;
-        // const percent = Math.min(100, Math.round((progress / target) * 100)); // Old calculation
         const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
         const activeParticipants = members.filter(m => m.participateInClanQuests).length;
         const actionCost = 300 + (30 * activeParticipants);
@@ -1310,12 +1309,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const currentTierIndex = (qData.tier || 0);
             
             // [FIXED] PROGRESS BAR LOGIC
+            // The track connects rewards. We map current tier progress to the segments.
+            // If there are N rewards, there are N-1 segments.
+            // Tier 0 (Index 0) -> Progress fills segment 0 (Reward 1 -> Reward 2)
             const totalSegments = Math.max(1, qInfo.rewards.length - 1);
-            let relativeProgress = 0;
-            // Only show progress bar if we have completed at least 1 tier (Tier 1 completed -> moving to Tier 2)
-            if (currentTierIndex > 0) {
-                 relativeProgress = (currentTierIndex - 1) + (progress / target);
-            }
+            let relativeProgress = currentTierIndex + (progress / target);
+            
+            // Cap progress at 100% of the track
+            if (relativeProgress > totalSegments) relativeProgress = totalSegments;
+            
             const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
 
             rewardsTrackHtml = `
@@ -1374,7 +1376,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div class="active-quest-container">
                 <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
                     <div class="active-quest-overlay">
-                        <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">${qInfo.title || 'Active Clan Quest'} (Tier ${tier})</h2>
+                        <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${qInfo.title || 'Active Clan Quest'} (Tier ${tier})</h2>
                         <div class="active-quest-meta-lg">
                             <span class="material-icons" style="font-size:16px;">schedule</span> Ends: ${formatDateThai(qData.tierEndTime || qInfo.tierEndTime)}
                         </div>
