@@ -97,7 +97,7 @@ modalStyle.textContent = `
     margin-top: 15px;
 }
 
-/* NEW: Large Quest Card Style */
+/* Quest Card Large */
 .quest-card-large {
     position: relative;
     border-radius: 12px;
@@ -106,7 +106,7 @@ modalStyle.textContent = `
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
     border: 1px solid #e2e8f0;
-    cursor: pointer; /* Clickable */
+    cursor: pointer;
 }
 .quest-card-large:hover {
     transform: translateY(-3px);
@@ -114,7 +114,7 @@ modalStyle.textContent = `
 }
 .quest-card-large-img {
     width: 100%;
-    height: 180px; /* Fixed height for banner look */
+    height: 180px;
     object-fit: cover;
     display: block;
 }
@@ -156,7 +156,7 @@ modalStyle.textContent = `
     backdrop-filter: blur(4px);
 }
 
-/* NEW: Active Quest Card Styling (Banner Style) */
+/* Active Quest Styling */
 .active-quest-container {
     background: white;
     border-radius: 16px;
@@ -168,7 +168,7 @@ modalStyle.textContent = `
 }
 .active-quest-banner {
     width: 100%;
-    height: 220px; /* Large Banner Height */
+    height: 220px;
     object-fit: cover;
     display: block;
     position: relative;
@@ -182,7 +182,7 @@ modalStyle.textContent = `
     justify-content: flex-end;
     padding: 20px;
     color: white;
-    pointer-events: none; /* Let clicks pass through if needed */
+    pointer-events: none;
 }
 .active-quest-title-lg {
     font-size: 1.8rem;
@@ -203,27 +203,39 @@ modalStyle.textContent = `
     padding: 20px;
 }
 
-/* Battle Pass Style Progress Bar */
-.xp-progress-wrapper {
+/* Battle Pass Unified Tracker */
+.battle-pass-hub {
     position: relative;
-    height: 24px;
-    background: #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    margin: 5px 0 15px 0; /* Adjusted margin */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    border: 1px solid #cbd5e1;
+    padding: 30px 10px 40px 10px;
+    margin-top: 10px;
 }
+
+.xp-progress-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 40px;
+    right: 40px;
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    transform: translateY(-50%);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    border: 2px solid #cbd5e1;
+    z-index: 1;
+}
+
 .xp-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #f59e0b, #fbbf24);
     width: 0%;
     transition: width 1s ease-out;
-    border-radius: 12px;
+    border-radius: 10px;
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
 }
+
+@keyframes move { from { background-position: 0 0; } to { background-position: 30px 0; } }
+
 .xp-progress-fill::after {
     content: "";
     position: absolute;
@@ -233,44 +245,14 @@ modalStyle.textContent = `
     background-size: 30px 30px;
     animation: move 2s linear infinite;
 }
-.xp-text {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    top: 0; left: 0;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #334155;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
-    z-index: 2;
-    letter-spacing: 0.5px;
-}
 
-/* Battle Pass Rewards Track */
 .battle-pass-track {
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: relative;
-    padding: 20px 10px;
-    margin-top: 5px;
+    z-index: 2;
     overflow-x: auto;
-}
-/* Connecting Line */
-.battle-pass-track::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 20px;
-    right: 20px;
-    height: 6px;
-    background: #e2e8f0;
-    transform: translateY(-50%);
-    z-index: 0;
-    border-radius: 4px;
 }
 
 .reward-step {
@@ -278,38 +260,34 @@ modalStyle.textContent = `
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
-    z-index: 1;
     min-width: 80px;
 }
 
 .reward-icon-box {
-    width: 64px;
-    height: 64px;
+    width: 58px;
+    height: 58px;
     background: #fff;
     border: 3px solid #cbd5e1;
-    border-radius: 16px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    margin-bottom: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-bottom: 0;
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .reward-icon-box img {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
 }
 
-/* Completed State */
+/* States */
 .reward-step.completed-tier .reward-icon-box {
     background: #dcfce7;
     border-color: #22c55e;
-    opacity: 0.8;
 }
 .reward-step.completed-tier .reward-icon-box::after {
     content: '✓';
@@ -317,29 +295,43 @@ modalStyle.textContent = `
     bottom: -8px;
     background: #22c55e;
     color: white;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid white;
 }
 
-/* Active State */
 .reward-step.active-tier .reward-icon-box {
     border-color: #f59e0b;
     background: #fffbeb;
     transform: scale(1.15);
-    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
-    z-index: 2;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
 }
-.reward-step.active-tier .tier-label {
-    color: #d97706;
-    font-weight: 800;
-    font-size: 0.85rem;
-    margin-top: 5px;
+
+.xp-label-floating {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #334155;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.tier-label {
+    margin-top: 15px;
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .reward-badge {
@@ -348,53 +340,14 @@ modalStyle.textContent = `
     right: -8px;
     background: #ef4444;
     color: white;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    padding: 1px 5px;
+    border-radius: 8px;
     border: 2px solid white;
 }
 
-.tier-label {
-    font-size: 0.75rem;
-    color: #64748b;
-    text-align: center;
-    font-weight: 600;
-    background: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-/* Rewards List in Modal */
-.reward-item {
-    display: flex;
-    align-items: center;
-    background: #f1f5f9;
-    padding: 8px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-}
-.reward-item img {
-    width: 32px;
-    height: 32px;
-    margin-right: 10px;
-    border-radius: 4px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-}
-.voter-tag {
-    display: inline-block;
-    background: #e0f2fe;
-    color: #0369a1;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin: 2px;
-}
-
-/* Styles for Quest Toggle & Flair in List */
+/* Quest Toggle & Flair */
 .quest-inline-icon {
     font-size: 20px !important;
     margin-left: 8px;
@@ -402,14 +355,10 @@ modalStyle.textContent = `
     cursor: default;
     transition: transform 0.2s, opacity 0.2s;
 }
-.quest-inline-icon.clickable {
-    cursor: pointer;
-}
-.quest-inline-icon.clickable:hover {
-    transform: scale(1.2);
-}
-.quest-inline-icon.on { color: #22c55e; } /* Green */
-.quest-inline-icon.off { color: #ef4444; opacity: 0.4; } /* Red faded */
+.quest-inline-icon.clickable { cursor: pointer; }
+.quest-inline-icon.clickable:hover { transform: scale(1.2); }
+.quest-inline-icon.on { color: #22c55e; }
+.quest-inline-icon.off { color: #ef4444; opacity: 0.4; }
 .quest-inline-icon.loading { animation: spin 1s linear infinite; color: #64748b; }
 
 .action-icon {
@@ -421,8 +370,8 @@ modalStyle.textContent = `
     transition: all 0.2s;
 }
 .action-icon:hover { opacity: 1; transform: scale(1.1); }
-.kick-icon { color: #ef4444; } /* Red */
-.block-icon { color: #64748b; } /* Slate */
+.kick-icon { color: #ef4444; }
+.block-icon { color: #64748b; }
 
 .flair-editable {
     cursor: pointer;
@@ -431,12 +380,8 @@ modalStyle.textContent = `
     border-radius: 4px;
     transition: all 0.2s;
 }
-.flair-editable:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-}
+.flair-editable:hover { background: #f1f5f9; border-color: #cbd5e1; }
 
-/* Blocklist Styles */
 .blocklist-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -451,96 +396,50 @@ modalStyle.textContent = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: sans-serif;
     font-size: 0.9rem;
-}
-.blocked-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
-.blocked-name {
-    cursor: pointer;
-    color: #0ea5e9;
-    font-weight: bold;
-    transition: color 0.2s;
-}
-.blocked-name:hover {
-    color: #0284c7;
-    text-decoration: underline;
 }
 .btn-unblock {
     background: none; border: none; color: #22c55e;
     cursor: pointer; font-weight: bold; font-size: 0.8rem;
 }
-.btn-unblock:hover { text-decoration: underline; }
 
-/* Chat Emoji Style */
-.chat-emoji-container {
-    display: inline-block;
-    width: 64px; 
-    height: 64px;
-    vertical-align: middle;
-    transition: transform 0.2s;
-}
+/* Chat Emoji */
 .chat-emoji-img {
-    width: 64px; 
-    height: 64px;
+    width: 64px; height: 64px;
     vertical-align: middle;
     object-fit: contain;
 }
-.chat-emoji-container:hover, .chat-emoji-img:hover {
-    transform: scale(1.2);
-}
 
-/* Member Card Styles */
+/* Member Card */
 .member-list {
-    display: grid;
-    gap: 10px;
+    display: grid; gap: 10px;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 .member-card {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
+    display: flex; align-items: center;
+    padding: 10px; background: white;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    cursor: pointer; transition: transform 0.2s;
 }
-.member-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
+.member-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
 .member-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: #f1f5f9;
-    margin-right: 12px;
-    flex-shrink: 0;
-    background-position: center;
-    background-repeat: no-repeat;
+    width: 48px; height: 48px;
+    border-radius: 50%; background-color: #f1f5f9;
+    margin-right: 12px; flex-shrink: 0;
+    background-position: center; background-repeat: no-repeat;
     border: 1px solid #e2e8f0;
-}
-.member-details {
-    flex: 1;
-    overflow: hidden;
 }
 .role-badge {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 5px;
-    font-weight: bold;
-    text-transform: uppercase;
+    font-size: 0.7rem; padding: 2px 6px;
+    border-radius: 4px; margin-left: 5px;
+    font-weight: bold; text-transform: uppercase;
 }
 .role-badge.leader { background: #fee2e2; color: #991b1b; }
 .role-badge.coleader { background: #e0f2fe; color: #075985; }
 
-/* Scroll Area */
 .clan-scroll-area {
-    display: flex;
-    flex-direction: column;
-    min-height: 300px;
-    max-height: 500px;
+    display: flex; flex-direction: column;
+    min-height: 300px; max-height: 500px;
     overflow-y: auto;
 }
 `;
@@ -683,31 +582,6 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // **********************************************
 // 4. GLOBAL FUNCTIONS
 // **********************************************
-
-function startClanPolling(clanId, isMyClan) {
-    if (clanPollingInterval) clearInterval(clanPollingInterval);
-    
-    currentViewingClanId = clanId;
-    isCurrentViewMyClan = isMyClan;
-    isFirstRender = true;
-
-    console.log('[Auto-Update] Enabled (60s interval for everything).');
-    
-    clanPollingInterval = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            fetchClanData(clanId, isMyClan, true); 
-        }
-    }, 60000); 
-}
-
-function stopClanPolling() {
-    if (clanPollingInterval) {
-        clearInterval(clanPollingInterval);
-        clanPollingInterval = null;
-    }
-    currentViewingClanId = null;
-    isFirstRender = true;
-}
 
 async function fetchAndCacheEmojis() {
     if (globalEmojiMap.size > 0) return; 
@@ -1620,6 +1494,32 @@ async function searchClan() {
     await fetchClanData(searchRes[0].id, false);
 }
 
+// Global polling functions
+function startClanPolling(clanId, isMyClan) {
+    if (clanPollingInterval) clearInterval(clanPollingInterval);
+    
+    currentViewingClanId = clanId;
+    isCurrentViewMyClan = isMyClan;
+    isFirstRender = true;
+
+    console.log('[Auto-Update] Enabled (60s interval for everything).');
+    
+    clanPollingInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            fetchClanData(clanId, isMyClan, true); 
+        }
+    }, 60000); 
+}
+
+function stopClanPolling() {
+    if (clanPollingInterval) {
+        clearInterval(clanPollingInterval);
+        clanPollingInterval = null;
+    }
+    currentViewingClanId = null;
+    isFirstRender = true;
+}
+
 // [UPDATED] Sequential Loading Function with Progress Bar
 async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     const totalSteps = isMyClan ? 14 : 9; // Approximate steps
@@ -1772,16 +1672,24 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     }
     currentParticipatingCount = participatingMemberCount;
 
-    if(quests) console.log('[ActiveQuest Data]', quests);
-
     // Final Render
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
-    }, 500); // Small delay to show 100%
+    }, 500); 
 }
 
-// ... (fetchMemberDetails and other existing functions remain same) ...
+async function fetchMemberDetails(clanId, playerId, canEdit) {
+    if (!playerId) return;
+    const modalId = 'member-modal';
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+
+    const mem = (await fetchData(`/players/${playerId}`)) || {};
+    
+    // Basic modal construction (simplified for this context)
+    window.goToPlayerSearch(mem.username);
+}
 
 function renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, canEdit = false, isBackground = false, participatingMemberCount = 0) { 
     const memberMap = {};
@@ -1791,7 +1699,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         });
     }
 
-    // 1. QUESTS HTML (Active) - BATTLE PASS STYLE
+    // 1. ACTIVE QUEST HTML (BATTLE PASS STYLE - UPDATED)
     let questsHtml = '<div style="text-align:center; color:#ccc; padding:20px;">No Active Quests</div>';
     let hasActiveQuest = false;
     
@@ -1804,35 +1712,36 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const target = qData.xpPerReward || qInfo.xpPerReward || 1;
         const percent = Math.min(100, Math.round((progress / target) * 100));
         const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
-        const activeParticipants = (qData.participants || []).length || participatingMemberCount;
-        
-        const primaryColor = qInfo.promoImagePrimaryColor || '#3b82f6';
+        const activeParticipants = members.filter(m => m.participateInClanQuests).length;
         const actionCost = 300 + (30 * activeParticipants);
 
-        // --- BATTLE PASS TRACK VISUALIZATION ---
+        // --- BATTLE PASS TRACK (UNIFIED) ---
         let rewardsTrackHtml = '';
         if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
-            rewardsTrackHtml = '<div class="battle-pass-track">';
+            rewardsTrackHtml = `
+                <div class="battle-pass-hub">
+                    <!-- The Progress Bar is now inside the Track Hub -->
+                    <div class="xp-progress-wrapper">
+                        <div class="xp-progress-fill" style="width:${percent}%;"></div>
+                    </div>
+
+                    <div class="battle-pass-track">
+            `;
+            
             qInfo.rewards.forEach((r, idx) => {
                 let imgUrl = 'https://via.placeholder.com/60?text=?';
-                if(r.type === 'AVATAR_ITEM') {
-                    imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
-                } else if(r.type === 'GOLD') {
-                    imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
-                }
+                if(r.type === 'AVATAR_ITEM') imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
                 
-                let statusClass = '';
-                // Logic: 
-                // idx < currentTierIndex -> Completed
-                // idx == currentTierIndex -> Active
                 const currentTierIndex = (qData.tier || 0);
-                
+                let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
                 else if (idx === currentTierIndex) statusClass = 'active-tier';
 
                 rewardsTrackHtml += `
                     <div class="reward-step ${statusClass}">
                         <div class="reward-icon-box">
+                            ${idx === currentTierIndex ? `<div class="xp-label-floating">${progress.toLocaleString()} / ${target.toLocaleString()} XP</div>` : ''}
                             <img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/60?text=Item'">
                             ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
                         </div>
@@ -1840,9 +1749,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </div>
                 `;
             });
-            rewardsTrackHtml += '</div>';
+            rewardsTrackHtml += '</div></div>';
         }
-        // ------------------------------------------
 
         let actionsHtml = '';
         if (canEdit) {
@@ -1875,27 +1783,17 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 
                 <div class="active-quest-body">
-                    
-                    <h4 style="margin:0 0 5px 0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
+                    <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> 
                         Quest Rewards Progression
                     </h4>
 
-                    <!-- MOVED: Battle Pass Progress Bar to be under the header -->
-                    <div class="xp-progress-wrapper" style="margin-bottom: 5px;">
-                        <div class="xp-progress-fill" style="width:${percent}%;"></div>
-                        <div class="xp-text">${progress.toLocaleString()} / ${target.toLocaleString()} XP (${percent}%)</div>
-                    </div>
-
                     ${rewardsTrackHtml}
-                    
                     ${actionsHtml}
                 </div>
             </div>
         `;
     } 
-
-    // ... (rest of the code below) ...
 
     // 2. AVAILABLE QUESTS
     let availableQuestsHtml = '';
@@ -1968,9 +1866,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                     <img src="${q.promoImageUrl}" class="quest-card-large-img">
-                     ${voteHtml}
-                     <div class="quest-card-overlay">
+                      <img src="${q.promoImageUrl}" class="quest-card-large-img">
+                      ${voteHtml}
+                      <div class="quest-card-overlay">
                         <div>
                              <div class="quest-price-tag" style="color: ${isGem ? '#d8b4fe' : '#fcd34d'};">
                                 <span class="material-icons" style="font-size:16px;">${isGem ? 'diamond' : 'monetization_on'}</span>
@@ -1978,7 +1876,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                              </div>
                         </div>
                         ${claimBtn}
-                     </div>
+                      </div>
                 </div>
             `;
         }).join('');
@@ -2231,7 +2129,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         if (chatContainer && chatContainer.innerHTML !== chatHtml) {
             const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
             chatContainer.innerHTML = chatHtml;
-            initLottieAnimations(); 
+            // initLottieAnimations(); 
             if (isAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
@@ -2387,13 +2285,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     clanContentContainer.innerHTML = profileHeader + mainContent + apiConsole;
 
-    const chatContainer = document.getElementById('clan-chat-container');
-    if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        initLottieAnimations(); 
+    const finalChatContainer = document.getElementById('clan-chat-container');
+    if (finalChatContainer) {
+        finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
     }
 }
 
+// Initialize on Load (Restored full initialization logic)
 document.addEventListener('DOMContentLoaded', () => {
     sendIncrementSignal('visitors');
     fetchAndDisplayData();
