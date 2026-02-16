@@ -234,7 +234,12 @@ function showMemberModal(data) {
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
-            <h2 style="margin:0; font-size:1.5rem; color:#1e293b;">${data.username}</h2>
+            <!-- Clickable Name -->
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
+                onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${data.username}')"
+                title="Click to view full profile">
+                ${data.username}
+            </h2>
             <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
             <div style="margin-top:5px;">
                 <span class="status-badge ${statusClass}" style="font-size:0.7rem; padding:2px 8px;">${statusLabel}</span>
@@ -300,7 +305,7 @@ window.showQuestModal = (questId) => {
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
     
-    // Rewards - Updated Layout to Horizontal Grid (Calculated Columns for 2 Rows)
+    // Rewards - Updated Layout to Grid based on columns (calculating for 2 rows)
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
@@ -339,7 +344,8 @@ window.showQuestModal = (questId) => {
             `;
         }).join('');
 
-        // Grid Layout: Calculate columns to force approximately 2 rows
+        // Grid Layout: Determine columns to fit into 2 rows
+        // e.g., 6 items -> 3 cols (3x2), 8 items -> 4 cols (4x2)
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
@@ -1450,6 +1456,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         
         const progress = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
         const target = qData.xpPerReward || qInfo.xpPerReward || 1;
+        const percent = Math.min(100, Math.round((progress / target) * 100));
         const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
         const activeParticipants = members.filter(m => m.participateInClanQuests).length;
         const actionCost = 300 + (30 * activeParticipants);
