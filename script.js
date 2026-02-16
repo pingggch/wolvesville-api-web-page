@@ -329,17 +329,12 @@ window.showQuestModal = (questId) => {
                 imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
             }
 
-            // Card Style for Grid - SWAPPED (Text Left, Image Right)
+            // Card Style for Grid - Image Centered, No Label Text
             return `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 10px; border-radius:10px; border:1px solid #e2e8f0; position:relative; overflow:hidden;">
-                    <div style="overflow:hidden; flex:1;">
-                        <div style="font-weight:bold; font-size:0.8rem; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${label}">${label}</div>
-                        ${subLabel ? `<div style="font-size:0.75rem; font-weight:600; color:#475569;">${subLabel}</div>` : ''}
-                    </div>
-                    <div style="margin-left:8px; min-width:40px; position:relative;">
-                        <span style="position:absolute; top:-8px; right:-8px; background:#64748b; color:white; font-size:0.6rem; padding:1px 5px; border-bottom-left-radius:6px; font-weight:bold;">T${idx+1}</span>
-                        <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:40px; height:40px; object-fit:contain;">
-                    </div>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;">
+                    <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
+                    <img src="${imgUrl}" title="${label}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
         }).join('');
