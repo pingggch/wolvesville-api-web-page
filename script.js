@@ -211,6 +211,87 @@ async function fetchAndCacheAvatarItems() {
     }
 }
 
+// NEW: Show Member Details Modal
+function showMemberModal(data) {
+    // Determine Avatar URL
+    let avatarUrl = 'https://via.placeholder.com/150';
+    if(data.equippedAvatar?.url) avatarUrl = data.equippedAvatar.url;
+    else if(data.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${data.profileIconId}`;
+
+    const creationDate = formatDateThai(data.creationTime);
+    const lastOnline = formatDateThai(data.lastOnline);
+    
+    // Donation Stats
+    const don = data.donated || {};
+    const xpDur = data.xpDurations || {};
+    
+    // Status Badge
+    let statusClass = 'offline';
+    let statusLabel = data.status || 'UNKNOWN';
+    if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
+    else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
+    
+    const content = `
+        <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
+            <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b;">${data.username}</h2>
+            <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
+            <div style="margin-top:5px;">
+                <span class="status-badge ${statusClass}" style="font-size:0.7rem; padding:2px 8px;">${statusLabel}</span>
+                <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">LVL ${data.level || 0}</span>
+                ${data.isCoLeader ? '<span style="background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">CO-LEADER</span>' : ''}
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Joined</div>
+                <div style="font-weight:600; font-size:0.9rem;">${creationDate.split(' ')[0]}</div>
+             </div>
+             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Last Online</div>
+                <div style="font-weight:600; font-size:0.85rem;">${lastOnline}</div>
+             </div>
+        </div>
+
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">💰 Donations</h4>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; text-align:center; margin-bottom:15px;">
+            <div style="font-size:0.7rem; color:#94a3b8;">Period</div>
+            <div style="font-size:0.7rem; color:#94a3b8;">Week</div>
+            <div style="font-size:0.7rem; color:#94a3b8;">Month</div>
+            <div style="font-size:0.7rem; color:#94a3b8;">All Time</div>
+            
+            <div style="font-weight:bold; color:#d97706; font-size:0.8rem;">Gold</div>
+            <div style="font-size:0.85rem;">${(don.gold?.week||0).toLocaleString()}</div>
+            <div style="font-size:0.85rem;">${(don.gold?.month||0).toLocaleString()}</div>
+            <div style="font-size:0.85rem;">${(don.gold?.allTime||0).toLocaleString()}</div>
+
+            <div style="font-weight:bold; color:#9333ea; font-size:0.8rem;">Gems</div>
+            <div style="font-size:0.85rem;">${(don.gems?.week||0).toLocaleString()}</div>
+            <div style="font-size:0.85rem;">${(don.gems?.month||0).toLocaleString()}</div>
+            <div style="font-size:0.85rem;">${(don.gems?.allTime||0).toLocaleString()}</div>
+        </div>
+
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">⚔️ Activity</h4>
+        <div style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
+             <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span style="color:#166534; font-size:0.9rem;">XP (Week/Month)</span>
+                <strong>${(xpDur.week||0).toLocaleString()} / ${(xpDur.month||0).toLocaleString()}</strong>
+             </div>
+             <div style="display:flex; justify-content:space-between;">
+                <span style="color:#166534; font-size:0.9rem;">Quests (Gold/Gem)</span>
+                <strong>${data.goldQuests||0} / ${data.gemQuests||0}</strong>
+             </div>
+        </div>
+        
+        <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">
+            Player ID: <span style="font-family:monospace;">${data.playerId || data.id}</span>
+        </div>
+    `;
+    
+    showCustomInfoModal(data.username || 'Member Details', content);
+}
+
 // NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
@@ -223,7 +304,6 @@ window.showQuestModal = (questId) => {
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
-            let itemInfo = '';
             let imgUrl = 'https://via.placeholder.com/60?text=?';
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
@@ -237,7 +317,7 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
-                // ID Removed as requested
+                subLabel = ''; // ID Removed as requested
             } else if (r.type === 'GOLD') {
                 imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
@@ -249,7 +329,7 @@ window.showQuestModal = (questId) => {
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 10px; border-radius:10px; border:1px solid #e2e8f0; position:relative; overflow:hidden;">
                     <div style="overflow:hidden; flex:1;">
                         <div style="font-weight:bold; font-size:0.8rem; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${label}">${label}</div>
-                        ${subLabel && r.amount > 1 ? `<div style="font-size:0.75rem; font-weight:600; color:#475569;">${subLabel}</div>` : ''}
+                        ${subLabel ? `<div style="font-size:0.75rem; font-weight:600; color:#475569;">${subLabel}</div>` : ''}
                     </div>
                     <div style="margin-left:8px; min-width:40px; position:relative;">
                         <span style="position:absolute; top:-8px; right:-8px; background:#64748b; color:white; font-size:0.6rem; padding:1px 5px; border-bottom-left-radius:6px; font-weight:bold;">T${idx+1}</span>
@@ -260,7 +340,6 @@ window.showQuestModal = (questId) => {
         }).join('');
 
         // Grid Layout: Calculate columns to force approximately 2 rows
-        // e.g. 6 items / 2 = 3 columns. 8 items / 2 = 4 columns.
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
@@ -279,8 +358,9 @@ window.showQuestModal = (questId) => {
         }
     }
 
+    // Quest Modal Content - Show just image at top
     const content = `
-        <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">
+        <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
         ${rewardsHtml}
         <h4 style="margin:15px 0 10px 0; color:#334155;">🗳️ Votes (${(clanVotesCache.votes?.[questId] || []).length})</h4>
@@ -663,21 +743,46 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
     }
 };
 
-window.goToPlayerSearch = function(username) {
-    const modal = document.getElementById('member-modal');
-    if(modal) modal.remove();
+// [UPDATED] FETCH MEMBER DETAILS (CLICK HANDLER)
+async function fetchMemberDetails(clanId, playerId, canEdit) {
+    if (!playerId) return;
 
-    const searchLink = document.querySelector('.nav-link[data-page="player-search"]');
-    if(searchLink) searchLink.click();
+    // Show initial loading modal
+    showCustomInfoModal(
+        'Loading Member...', 
+        '<div style="text-align:center; padding:20px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching details...</div>'
+    );
+    
+    try {
+        // Parallel Fetch: Detailed list + specific player (for safety)
+        const [detailedRes, playerRes] = await Promise.all([
+            fetchData(`/clans/${clanId}/members/detailed`),
+            fetchData(`/players/${playerId}`)
+        ]);
 
-    const input = document.getElementById('username-input');
-    if(input) {
-        input.value = username;
-        if (typeof searchAndDisplayPlayer === 'function') {
-            searchAndDisplayPlayer();
-        } else {
-            console.error("searchAndDisplayPlayer function not found");
+        let memberData = {};
+
+        // If detailed list works, find the member
+        if (!detailedRes.error && Array.isArray(detailedRes)) {
+            const found = detailedRes.find(m => m.playerId === playerId);
+            if (found) memberData = found;
         }
+
+        // Merge with player profile (playerRes usually has equippedAvatar if detailedRes doesn't)
+        if (!playerRes.error) {
+            memberData = { ...playerRes, ...memberData };
+        }
+
+        // Close loading modal (remove last overlay)
+        const overlays = document.querySelectorAll('.modal-overlay');
+        if (overlays.length > 0) overlays[overlays.length - 1].remove();
+        
+        // Show actual data
+        showMemberModal(memberData);
+
+    } catch (e) {
+        console.error('[MemberDetails] Error:', e);
+        showCustomAlert('Error', 'Failed to load member details.');
     }
 }
 
