@@ -1,7 +1,7 @@
 // **********************************************
 // 1. CONFIGURATION
 // **********************************************
-console.log('--- Main.js: Loading Started ---'); 
+console.log('--- script.js: Loading Started ---'); 
 
 const localServerUrl = window.location.origin; 
 
@@ -30,427 +30,16 @@ lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lot
 document.head.appendChild(lottieScript);
 
 // **********************************************
-// 2. CUSTOM UI HELPERS (MODALS & STYLES)
+// 2. CUSTOM UI HELPERS
 // **********************************************
-const modalStyle = document.createElement('style');
-modalStyle.textContent = `
-.custom-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 10000;
-    display: flex; justify-content: center; align-items: center;
-    backdrop-filter: blur(2px);
-}
-.custom-modal {
-    background: white; padding: 25px; border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    max-width: 450px; width: 90%; text-align: center;
-    animation: popIn 0.2s ease-out;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-@keyframes popIn { from {transform: scale(0.9); opacity: 0;} to {transform: scale(1); opacity: 1;} }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-.custom-modal h3 { margin-top: 0; color: #1e293b; }
-.custom-modal p { color: #475569; line-height: 1.5; }
-.custom-modal-buttons { margin-top: 25px; display: flex; justify-content: center; gap: 15px; }
-.btn-modal { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: transform 0.1s; }
-.btn-modal:active { transform: scale(0.95); }
-.btn-confirm { background: #0ea5e9; color: white; }
-.btn-cancel { background: #e2e8f0; color: #475569; }
-.btn-danger { background: #ef4444; color: white; }
-
-/* Loading Progress Bar Style */
-.loading-container {
-    text-align: center;
-    padding: 40px;
-    max-width: 400px;
-    margin: 0 auto;
-}
-.loading-bar-track {
-    width: 100%;
-    height: 10px;
-    background: #e2e8f0;
-    border-radius: 5px;
-    margin: 15px 0;
-    overflow: hidden;
-    position: relative;
-}
-.loading-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
-    width: 0%;
-    transition: width 0.3s ease-out;
-    border-radius: 5px;
-}
-.loading-text {
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-/* Quest Grid Layout */
-.quest-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-
-/* Quest Card Large */
-.quest-card-large {
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #f8fafc;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-}
-.quest-card-large:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
-}
-.quest-card-large-img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    display: block;
-}
-.quest-card-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-    padding: 30px 15px 15px;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-.quest-price-tag {
-    background: rgba(0,0,0,0.6);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.95rem;
-    backdrop-filter: blur(4px);
-}
-.quest-votes-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    backdrop-filter: blur(4px);
-}
-
-/* Active Quest Styling */
-.active-quest-container {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    margin-bottom: 25px;
-    position: relative;
-    border: 1px solid #e2e8f0;
-}
-.active-quest-banner {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    display: block;
-    position: relative;
-}
-.active-quest-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 220px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.9) 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 20px;
-    color: white;
-    pointer-events: none;
-}
-.active-quest-title-lg {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin: 0;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    line-height: 1.2;
-}
-.active-quest-meta-lg {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 5px;
-    font-size: 0.9rem;
-    color: #e2e8f0;
-}
-.active-quest-body {
-    padding: 20px;
-}
-
-/* Battle Pass Unified Tracker */
-.battle-pass-hub {
-    position: relative;
-    padding: 30px 10px 40px 10px;
-    margin-top: 10px;
-}
-
-.xp-progress-wrapper {
-    position: absolute;
-    top: 50%;
-    left: 40px;
-    right: 40px;
-    height: 14px;
-    background: #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
-    transform: translateY(-50%);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    border: 2px solid #cbd5e1;
-    z-index: 1;
-}
-
-.xp-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #f59e0b, #fbbf24);
-    width: 0%;
-    transition: width 1s ease-out;
-    border-radius: 10px;
-    position: relative;
-}
-
-@keyframes move { from { background-position: 0 0; } to { background-position: 30px 0; } }
-
-.xp-progress-fill::after {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
-    background-image: linear-gradient(-45deg,rgba(255,255,255,.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.2) 75%,transparent 75%,transparent);
-    z-index: 1;
-    background-size: 30px 30px;
-    animation: move 2s linear infinite;
-}
-
-.battle-pass-track {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    z-index: 2;
-    overflow-x: auto;
-}
-
-.reward-step {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 80px;
-}
-
-.reward-icon-box {
-    width: 58px;
-    height: 58px;
-    background: #fff;
-    border: 3px solid #cbd5e1;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    margin-bottom: 0;
-    position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.reward-icon-box img {
-    width: 42px;
-    height: 42px;
-    object-fit: contain;
-}
-
-/* States */
-.reward-step.completed-tier .reward-icon-box {
-    background: #dcfce7;
-    border-color: #22c55e;
-}
-.reward-step.completed-tier .reward-icon-box::after {
-    content: '✓';
-    position: absolute;
-    bottom: -8px;
-    background: #22c55e;
-    color: white;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid white;
-}
-
-.reward-step.active-tier .reward-icon-box {
-    border-color: #f59e0b;
-    background: #fffbeb;
-    transform: scale(1.15);
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
-}
-
-.xp-label-floating {
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #334155;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: bold;
-    white-space: nowrap;
-}
-
-.tier-label {
-    margin-top: 15px;
-    font-size: 0.7rem;
-    color: #64748b;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.reward-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #ef4444;
-    color: white;
-    font-size: 0.65rem;
-    font-weight: bold;
-    padding: 1px 5px;
-    border-radius: 8px;
-    border: 2px solid white;
-}
-
-/* Quest Toggle & Flair */
-.quest-inline-icon {
-    font-size: 20px !important;
-    margin-left: 8px;
-    vertical-align: middle;
-    cursor: default;
-    transition: transform 0.2s, opacity 0.2s;
-}
-.quest-inline-icon.clickable { cursor: pointer; }
-.quest-inline-icon.clickable:hover { transform: scale(1.2); }
-.quest-inline-icon.on { color: #22c55e; }
-.quest-inline-icon.off { color: #ef4444; opacity: 0.4; }
-.quest-inline-icon.loading { animation: spin 1s linear infinite; color: #64748b; }
-
-.action-icon {
-    font-size: 18px !important;
-    margin-left: 5px;
-    vertical-align: middle;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s;
-}
-.action-icon:hover { opacity: 1; transform: scale(1.1); }
-.kick-icon { color: #ef4444; }
-.block-icon { color: #64748b; }
-
-.flair-editable {
-    cursor: pointer;
-    border: 1px dashed transparent;
-    padding: 0 4px;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-.flair-editable:hover { background: #f1f5f9; border-color: #cbd5e1; }
-
-.blocklist-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-}
-.blocked-item {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 8px 12px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-}
-.btn-unblock {
-    background: none; border: none; color: #22c55e;
-    cursor: pointer; font-weight: bold; font-size: 0.8rem;
-}
-
-/* Chat Emoji */
-.chat-emoji-img {
-    width: 64px; height: 64px;
-    vertical-align: middle;
-    object-fit: contain;
-}
-
-/* Member Card */
-.member-list {
-    display: grid; gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-}
-.member-card {
-    display: flex; align-items: center;
-    padding: 10px; background: white;
-    border: 1px solid #e2e8f0; border-radius: 8px;
-    cursor: pointer; transition: transform 0.2s;
-}
-.member-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-.member-avatar {
-    width: 48px; height: 48px;
-    border-radius: 50%; background-color: #f1f5f9;
-    margin-right: 12px; flex-shrink: 0;
-    background-position: center; background-repeat: no-repeat;
-    border: 1px solid #e2e8f0;
-}
-.role-badge {
-    font-size: 0.7rem; padding: 2px 6px;
-    border-radius: 4px; margin-left: 5px;
-    font-weight: bold; text-transform: uppercase;
-}
-.role-badge.leader { background: #fee2e2; color: #991b1b; }
-.role-badge.coleader { background: #e0f2fe; color: #075985; }
-
-.clan-scroll-area {
-    display: flex; flex-direction: column;
-    min-height: 300px; max-height: 500px;
-    overflow-y: auto;
-}
-`;
-document.head.appendChild(modalStyle);
+// Note: Styles are now handled in styles.css
 
 function showCustomConfirm(title, message, isDangerous = false) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
-        overlay.className = 'custom-modal-overlay';
+        overlay.className = 'modal-overlay';
         overlay.innerHTML = `
-            <div class="custom-modal">
+            <div class="modal-content">
                 <h3>${title}</h3>
                 <p>${message}</p>
                 <div class="custom-modal-buttons">
@@ -475,9 +64,9 @@ function showCustomConfirm(title, message, isDangerous = false) {
 
 function showCustomInfoModal(title, contentHtml) {
     const overlay = document.createElement('div');
-    overlay.className = 'custom-modal-overlay';
+    overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-        <div class="custom-modal" style="text-align:left;">
+        <div class="modal-content" style="text-align:left;">
             <h3 style="text-align:center;">${title}</h3>
             <div>${contentHtml}</div>
             <div class="custom-modal-buttons">
@@ -493,9 +82,9 @@ function showCustomInfoModal(title, contentHtml) {
 function showCustomPrompt(title, message, defaultValue = '') {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
-        overlay.className = 'custom-modal-overlay';
+        overlay.className = 'modal-overlay';
         overlay.innerHTML = `
-            <div class="custom-modal">
+            <div class="modal-content">
                 <h3>${title}</h3>
                 <p>${message}</p>
                 <input type="text" id="custom-prompt-input" value="${defaultValue.replace(/"/g, '&quot;')}" style="width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;">
@@ -529,9 +118,9 @@ function showCustomPrompt(title, message, defaultValue = '') {
 
 function showCustomAlert(title, message) {
     const overlay = document.createElement('div');
-    overlay.className = 'custom-modal-overlay';
+    overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-        <div class="custom-modal">
+        <div class="modal-content">
             <h3>${title}</h3>
             <p>${message}</p>
             <div class="custom-modal-buttons">
@@ -2291,7 +1880,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     }
 }
 
-// Initialize on Load (Restored full initialization logic)
+// Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     sendIncrementSignal('visitors');
     fetchAndDisplayData();
@@ -2349,3 +1938,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelector('.nav-link[data-page="dashboard"]')?.click();
 });
+
+console.log('--- script.js: Loading Finished ---');
