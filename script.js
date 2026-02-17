@@ -264,7 +264,7 @@ function showMemberModal(data) {
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
             <!-- Clickable Name to Search -->
-            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer;" 
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
                 ${data.username}
@@ -1896,7 +1896,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; cursor:pointer;" 
+                            <span style="font-weight:bold; font-size:1rem; cursor:pointer; text-decoration:underline;" 
                                   onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
                                   title="Search Player">${m.username || 'Unknown'}</span> 
                             ${roleBadge}
@@ -1935,7 +1935,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
             <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="color:var(--primary-color); ${botStyle}; cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${username}</strong>: 
+                <strong style="color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${username}</strong>: 
                 <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
                 <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
             </div>
@@ -1994,7 +1994,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                          const safeUsername = escapeJsString(p.username);
                          return `
                              <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                                 <span>${medal} <strong style="cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
+                                 <span>${medal} <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
                                  <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
                              </div>
                           `;
@@ -2175,7 +2175,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             const safeUsername = escapeJsString(m.username);
                             return `
                             <div class="blocked-item">
-                                <span><strong style="cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${m.username}</strong></span>
+                                <span><strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${m.username}</strong></span>
                                 <button class="btn-unblock" onclick="window.unblockMember('${clanId}', '${m.id}')">Unblock</button>
                             </div>
                           `;
