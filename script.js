@@ -64,11 +64,14 @@ function showCustomConfirm(title, message, isDangerous = false) {
     });
 }
 
-function showCustomInfoModal(title, contentHtml) {
+function showCustomInfoModal(title, contentHtml, isLarge = false) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    // Add logic for wider modal if isLarge is true
+    const style = isLarge ? 'min-width: 80%; max-width: 900px;' : '';
+    
     overlay.innerHTML = `
-        <div class="modal-content" style="text-align:left;">
+        <div class="modal-content" style="text-align:left; ${style}">
             <h3 style="text-align:center;">${title}</h3>
             <div>${contentHtml}</div>
             <div class="custom-modal-buttons">
@@ -234,6 +237,7 @@ function showMemberModal(data) {
     
     // Donation Stats (Handle structure from API)
     const don = data.donated || {};
+    // Activity Stats
     const xpDur = data.xpDurations || {};
     
     // Status Badge
@@ -310,6 +314,13 @@ function showMemberModal(data) {
                     <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div>
                     <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div>
                  </div>
+                 
+                 <!-- NEW: XP Lifetime -->
+                 <div style="grid-column: span 2; text-align: center; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 5px;">
+                    <div style="color:#15803d; font-size:0.75rem; margin-bottom:2px; font-weight:bold;">✨ XP (All Time)</div>
+                    <div style="font-weight:bold; font-size:1.1rem; color:#15803d;">${fmt(data.xp)}</div>
+                 </div>
+
                  <div>
                     <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div>
                     <div style="font-weight:bold; font-size:1rem;">${fmt(data.goldQuests)}</div>
@@ -320,7 +331,7 @@ function showMemberModal(data) {
                  </div>
              </div>
         </div>
-        
+
         <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">
             Player ID: <span style="font-family:monospace;">${data.playerId || data.id}</span>
         </div>
@@ -328,6 +339,65 @@ function showMemberModal(data) {
     
     showCustomInfoModal(data.username || 'Member Details', content);
 }
+
+// NEW: Function to View All Clan Quests (Wiki)
+window.viewAllQuests = async () => {
+    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
+    
+    try {
+        const res = await fetchData('/clans/quests/all');
+        
+        if (res.error) {
+             document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+             showCustomAlert('Error', 'Failed to fetch all quests: ' + (res.message || 'Unknown error'));
+             return;
+        }
+
+        // Generate HTML for All Quests Grid
+        let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
+        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
+        html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
+        
+        if (Array.isArray(res)) {
+            html += res.map(q => {
+                const isGem = q.purchasableWithGems;
+                let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
+                
+                // Construct Image URL with Fallback
+                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
+                
+                // Render Rewards Mini
+                let rewardsMini = '';
+                if(q.rewards && q.rewards.length > 0) {
+                   rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
+                }
+
+                return `
+                    <div class="quest-card-large" style="min-height: 160px; cursor: default;">
+                          <img src="${imgUrl}" class="quest-card-large-img" style="height: 100px;">
+                          <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+                            <div style="padding: 5px;">
+                                 <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
+                                 ${rewardsMini}
+                            </div>
+                          </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        html += '</div></div>';
+        
+        // Remove loading modal
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        // Show new large modal
+        showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
+
+    } catch(e) {
+        console.error(e);
+        showCustomAlert('Error', 'Error fetching quests');
+    }
+};
 
 // NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
@@ -1628,6 +1698,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         ${getQuestResetTimeDisplay()}
+                        
+                        <button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                            <span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> Quest Wiki
+                        </button>
+
                         <button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
                             <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)
                         </button>
