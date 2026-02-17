@@ -184,12 +184,14 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
-        const playerTab = document.querySelector('.nav-link[data-page="player"]');
+        // [FIXED] Updated selector to match 'player-search' from HTML
+        const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
         } else {
-            console.error('Player tab not found!');
+            console.error('Player tab not found! Please check data-page attribute in HTML.');
         }
+        
         // Trigger the search function
         // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
@@ -1921,7 +1923,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
+                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" 
                                   onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
                                   title="Search Player">
                                 ${m.username || 'Unknown'}
