@@ -1896,9 +1896,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; cursor:pointer; text-decoration:underline;" 
-                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
-                                  title="Search Player">${m.username || 'Unknown'}</span> 
+                            <span style="font-weight:bold; font-size:1rem;">${m.username || 'Unknown'}</span> 
                             ${roleBadge}
                             ${questIconHtml}
                             ${adminActionsHtml} <!-- Added Actions -->
@@ -1932,10 +1930,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             }
 
             const safeUsername = escapeJsString(username);
+            
+            // Logic for clickable username
+            const nameStyle = isBot ? `color:var(--primary-color); ${botStyle}` : `color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;`;
+            const clickAttr = isBot ? '' : `onclick="window.goToPlayerSearch('${safeUsername}')"`;
 
             return `
             <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${username}</strong>: 
+                <strong style="${nameStyle}" ${clickAttr}>${username}</strong>: 
                 <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
                 <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
             </div>
