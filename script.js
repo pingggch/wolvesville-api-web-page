@@ -1921,7 +1921,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; color:#1e293b;">${m.username || 'Unknown'}</span> 
+                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
+                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
+                                  title="Search Player">
+                                ${m.username || 'Unknown'}
+                            </span> 
                             ${roleBadge}
                             ${questIconHtml}
                             ${adminActionsHtml} <!-- Added Actions -->
