@@ -179,11 +179,30 @@ const clanContentContainer = document.getElementById('clan-content-container');
 
 // Helper for navigation
 window.goToPlayerSearch = (username) => {
+    console.log('Navigating to search for:', username);
     const input = document.getElementById('username-input');
     if(input) {
         input.value = username;
-        document.querySelector('.nav-link[data-page="player"]')?.click();
-        searchAndDisplayPlayer();
+        // Click the nav link to switch tabs
+        const playerTab = document.querySelector('.nav-link[data-page="player"]');
+        if (playerTab) {
+            playerTab.click();
+        } else {
+            console.error('Player tab not found!');
+        }
+        // Trigger the search function
+        // Check if function exists globally or locally
+        if (typeof window.searchAndDisplayPlayer === 'function') {
+            window.searchAndDisplayPlayer();
+        } else {
+            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
+            // Fallback: This might fail if called from a pure string onclick context depending on scope
+            try {
+                searchAndDisplayPlayer();
+            } catch (e) {
+                console.error('Could not execute search:', e);
+            }
+        }
     }
 };
 
@@ -1113,6 +1132,9 @@ async function fetchAndDisplayData() {
 }
 
 async function searchAndDisplayPlayer() {
+    // Also attach to window to be safe
+    window.searchAndDisplayPlayer = searchAndDisplayPlayer;
+    
     const input = usernameInput.value.trim();
     if (!input) return;
     if (!localStorage.getItem('wolvesville_api_key')) return alert('กรุณาใส่ API Key');
@@ -1145,6 +1167,9 @@ async function searchAndDisplayPlayer() {
     }
     fetchAndDisplayStatsOnly();
 }
+
+// Make sure it's globally available
+window.searchAndDisplayPlayer = searchAndDisplayPlayer;
 
 function renderPlayerProfile(data) {
     const stats = data.gameStats || {};
@@ -1896,7 +1921,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem;">${m.username || 'Unknown'}</span> 
+                            <span style="font-weight:bold; font-size:1rem; cursor:pointer; text-decoration:underline;" 
+                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
+                                  title="Search Player">${m.username || 'Unknown'}</span> 
                             ${roleBadge}
                             ${questIconHtml}
                             ${adminActionsHtml} <!-- Added Actions -->
