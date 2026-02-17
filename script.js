@@ -187,6 +187,11 @@ window.goToPlayerSearch = (username) => {
     }
 };
 
+// Helper to escape strings for JS arguments in HTML
+function escapeJsString(str) {
+    return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 async function fetchAndCacheEmojis() {
     if (globalEmojiMap.size > 0) return; 
     
@@ -252,12 +257,15 @@ function showMemberModal(data) {
     // Helper for formatting numbers
     const fmt = (n) => (n || 0).toLocaleString();
 
+    // Escape username for onclick
+    const safeUsername = escapeJsString(data.username);
+
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
             <!-- Clickable Name to Search -->
-            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
-                onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${data.username}')"
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer;" 
+                onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
                 ${data.username}
             </h2>
@@ -1849,7 +1857,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 `;
             }
 
-            const safeFlair = (m.flair || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safeFlair = escapeJsString(m.flair);
             let flairHtml = '';
             const displayFlair = m.flair ? m.flair : '<span style="opacity:0.5; font-style:italic;">No Flair</span>';
             
@@ -1881,12 +1889,16 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 `;
             }
 
+            const safeUsername = escapeJsString(m.username);
+
             return `
                 <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details">
                     <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem;">${m.username || 'Unknown'}</span> 
+                            <span style="font-weight:bold; font-size:1rem; cursor:pointer;" 
+                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
+                                  title="Search Player">${m.username || 'Unknown'}</span> 
                             ${roleBadge}
                             ${questIconHtml}
                             ${adminActionsHtml} <!-- Added Actions -->
@@ -1919,9 +1931,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 content = linkify(msg.msg || '');
             }
 
+            const safeUsername = escapeJsString(username);
+
             return `
             <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="color:var(--primary-color); ${botStyle}">${username}</strong>: 
+                <strong style="color:var(--primary-color); ${botStyle}; cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${username}</strong>: 
                 <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
                 <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
             </div>
@@ -1977,9 +1991,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                      const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
                      participantsHtml = sortedParts.map((p, index) => {
                          const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
+                         const safeUsername = escapeJsString(p.username);
                          return `
                              <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                                 <span>${medal} <strong>${p.username || 'Unknown'}</strong></span>
+                                 <span>${medal} <strong style="cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
                                  <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
                              </div>
                           `;
@@ -2156,12 +2171,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div class="blocklist-container">
                 <div class="blocklist-item-wrapper" style="color:#ccc; font-style:italic;">
                     ${blockedMembers.length > 0 && !blockedMembers.error 
-                        ? blockedMembers.map(m => `
+                        ? blockedMembers.map(m => {
+                            const safeUsername = escapeJsString(m.username);
+                            return `
                             <div class="blocked-item">
-                                <span><strong>${m.username}</strong></span>
+                                <span><strong style="cursor:pointer;" onclick="window.goToPlayerSearch('${safeUsername}')">${m.username}</strong></span>
                                 <button class="btn-unblock" onclick="window.unblockMember('${clanId}', '${m.id}')">Unblock</button>
                             </div>
-                          `).join('') 
+                          `;
+                        }).join('') 
                         : 'No blocked members loaded'}
                 </div>
             </div>
