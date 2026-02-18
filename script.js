@@ -34,12 +34,11 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
-// RESOURCE ICONS (External URLs) - Using Icons8 for reliable, high-quality icons
-const RESOURCE_ICONS = {
-    GOLD: "https://img.icons8.com/fluency/96/gold-coin.png",
-    GEM: "https://img.icons8.com/fluency/96/gem-stone.png",
-    ROSE: "https://img.icons8.com/fluency/96/rose.png",
-    UNKNOWN: "https://img.icons8.com/fluency/96/question-mark.png"
+// FIXED ICONS (Embedded SVG for reliability)
+// ใช้สำหรับ Gold และ Rose ที่มักจะมีปัญหาลิงก์เสีย
+const EMBEDDED_ICONS = {
+    GOLD: "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z'/%3E%3C/svg%3E",
+    ROSE: "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E91E63'%3E%3Cpath d='M12 2C9 2 7 3.5 7 5.5c0 .3.05.6.15.9-1.9.3-3.65 1.5-4.65 3.1-.9 1.4-.9 3 0 4.4 1 1.6 2.75 2.8 4.65 3.1-.1.3-.15.6-.15.9 0 2 2 3.5 5 3.5s5-1.5 5-3.5c0-.3-.05-.6-.15-.9 1.9-.3 3.65-1.5 4.65-3.1.9-1.4.9-3 0-4.4-1-1.6-2.75-2.8-4.65-3.1.1-.3.15-.6.15-.9 0-2-2-3.5-5-3.5zm0 15c-1.3 0-2.4-.8-2.8-2h5.6c-.4 1.2-1.5 2-2.8 2zm4-3H8c-.8 0-1.5-.2-2.1-.5.7-.7 1.5-1.5 2.1-2.5h8c.6 1 1.4 1.8 2.1 2.5-.6.3-1.3.5-2.1.5zm-4-10c1.3 0 2.4.8 2.8 2H9.2c.4-1.2 1.5-2 2.8-2z'/%3E%3C/svg%3E"
 };
 
 // **********************************************
@@ -380,7 +379,7 @@ window.showQuestModal = (questId) => {
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
-            let imgUrl = RESOURCE_ICONS.UNKNOWN; // Default
+            let imgUrl = 'https://via.placeholder.com/60?text=?'; // Default fallback
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
@@ -395,18 +394,18 @@ window.showQuestModal = (questId) => {
                 label = 'Avatar Item';
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
-                imgUrl = RESOURCE_ICONS.GOLD;
+                imgUrl = EMBEDDED_ICONS.GOLD; // Use Embedded SVG
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = RESOURCE_ICONS.GEM;
+                imgUrl = 'https://cdn.wolvesville.com/static/gem.png'; // Link works fine
             } else if (r.type === 'ROSE' || r.type === 'ROSES') {
-                imgUrl = RESOURCE_ICONS.ROSE;
+                imgUrl = EMBEDDED_ICONS.ROSE; // Use Embedded SVG
             }
 
             // Card Style for Grid - Image Centered, No Label Text
             return `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" onerror="this.src='${RESOURCE_ICONS.UNKNOWN}'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
                     ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
@@ -1577,7 +1576,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             `;
             
             qInfo.rewards.forEach((r, idx) => {
-                let imgUrl = RESOURCE_ICONS.UNKNOWN; // Default fallback
+                let imgUrl = 'https://via.placeholder.com/60?text=?'; // Default fallback
                 if(r.type === 'AVATAR_ITEM') {
                     // Try to get from cache first
                     const item = avatarItemsCache.get(r.avatarItemId);
@@ -1587,9 +1586,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                     }
                 }
-                else if(r.type === 'GOLD') imgUrl = RESOURCE_ICONS.GOLD;
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = RESOURCE_ICONS.GEM;
-                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = RESOURCE_ICONS.ROSE; // Added Rose handling
+                else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
+                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
