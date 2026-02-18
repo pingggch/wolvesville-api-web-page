@@ -17,6 +17,9 @@ let questDetailsCache = new Map();
 let clanVotesCache = {};
 let clanMembersCache = {}; // Map playerId -> username
 
+// Quest Wiki Cache
+let allQuestsCache = []; 
+
 // Polling Variables
 let clanPollingInterval = null;
 let currentViewingClanId = null;
@@ -184,26 +187,14 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
-        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
-        } else {
-            console.error('Player tab not found! Please check data-page attribute in HTML.');
         }
         
         // Trigger the search function
-        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
-        } else {
-            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
-            // Fallback: This might fail if called from a pure string onclick context depending on scope
-            try {
-                searchAndDisplayPlayer();
-            } catch (e) {
-                console.error('Could not execute search:', e);
-            }
         }
     }
 };
@@ -369,65 +360,6 @@ function showMemberModal(data) {
     showCustomInfoModal(data.username || 'Member Details', content);
 }
 
-// NEW: Function to View All Clan Quests (Wiki)
-window.viewAllQuests = async () => {
-    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
-    
-    try {
-        const res = await fetchData('/clans/quests/all');
-        
-        if (res.error) {
-             document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-             showCustomAlert('Error', 'Failed to fetch all quests: ' + (res.message || 'Unknown error'));
-             return;
-        }
-
-        // Generate HTML for All Quests Grid
-        let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
-        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
-        html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
-        
-        if (Array.isArray(res)) {
-            html += res.map(q => {
-                const isGem = q.purchasableWithGems;
-                let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
-                
-                // Construct Image URL with Fallback
-                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
-                
-                // Render Rewards Mini
-                let rewardsMini = '';
-                if(q.rewards && q.rewards.length > 0) {
-                   rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
-                }
-
-                return `
-                    <div class="quest-card-large" style="min-height: 160px; cursor: default;">
-                          <img src="${imgUrl}" class="quest-card-large-img" style="height: 100px;">
-                          <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
-                            <div style="padding: 5px;">
-                                 <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
-                                 ${rewardsMini}
-                            </div>
-                          </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        html += '</div></div>';
-        
-        // Remove loading modal
-        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-        // Show new large modal
-        showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
-
-    } catch(e) {
-        console.error(e);
-        showCustomAlert('Error', 'Error fetching quests');
-    }
-};
-
 // NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
@@ -472,7 +404,6 @@ window.showQuestModal = (questId) => {
         }).join('');
 
         // Grid Layout: Determine columns to fit into 2 rows
-        // e.g., 6 items -> 3 cols (3x2), 8 items -> 4 cols (4x2)
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
@@ -2236,6 +2167,106 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     }
 }
 
+// **********************************************
+// 9. QUEST WIKI LOGIC (GET /clans/quests/all)
+// **********************************************
+
+// ฟังก์ชันหลักสำหรับโหลดข้อมูล Quest Wiki
+async function initQuestWiki() {
+    const container = document.getElementById('quest-wiki-container');
+    const searchInput = document.getElementById('quest-search-input');
+    
+    // ถ้าเคยโหลดมาแล้ว ไม่ต้องโหลดซ้ำ (ประหยัด API call)
+    if (allQuestsCache.length > 0) {
+        renderWikiGrid(allQuestsCache);
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="text-align:center; grid-column:1/-1; padding:40px;">
+            <div class="quest-inline-icon loading" style="font-size:40px;">sync</div>
+            <br>กำลังดึงข้อมูลเควสทั้งหมดจากเซิร์ฟเวอร์...
+        </div>
+    `;
+
+    try {
+        // เรียกใช้ API endpoint ตามที่คุณต้องการ
+        const res = await fetchData('/clans/quests/all');
+
+        if (res.error) {
+            container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Error: ${res.message}</div>`;
+            return;
+        }
+
+        if (Array.isArray(res)) {
+            allQuestsCache = res; // เก็บลง Cache
+            renderWikiGrid(allQuestsCache); // สั่งแสดงผล
+
+            // เพิ่ม Event Listener สำหรับช่องค้นหา
+            if (searchInput) {
+                searchInput.addEventListener('keyup', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = allQuestsCache.filter(q => 
+                        (q.title && q.title.toLowerCase().includes(term)) || 
+                        (q.name && q.name.toLowerCase().includes(term)) // บางที API อาจส่ง name แทน title
+                    );
+                    renderWikiGrid(filtered);
+                });
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Critical Error loading Wiki</div>`;
+    }
+}
+
+// ฟังก์ชันสำหรับสร้าง HTML Grid ของเควส
+function renderWikiGrid(quests) {
+    const container = document.getElementById('quest-wiki-container');
+    
+    if (!quests || quests.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#888; grid-column:1/-1; padding:20px;">ไม่พบเควสที่ค้นหา</div>`;
+        return;
+    }
+
+    const html = quests.map(q => {
+        // ตรวจสอบว่าเป็นเควส Gem หรือ Gold
+        const isGem = q.purchasableWithGems;
+        const currencyIcon = isGem ? 'diamond' : 'monetization_on';
+        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // ม่วง หรือ เหลือง
+        
+        // ใช้ promoImagePrimaryColor เป็นสีขอบ (ถ้ามี)
+        const borderColor = q.promoImagePrimaryColor || '#e2e8f0';
+        
+        // รูปภาพ
+        const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/300x150?text=No+Image';
+
+        // นับจำนวนของรางวัล
+        const rewardCount = q.rewards ? q.rewards.length : 0;
+
+        return `
+            <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')" style="border-color:${borderColor};">
+                <img src="${imgUrl}" class="quest-card-large-img" loading="lazy">
+                <div class="quest-card-overlay">
+                    <div>
+                        <div class="quest-price-tag" style="color: ${currencyColor};">
+                            <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
+                            <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
+                        </div>
+                    </div>
+                    <div style="font-size:0.8rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; backdrop-filter:blur(4px);">
+                        ${rewardCount} Rewards
+                    </div>
+                </div>
+                <!-- Pre-cache details for modal -->
+                ${(() => { questDetailsCache.set(q.id, q); return ''; })()} 
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     sendIncrementSignal('visitors');
@@ -2259,6 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
             }
             if(t==='dashboard') fetchAndDisplayData();
+            else if(t==='quest-wiki') initQuestWiki(); // <--- เรียกฟังก์ชันเมื่อกดแท็บ Wiki
             else if(t==='settings') {
                 const cur = localStorage.getItem('wolvesville_api_key');
                 if(cur) apiKeyInput.value = cur;
