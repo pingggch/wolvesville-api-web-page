@@ -34,11 +34,11 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
-// FIXED ICONS (Embedded SVG for reliability)
-// ใช้สำหรับ Gold และ Rose ที่มักจะมีปัญหาลิงก์เสีย
+// FIXED ICONS (Embedded SVG Base64 for reliability)
+// ใช้สำหรับ Gold และ Rose โดยแปลงเป็น Base64 เพื่อให้มั่นใจว่าแสดงผลได้แน่นอน
 const EMBEDDED_ICONS = {
-    GOLD: "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z'/%3E%3C/svg%3E",
-    ROSE: "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E91E63'%3E%3Cpath d='M12 2C9 2 7 3.5 7 5.5c0 .3.05.6.15.9-1.9.3-3.65 1.5-4.65 3.1-.9 1.4-.9 3 0 4.4 1 1.6 2.75 2.8 4.65 3.1-.1.3-.15.6-.15.9 0 2 2 3.5 5 3.5s5-1.5 5-3.5c0-.3-.05-.6-.15-.9 1.9-.3 3.65-1.5 4.65-3.1.9-1.4.9-3 0-4.4-1-1.6-2.75-2.8-4.65-3.1.1-.3.15-.6.15-.9 0-2-2-3.5-5-3.5zm0 15c-1.3 0-2.4-.8-2.8-2h5.6c-.4 1.2-1.5 2-2.8 2zm4-3H8c-.8 0-1.5-.2-2.1-.5.7-.7 1.5-1.5 2.1-2.5h8c.6 1 1.4 1.8 2.1 2.5-.6.3-1.3.5-2.1.5zm-4-10c1.3 0 2.4.8 2.8 2H9.2c.4-1.2 1.5-2 2.8-2z'/%3E%3C/svg%3E"
+    GOLD: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRkZENzAwIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6bS4zMS04Ljg2Yy0xLjc3LS40NS0yLjM0LS45NC0yLjM0LTEuNjcgMC0uODQuNzktMS40MyAyLjEtMS40MyAxLjM4IDAgMS45LjY2IDEuOTQgMS42NGgxLjcxYy0uMDUtMS4zNC0uODctMi41Ny0yLjQ5LTIuOTdWNUgxMC45djEuNjljLTEuNTEuMzItMi43MiAxLjMtMi43MiAyLjgxIDAgMS43OSAxLjQ5IDIuNjkgMy42NiAzLjIxIDEuOTUuNDYgMi4zNCAxLjE1IDIuMzQgMS44NyAwIC41My0uMzkgMS4zOS0yLjEgMS4zOS0xLjYgMC0yLjIzLS43Mi0yLjMyLTEuNjRIOC4wNGMuMSAxLjcgMS4zNiAyLjY2IDIuODYgMi45N1YxOWgyLjM0di0xLjY3YzEuNTItLjI5IDIuNzItMS4xNiAyLjczLTIuNzctLjAxLTIuMi0xLjktMi45Ni0zLjY2LTMuNDJ6Ii8+PC9zdmc+",
+    ROSE: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRTkxRTYzIj48cGF0aCBkPSJNMTIgMkM5IDIgNyAzLjUgNyA1LjVjMCAuMy4wNS42LjE1LjktMS45LjMtMy42NSAxLjUtNC42NSAzLjEtLjkgMS40LS45IDMgMCA0LjQgMSAxLjYgMi43NSAyLjggNC42NSAzLjEtLjEuMy0uMTUuNi0uMTUuOSAwIDIgMiAzLjUgNSAzLjVzNS0xLjUgNS0zLjVjMC0uMy0uMDUtLjYtLjE1LS45IDEuOS0uMyAzLjY1LTEuNSA0LjY1LTMuMS45LTEuNC45LTMgMC00LjQtMS0xLjYtMi43NS0yLjgtNC42NS0zLjEuMS0uMy4xNS0uNi4xNS0uOSAwLTItMi0zLjUtNS0zLjV6bTAgMTVjLTEuMyAwLTIuNC0uOC0yLjgtMmg1LjZjLS40IDEuMi0xLjUgMi0yLjggMnptNC0zSDhjLS44IDAtMS41LS4yLTIuMS0uNS43LS43IDEuNS0xLjUgMi4xLTIuNWg4Yy42IDEgMS40IDEuOCAyLjEgMi41LS42LjMtMS4zLjUtMi4xLjV6bS00LTEwYzEuMyAwIDIuNC44IDIuOCAySDkuMmMuNC0xLjIgMS41LTIgMi44LTJ6Ii8+PC9zdmc+"
 };
 
 // **********************************************
@@ -194,14 +194,26 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
+        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
+        } else {
+            console.error('Player tab not found! Please check data-page attribute in HTML.');
         }
         
         // Trigger the search function
+        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
+        } else {
+            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
+            // Fallback: This might fail if called from a pure string onclick context depending on scope
+            try {
+                searchAndDisplayPlayer();
+            } catch (e) {
+                console.error('Could not execute search:', e);
+            }
         }
     }
 };
@@ -367,6 +379,65 @@ function showMemberModal(data) {
     showCustomInfoModal(data.username || 'Member Details', content);
 }
 
+// NEW: Function to View All Clan Quests (Wiki)
+window.viewAllQuests = async () => {
+    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
+    
+    try {
+        const res = await fetchData('/clans/quests/all');
+        
+        if (res.error) {
+             document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+             showCustomAlert('Error', 'Failed to fetch all quests: ' + (res.message || 'Unknown error'));
+             return;
+        }
+
+        // Generate HTML for All Quests Grid
+        let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
+        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
+        html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
+        
+        if (Array.isArray(res)) {
+            html += res.map(q => {
+                const isGem = q.purchasableWithGems;
+                let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
+                
+                // Construct Image URL with Fallback
+                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
+                
+                // Render Rewards Mini
+                let rewardsMini = '';
+                if(q.rewards && q.rewards.length > 0) {
+                   rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
+                }
+
+                return `
+                    <div class="quest-card-large" style="min-height: 160px; cursor: default;">
+                          <img src="${imgUrl}" class="quest-card-large-img" style="height: 100px;">
+                          <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+                            <div style="padding: 5px;">
+                                 <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
+                                 ${rewardsMini}
+                            </div>
+                          </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        html += '</div></div>';
+        
+        // Remove loading modal
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        // Show new large modal
+        showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
+
+    } catch(e) {
+        console.error(e);
+        showCustomAlert('Error', 'Error fetching quests');
+    }
+};
+
 // NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
@@ -379,7 +450,7 @@ window.showQuestModal = (questId) => {
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
-            let imgUrl = 'https://via.placeholder.com/60?text=?'; // Default fallback
+            let imgUrl = 'https://via.placeholder.com/60?text=?';
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
@@ -392,13 +463,14 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
+                // subLabel = ''; // Show just count or nothing
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
-                imgUrl = EMBEDDED_ICONS.GOLD; // Use Embedded SVG
+                imgUrl = EMBEDDED_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gem.png'; // Link works fine
+                imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
             } else if (r.type === 'ROSE' || r.type === 'ROSES') {
-                imgUrl = EMBEDDED_ICONS.ROSE; // Use Embedded SVG
+                imgUrl = EMBEDDED_ICONS.ROSE;
             }
 
             // Card Style for Grid - Image Centered, No Label Text
@@ -412,6 +484,7 @@ window.showQuestModal = (questId) => {
         }).join('');
 
         // Grid Layout: Determine columns to fit into 2 rows
+        // e.g., 6 items -> 3 cols (3x2), 8 items -> 4 cols (4x2)
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
