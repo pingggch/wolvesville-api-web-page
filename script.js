@@ -2201,20 +2201,28 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <input type="text" id="manual-block-input" placeholder="Enter Player ID (UUID) to block..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
                 <button onclick="window.manualAddToBlocklist('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Block ID</button>
             </div>
-            <div class="blocklist-container">
-                <div class="blocklist-item-wrapper" style="color:#ccc; font-style:italic;">
-                    ${blockedMembers.length > 0 && !blockedMembers.error 
-                        ? blockedMembers.map(m => {
-                            const safeUsername = escapeJsString(m.username);
-                            return `
-                            <div class="blocked-item">
-                                <span><strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${m.username}</strong></span>
-                                <button class="btn-unblock" onclick="window.unblockMember('${clanId}', '${m.id}')">Unblock</button>
+            <div class="blocklist-grid">
+                ${blockedMembers.length > 0 && !blockedMembers.error 
+                    ? blockedMembers.map(m => {
+                        const safeUsername = escapeJsString(m.username);
+                        // Construct Avatar URL
+                        let avatarUrl = 'https://via.placeholder.com/40';
+                        if(m.equippedAvatar?.url) avatarUrl = m.equippedAvatar.url;
+                        else if(m.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${m.profileIconId}`;
+                        
+                        return `
+                        <div class="blocked-member-card">
+                            <div class="blocked-member-info">
+                                <img src="${avatarUrl}" class="blocked-avatar" onerror="this.src='https://via.placeholder.com/40'">
+                                <span class="blocked-name" onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" title="View Profile">${m.username || 'Unknown'}</span>
                             </div>
-                          `;
-                        }).join('') 
-                        : 'No blocked members loaded'}
-                </div>
+                            <button class="btn-unblock-icon" onclick="window.unblockMember('${clanId}', '${m.id}')" title="Unblock">
+                                <span class="material-icons" style="font-size:18px;">lock_open</span>
+                            </button>
+                        </div>
+                      `;
+                    }).join('') 
+                    : '<div style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:20px;">No blocked members found.</div>'}
             </div>
         </div>
         ` : ''}
