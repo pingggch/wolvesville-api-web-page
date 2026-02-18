@@ -34,12 +34,12 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
-// FIXED ICONS (Embedded SVG Base64 for reliability)
-// ใช้สำหรับ Gold, Rose และ Gem เพื่อให้มั่นใจว่าแสดงผลได้แน่นอน 100%
+// FIXED ICONS (Official Game Assets)
+// ใช้ลิงก์รูปภาพจริงจากเกมเพื่อให้สวยงามและถูกต้อง (ใช้คู่กับ referrerpolicy="no-referrer")
 const EMBEDDED_ICONS = {
-    GOLD: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRkZENzAwIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6bS4zMS04Ljg2Yy0xLjc3LS40NS0yLjM0LS45NC0yLjM0LTEuNjcgMC0uODQuNzktMS40MyAyLjEtMS40MyAxLjM4IDAgMS45LjY2IDEuOTQgMS42NGgxLjcxYy0uMDUtMS4zNC0uODctMi41Ny0yLjQ5LTIuOTdWNUgxMC45djEuNjljLTEuNTEuMzItMi43MiAxLjMtMi43MiAyLjgxIDAgMS43OSAxLjQ5IDIuNjkgMy42NiAzLjIxIDEuOTUuNDYgMi4zNCAxLjE1IDIuMzQgMS44NyAwIC41My0uMzkgMS4zOS0yLjEgMS4zOS0xLjYgMC0yLjIzLS43Mi0yLjMyLTEuNjRIOC4wNGMuMSAxLjcgMS4zNiAyLjY2IDIuODYgMi45N1YxOWgyLjM0di0xLjY3YzEuNTItLjI5IDIuNzItMS4xNiAyLjczLTIuNzctLjAxLTIuMi0xLjktMi45Ni0zLjY2LTMuNDJ6Ii8+PC9zdmc+",
-    ROSE: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRTkxRTYzIj48cGF0aCBkPSJNMTIgMkM5IDIgNyAzLjUgNyA1LjVjMCAuMy4wNS42LjE1LjktMS45LjMtMy42NSAxLjUtNC42NSAzLjEtLjkgMS40LS45IDMgMCA0LjQgMSAxLjYgMi43NSAyLjggNC42NSAzLjEtLjEuMy0uMTUuNi0uMTUuOSAwIDIgMiAzLjUgNSAzLjVzNS0xLjUgNS0zLjVjMC0uMy0uMDUtLjYtLjE1LS45IDEuOS0uMyAzLjY1LTEuNSA0LjY1LTMuMS45LTEuNC45LTMgMC00LjQtMS0xLjYtMi43NS0yLjgtNC42NS0zLjEuMS0uMy4xNS0uNi4xNS0uOSAwLTItMi0zLjUtNS0zLjV6bTAgMTVjLTEuMyAwLTIuNC0uOC0yLjgtMmg1LjZjLS40IDEuMi0xLjUgMi0yLjggMnptNC0zSDhjLS44IDAtMS41LS4yLTIuMS0uNS43LS43IDEuNS0xLjUgMi4xLTIuNWg4Yy42IDEgMS40IDEuOCAyLjEgMi41LS42LjMtMS4zLjUtMi4xLjV6bS00LTEwYzEuMyAwIDIuNC44IDIuOCAySDkuMmMuNC0xLjIgMS41LTIgMi44LTJ6Ii8+PC9zdmc+",
-    GEM: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjOUMyN0IwIj48cGF0aCBkPSJNMTkgM0g1Yy0xLjEgMC0yIC45LTIgMnYxNGMwIDEuMS45IDIgMiAyaDE0YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bS02IDE0bC0zLTQuNUw3IDE3VjdsNC41IDMgMy00LjVMMTcgN3YxMGwtNCAweiIvPjwvc3ZnPg==",
+    GOLD: "https://cdn.wolvesville.com/static/gold.png",
+    ROSE: "https://cdn.wolvesville.com/static/rose.png",
+    GEM: "https://cdn.wolvesville.com/static/gem.png",
     UNKNOWN: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI0JEQkRCQyI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTEgMTdoLTJ2LTZoMnY2em0wLThoLTJWN2gydjJ6Ii8+PC9zdmc+"
 };
 
@@ -196,7 +196,6 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
-        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
@@ -205,12 +204,10 @@ window.goToPlayerSearch = (username) => {
         }
         
         // Trigger the search function
-        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
         } else {
-            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
-            // Fallback: This might fail if called from a pure string onclick context depending on scope
+            // Fallback
             try {
                 searchAndDisplayPlayer();
             } catch (e) {
@@ -495,7 +492,7 @@ window.showQuestModal = (questId) => {
             } else if (r.type === 'GOLD') {
                 imgUrl = EMBEDDED_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
+                imgUrl = EMBEDDED_ICONS.GEM; 
             } else if (r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') {
                 imgUrl = EMBEDDED_ICONS.ROSE;
             }
