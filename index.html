@@ -36,6 +36,13 @@
                             <span class="nav-text">จัดการแคลน</span>
                         </a>
                     </li>
+                    <!-- NEW MENU ITEM -->
+                    <li>
+                        <a href="#" class="nav-link" data-page="quest-wiki">
+                            <span class="material-icons">menu_book</span>
+                            <span class="nav-text">Quest Wiki</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
@@ -117,7 +124,7 @@
                 </div>
             </section>
 
-            <!-- NEW: CLAN MANAGER PAGE -->
+            <!-- CLAN MANAGER PAGE -->
             <section id="clan-manager" class="page-content">
                 <h2>จัดการแคลน (Clan Manager)</h2>
                 <div class="search-container">
@@ -126,10 +133,23 @@
                     <button id="my-clan-btn" style="background:#eab308; margin-left:10px;">⭐ แคลนของฉัน</button>
                 </div>
                 <div id="clan-content-container">
-                    <!-- Clan info will be rendered here -->
                     <div style="text-align:center; color:#888; margin-top:40px;">
                         <span class="material-icons" style="font-size:48px; display:block; margin-bottom:10px;">shield</span>
                         ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW: QUEST WIKI PAGE -->
+            <section id="quest-wiki" class="page-content">
+                <h2>📚 Quest Wiki (All Quests)</h2>
+                <div class="search-container">
+                    <input type="text" id="quest-search-input" placeholder="พิมพ์เพื่อค้นหาชื่อเควส...">
+                </div>
+                <div id="quest-wiki-container" class="quest-grid">
+                    <div style="text-align:center; color:#888; grid-column:1/-1; padding:40px;">
+                        <div class="quest-inline-icon loading" style="font-size:40px;">sync</div>
+                        <br>กำลังโหลดข้อมูลเควส...
                     </div>
                 </div>
             </section>
