@@ -185,6 +185,7 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
+        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
@@ -193,9 +194,12 @@ window.goToPlayerSearch = (username) => {
         }
         
         // Trigger the search function
+        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
         } else {
+            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
+            // Fallback: This might fail if called from a pure string onclick context depending on scope
             try {
                 searchAndDisplayPlayer();
             } catch (e) {
@@ -234,10 +238,12 @@ async function fetchAndCacheAvatarItems() {
     if (avatarItemsCache.size > 0) return;
     
     console.log('[Items] Fetching avatar items list...');
+    // This fetches the list of all avatar items to map ID to Image URL
     const res = await fetchData('/items/avatarItems', false, false);
     
     if (!res.error && Array.isArray(res)) {
         res.forEach(item => {
+            // Store item details in cache
             avatarItemsCache.set(item.id, item);
         });
         console.log(`[Items] Cached ${avatarItemsCache.size} avatar items.`);
@@ -248,27 +254,38 @@ async function fetchAndCacheAvatarItems() {
 
 // NEW: Show Member Details Modal
 function showMemberModal(data) {
+    // Determine Avatar URL
     let avatarUrl = 'https://via.placeholder.com/150';
     if(data.equippedAvatar?.url) avatarUrl = data.equippedAvatar.url;
     else if(data.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${data.profileIconId}`;
 
     const creationDate = formatDateThai(data.creationTime);
     const lastOnline = formatDateThai(data.lastOnline);
+    
+    // Donation Stats (Handle structure from API)
     const don = data.donated || {};
+    // Activity Stats
     const xpDur = data.xpDurations || {};
     
+    // Status Badge
     let statusClass = 'offline';
     let statusLabel = data.status || 'UNKNOWN';
     if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
     else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
     
+    // Join Message
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
+
+    // Helper for formatting numbers
     const fmt = (n) => (n || 0).toLocaleString();
+
+    // Escape username for onclick
     const safeUsername = escapeJsString(data.username);
 
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
+            <!-- Clickable Name to Search -->
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
@@ -300,25 +317,54 @@ function showMemberModal(data) {
             <div style="font-weight:bold; color:#d97706;">Gold</div>
             <div style="font-weight:bold; color:#9333ea;">Gems</div>
             
-            <div style="color:#64748b;">Week</div><div style="color:#d97706;">${fmt(don.gold?.week)}</div><div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
-            <div style="color:#64748b;">Month</div><div style="color:#d97706;">${fmt(don.gold?.month)}</div><div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
-            <div style="color:#64748b;">All Time</div><div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div><div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
+            <!-- Week -->
+            <div style="color:#64748b;">Week</div>
+            <div style="color:#d97706;">${fmt(don.gold?.week)}</div>
+            <div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
+
+            <!-- Month -->
+            <div style="color:#64748b;">Month</div>
+            <div style="color:#d97706;">${fmt(don.gold?.month)}</div>
+            <div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
+
+            <!-- All Time -->
+            <div style="color:#64748b;">All Time</div>
+            <div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div>
+            <div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
         </div>
 
         <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">⚔️ Activity</h4>
         <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Week)</div><div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.week)}</div></div>
-                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div><div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div></div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Week)</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.week)}</div>
+                 </div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div>
+                 </div>
+                 
+                 <!-- NEW: XP Lifetime -->
                  <div style="grid-column: span 2; text-align: center; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 5px;">
                     <div style="color:#15803d; font-size:0.75rem; margin-bottom:2px; font-weight:bold;">✨ XP (All Time)</div>
                     <div style="font-weight:bold; font-size:1.1rem; color:#15803d;">${fmt(data.xp)}</div>
                  </div>
-                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div><div style="font-weight:bold; font-size:1rem;">${fmt(data.goldQuests)}</div></div>
-                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gem Quests</div><div style="font-weight:bold; font-size:1rem;">${fmt(data.gemQuests)}</div></div>
+
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.goldQuests)}</div>
+                 </div>
+                 <div>
+                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gem Quests</div>
+                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.gemQuests)}</div>
+                 </div>
              </div>
         </div>
-        <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">Player ID: <span style="font-family:monospace;">${data.playerId || data.id}</span></div>
+
+        <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">
+            Player ID: <span style="font-family:monospace;">${data.playerId || data.id}</span>
+        </div>
     `;
     
     showCustomInfoModal(data.username || 'Member Details', content);
@@ -445,8 +491,6 @@ window.showQuestModal = (questId) => {
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    // Removed vote section as requested
-    
     const content = `
         <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
@@ -698,8 +742,95 @@ async function fetchMemberDetails(clanId, playerId, canEdit) {
     showMemberModal(memberData);
 }
 
-// ... (Utility functions: isUUID, formatMessage, linkify, formatDateThai, getQuestResetTimeDisplay, sendIncrementSignal) ...
-// ... (API Handler: fetchData, sendPayload, fetchTotalItemsCount, fetchAndDisplayStatsOnly) ...
+// **********************************************
+// 5. UTILITY FUNCTIONS
+// **********************************************
+function isUUID(str) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str); }
+function formatMessage(msg) { return msg ? msg.replace(/\n/g, '<br>') : 'ไม่มีข้อความส่วนตัว'; }
+function linkify(text) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, function(url) {
+        return '<a href="' + url + '" target="_blank">' + url + '</a>';
+    });
+}
+function formatDateThai(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function getQuestResetTimeDisplay() {
+    const now = new Date(); let reset = new Date();
+    const day = now.getDay(); const diff = (day < 1) ? 1 : (1 + 7 - day) % 7; 
+    const isTodayReset = diff === 0 && now.getHours() < 7;
+    reset.setDate(now.getDate() + (isTodayReset ? 0 : diff)); reset.setHours(7, 0, 0, 0); 
+    if (reset < now) { reset.setDate(reset.getDate() + (diff === 0 ? 7 : 0)); if (reset < now) reset.setDate(reset.getDate() + 7); }
+    const timeDiff = reset - now;
+    const d = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">Refreshes in: ${d}d ${h}h ${m}m (Mon 07:00)</span>`;
+}
+function sendIncrementSignal(type) {
+    fetch(`${localServerUrl}/api/stats/increment/${type}`, { method: 'POST' }).then(res => { if (res.ok) fetchAndDisplayStatsOnly(); }).catch(console.error);
+}
+
+// **********************************************
+// 6. API HANDLER
+// **********************************************
+async function fetchData(endpoint, isStatusCheck = false, isRequest = true) {
+    const key = localStorage.getItem('wolvesville_api_key');
+    if (!key) return { error: true, message: 'Missing API Key' };
+    try {
+        const timestamp = new Date().getTime();
+        const url = `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent(endpoint)}&apiKey=${encodeURIComponent(key)}&_t=${timestamp}`;
+        const res = await fetch(url);
+        if (res.ok) { if (isRequest) sendIncrementSignal('requests'); return await res.json(); } else { return { error: true, status: res.status }; }
+    } catch (e) { return { error: true, message: e.message }; }
+}
+
+async function sendPayload(endpoint, method, payload) {
+    const key = localStorage.getItem('wolvesville_api_key');
+    if (!key) return { error: true, message: 'Missing API Key' };
+    const url = `${localServerUrl}/api/wolvesville`; 
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: endpoint, apiKey: key, method: method, data: payload, body: payload, headers: { 'Content-Type': 'application/json' } }) });
+        if (res.ok) { sendIncrementSignal('requests'); const text = await res.text(); return text ? JSON.parse(text) : { success: true }; }
+        else { const txt = await res.text(); if (res.status === 404 && txt.includes('Cannot POST')) { return { error: true, status: 404, message: 'Proxy Error: Your local server does not accept POST requests.' }; } return { error: true, status: res.status, message: txt }; }
+    } catch (e) { return { error: true, message: e.message }; }
+}
+
+async function fetchTotalItemsCount(force = false) {
+    if (!force && itemDataCache) return itemDataCache;
+    if (isFetchingItems) return { count: '...', error: false };
+    isFetchingItems = true;
+    try {
+        const key = localStorage.getItem('wolvesville_api_key');
+        if (!key) throw new Error('No API Key');
+        const response = await fetch(`${localServerUrl}/api/items/total?apiKey=${encodeURIComponent(key)}`);
+        const data = await response.json();
+        if (data.error) { itemDataCache = { count: '-', error: true }; } else { itemDataCache = { count: data.count, error: false }; console.log(`[Items] Count loaded: ${data.count}`); }
+    } catch (e) { console.error('[Items] Error:', e); itemDataCache = { count: '-', error: true }; }
+    isFetchingItems = false;
+    return itemDataCache;
+}
+
+async function fetchAndDisplayStatsOnly() {
+    try {
+        const res = await fetch(`${localServerUrl}/api/stats`);
+        if (res.ok) {
+            const stats = await res.json();
+            if(requestsTodayOnly) requestsTodayOnly.textContent = stats.requests.count_today.toLocaleString();
+            if(requestsFullToday) requestsFullToday.textContent = stats.requests.count_today.toLocaleString();
+            if(requestsFullThisMonth) requestsFullThisMonth.textContent = stats.requests.count_month.toLocaleString();
+            if(requestsFullThisYear) requestsFullThisYear.textContent = stats.requests.count_year.toLocaleString();
+            if(requestsFullLifetime) requestsFullLifetime.textContent = (stats.requests.count_lifetime||0).toLocaleString();
+            if(visitorsFullToday) visitorsFullToday.textContent = stats.visitors.count_today.toLocaleString();
+            if(visitorsFullThisMonth) visitorsFullThisMonth.textContent = stats.visitors.count_month.toLocaleString();
+            if(visitorsFullThisYear) visitorsFullThisYear.textContent = stats.visitors.count_year.toLocaleString();
+            if(visitorsFullLifetime) visitorsFullLifetime.textContent = (stats.visitors.count_lifetime||0).toLocaleString();
+        }
+    } catch (e) { console.error(e); }
+}
 
 // **********************************************
 // 7. DASHBOARD & PLAYER LOGIC
@@ -992,12 +1123,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         let shuffleVotesHtml = '';
         if (!votesData.error && votesData.shuffleVotes && Array.isArray(votesData.shuffleVotes) && votesData.shuffleVotes.length > 0) {
-             const voterIds = votesData.shuffleVotes;
-             const voterNames = voterIds.map(vid => memberMap[vid] || 'Unknown').join(', ');
-             shuffleVotesHtml = `<div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;"><span style="font-weight:bold;">🗳️ Shuffle Votes (${voterIds.length}):</span> ${voterNames}</div>`;
+             const voterNames = votesData.shuffleVotes.map(vid => memberMap[vid] || 'Unknown').join(', ');
+             shuffleVotesHtml = `<div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;"><span style="font-weight:bold;">🗳️ Shuffle Votes (${votesData.shuffleVotes.length}):</span> ${voterNames}</div>`;
         }
 
-        availableQuestsHtml = `<div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;"><div style="display:flex; justify-content:space-between; align-items:start;"><h3 style="margin:0; color:#334155; font-size:1.1rem; align-self:center;">🛒 Available to Purchase</h3><div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;"><div style="display:flex; align-items:center; gap:10px;">${getQuestResetTimeDisplay()}<button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);"><span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> Quest Wiki</button><button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);"><span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)</button></div>${shuffleVotesHtml}</div></div></div><div class="quest-grid">`;
+        availableQuestsHtml = `<div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;"><div style="display:flex; justify-content:space-between; align-items:start;"><h3 style="margin:0; color:#334155; font-size:1.1rem; align-self:center;">🛒 Available to Purchase</h3><div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;"><div style="display:flex; align-items:center; gap:10px;"><button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);"><span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> Quest Wiki</button><button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);"><span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)</button></div>${shuffleVotesHtml}</div></div></div><div class="quest-grid">`;
         
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
@@ -1053,7 +1183,24 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             const safeUsername = escapeJsString(m.username);
 
-            return `<div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details"><div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div><div class="member-details"><div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;"><span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" title="Search Player">${m.username || 'Unknown'}</span> ${roleBadge} ${questIconHtml} ${adminActionsHtml}</div><div class="member-meta"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span> ${statusText} ${flairHtml}</div></div></div>`;
+            // [FIXED] Clickable name without underline, but cursor pointer
+            return `
+            <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details">
+                <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
+                <div class="member-details">
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+                        <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" 
+                              onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
+                              title="Search Player">
+                              ${m.username || 'Unknown'}
+                        </span> 
+                        ${roleBadge} ${questIconHtml} ${adminActionsHtml}
+                    </div>
+                    <div class="member-meta">
+                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span> ${statusText} ${flairHtml}
+                    </div>
+                </div>
+            </div>`;
         }).join('');
     }
 
@@ -1182,6 +1329,129 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     const finalChatContainer = document.getElementById('clan-chat-container');
     if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
 }
+
+// **********************************************
+// 9. QUEST WIKI LOGIC
+// **********************************************
+
+// Load Quest Wiki Data
+async function loadQuestWiki() {
+    const container = document.getElementById('quest-wiki-container');
+    if(!container) return;
+    
+    fetchAndCacheAvatarItems();
+
+    if(allQuestsCache.length > 0) {
+        renderQuestWiki(allQuestsCache);
+        return;
+    }
+
+    container.innerHTML = '<div style="text-align:center; color:#888; grid-column:1/-1; padding:40px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>';
+
+    const res = await fetchData('/clans/quests/all');
+    if(res.error) {
+        container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Error: ${res.message}</div>`;
+        return;
+    }
+
+    if(Array.isArray(res)) {
+        allQuestsCache = res;
+        renderQuestWiki(res);
+    }
+}
+
+// Render Quest Wiki Grid
+function renderQuestWiki(quests) {
+    const container = document.getElementById('quest-wiki-container');
+    const searchVal = document.getElementById('quest-search-input')?.value.toLowerCase() || '';
+    
+    const filtered = quests.filter(q => {
+        return (!searchVal || (q.id && q.id.toLowerCase().includes(searchVal))) && q.promoImageUrl;
+    });
+    
+    if(filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#888; grid-column:1/-1;">No quests found matching your search.</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(q => {
+        const isGem = q.purchasableWithGems;
+        const costLabel = isGem ? '💎 Gem' : '💰 Gold';
+        const costColor = isGem ? '#d8b4fe' : '#fcd34d'; 
+        const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
+        const primaryColor = q.promoImagePrimaryColor || '#e2e8f0';
+        const rewardsCount = q.rewards ? q.rewards.length : 0;
+        
+        return `
+            <div class="quest-card-large" style="border-bottom: 5px solid ${primaryColor};" onclick="window.showQuestModal('${q.id}')">
+                <img src="${imgUrl}" class="quest-card-large-img" loading="lazy" style="background-color:${primaryColor}20;">
+                <div class="quest-card-overlay">
+                    <div>
+                         <div class="quest-price-tag" style="background: rgba(0,0,0,0.8); color:${costColor};">
+                            ${costLabel}
+                         </div>
+                    </div>
+                    <div style="font-size:0.75rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:6px; color:white;">
+                        ${rewardsCount} Rewards
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    quests.forEach(q => questDetailsCache.set(q.id, q));
+}
+
+let searchTimeout;
+document.getElementById('quest-search-input')?.addEventListener('keyup', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { renderQuestWiki(allQuestsCache); }, 300);
+});
+
+// NEW: Function to Show Quest Details Modal
+window.showQuestModal = (questId) => {
+    const quest = questDetailsCache.get(questId);
+    if (!quest) return showCustomAlert('Error', 'Quest details not found.');
+
+    const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
+    
+    let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
+    if (quest.rewards && quest.rewards.length > 0) {
+        const rewardsList = quest.rewards.map((r, idx) => {
+            let imgUrl = 'https://via.placeholder.com/60?text=?';
+            let label = r.type.replace(/_/g, ' ');
+            let subLabel = `x${r.amount}`;
+
+            if (r.type === 'AVATAR_ITEM') {
+                const itemId = r.avatarItemId;
+                imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
+                const cachedItem = avatarItemsCache.get(itemId);
+                if (cachedItem && cachedItem.imageUrl) imgUrl = cachedItem.imageUrl; 
+                label = 'Avatar Item';
+                if (r.amount <= 1) subLabel = '';
+            } else if (r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
+            else if (r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+
+            return `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
+                    <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
+                    <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
+        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
+    }
+
+    const content = `
+        <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
+        <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
+        ${rewardsHtml}
+    `;
+    showCustomInfoModal('Clan Quest', content);
+};
 
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
