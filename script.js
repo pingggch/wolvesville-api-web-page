@@ -34,7 +34,6 @@ document.head.appendChild(lottieScript);
 // **********************************************
 // 2. CUSTOM UI HELPERS
 // **********************************************
-// Note: Styles are now handled in styles.css
 
 function showCustomConfirm(title, message, isDangerous = false) {
     return new Promise((resolve) => {
@@ -67,12 +66,11 @@ function showCustomConfirm(title, message, isDangerous = false) {
 function showCustomInfoModal(title, contentHtml, isLarge = false) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    // Add logic for wider modal if isLarge is true
-    const style = isLarge ? 'min-width: 80%; max-width: 900px;' : '';
+    const style = isLarge ? 'min-width: 80%; max-width: 1000px;' : '';
     
     overlay.innerHTML = `
         <div class="modal-content" style="text-align:left; ${style}">
-            <h3 style="text-align:center;">${title}</h3>
+            <h3 style="text-align:center; margin-bottom: 20px;">${title}</h3>
             <div>${contentHtml}</div>
             <div class="custom-modal-buttons">
                 <button class="btn-modal btn-confirm">Close</button>
@@ -177,48 +175,29 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // 4. GLOBAL FUNCTIONS
 // **********************************************
 
-// Helper for navigation
 window.goToPlayerSearch = (username) => {
     console.log('Navigating to search for:', username);
     const input = document.getElementById('username-input');
     if(input) {
         input.value = username;
-        // Click the nav link to switch tabs
-        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
-        } else {
-            console.error('Player tab not found! Please check data-page attribute in HTML.');
         }
-        
-        // Trigger the search function
-        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
-        } else {
-            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
-            // Fallback: This might fail if called from a pure string onclick context depending on scope
-            try {
-                searchAndDisplayPlayer();
-            } catch (e) {
-                console.error('Could not execute search:', e);
-            }
         }
     }
 };
 
-// Helper to escape strings for JS arguments in HTML
 function escapeJsString(str) {
     return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 async function fetchAndCacheEmojis() {
     if (globalEmojiMap.size > 0) return; 
-    
     console.log('[Emojis] Fetching emojis list...');
     const res = await fetchData('/items/emojis', false, false);
-    
     if (!res.error && Array.isArray(res)) {
         res.forEach(emoji => {
             globalEmojiMap.set(emoji.id, {
@@ -227,151 +206,24 @@ async function fetchAndCacheEmojis() {
             }); 
         });
         console.log(`[Emojis] Cached ${globalEmojiMap.size} emojis.`);
-    } else {
-        console.error('[Emojis] Failed to fetch:', res);
     }
 }
 
-// NEW: Fetch Avatar Items from API
 async function fetchAndCacheAvatarItems() {
     if (avatarItemsCache.size > 0) return;
-    
     console.log('[Items] Fetching avatar items list...');
-    // This fetches the list of all avatar items to map ID to Image URL
     const res = await fetchData('/items/avatarItems', false, false);
-    
     if (!res.error && Array.isArray(res)) {
         res.forEach(item => {
-            // Store item details in cache
             avatarItemsCache.set(item.id, item);
         });
         console.log(`[Items] Cached ${avatarItemsCache.size} avatar items.`);
-    } else {
-        console.error('[Items] Failed to fetch avatar items:', res);
     }
 }
 
-// NEW: Show Member Details Modal
-function showMemberModal(data) {
-    // Determine Avatar URL
-    let avatarUrl = 'https://via.placeholder.com/150';
-    if(data.equippedAvatar?.url) avatarUrl = data.equippedAvatar.url;
-    else if(data.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${data.profileIconId}`;
-
-    const creationDate = formatDateThai(data.creationTime);
-    const lastOnline = formatDateThai(data.lastOnline);
-    
-    // Donation Stats (Handle structure from API)
-    const don = data.donated || {};
-    // Activity Stats
-    const xpDur = data.xpDurations || {};
-    
-    // Status Badge
-    let statusClass = 'offline';
-    let statusLabel = data.status || 'UNKNOWN';
-    if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
-    else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
-    
-    // Join Message
-    const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
-
-    // Helper for formatting numbers
-    const fmt = (n) => (n || 0).toLocaleString();
-
-    // Escape username for onclick
-    const safeUsername = escapeJsString(data.username);
-
-    const content = `
-        <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-            <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
-            <!-- Clickable Name to Search -->
-            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
-                onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
-                title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
-                ${data.username}
-            </h2>
-            <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
-            <div style="margin-top:5px;">
-                <span class="status-badge ${statusClass}" style="font-size:0.7rem; padding:2px 8px;">${statusLabel}</span>
-                <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">LVL ${data.level || 0}</span>
-                ${data.isCoLeader ? '<span style="background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">CO-LEADER</span>' : ''}
-            </div>
-            ${joinMsg}
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
-             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
-                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Joined</div>
-                <div style="font-weight:600; font-size:0.9rem;">${creationDate.split(' ')[0]}</div>
-             </div>
-             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
-                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Last Online</div>
-                <div style="font-weight:600; font-size:0.85rem;">${lastOnline}</div>
-             </div>
-        </div>
-
-        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">💰 Donations</h4>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; text-align:center; margin-bottom:15px; font-size:0.85rem;">
-            <div style="font-weight:bold; color:#64748b; font-size:0.75rem;">Period</div>
-            <div style="font-weight:bold; color:#d97706;">Gold</div>
-            <div style="font-weight:bold; color:#9333ea;">Gems</div>
-            
-            <!-- Week -->
-            <div style="color:#64748b;">Week</div>
-            <div style="color:#d97706;">${fmt(don.gold?.week)}</div>
-            <div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
-
-            <!-- Month -->
-            <div style="color:#64748b;">Month</div>
-            <div style="color:#d97706;">${fmt(don.gold?.month)}</div>
-            <div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
-
-            <!-- All Time -->
-            <div style="color:#64748b;">All Time</div>
-            <div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div>
-            <div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
-        </div>
-
-        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">⚔️ Activity</h4>
-        <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
-             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                 <div>
-                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Week)</div>
-                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.week)}</div>
-                 </div>
-                 <div>
-                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div>
-                    <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div>
-                 </div>
-                 
-                 <!-- NEW: XP Lifetime -->
-                 <div style="grid-column: span 2; text-align: center; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 5px;">
-                    <div style="color:#15803d; font-size:0.75rem; margin-bottom:2px; font-weight:bold;">✨ XP (All Time)</div>
-                    <div style="font-weight:bold; font-size:1.1rem; color:#15803d;">${fmt(data.xp)}</div>
-                 </div>
-
-                 <div>
-                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div>
-                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.goldQuests)}</div>
-                 </div>
-                 <div>
-                    <div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gem Quests</div>
-                    <div style="font-weight:bold; font-size:1rem;">${fmt(data.gemQuests)}</div>
-                 </div>
-             </div>
-        </div>
-
-        <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">
-            Player ID: <span style="font-family:monospace;">${data.playerId || data.id}</span>
-        </div>
-    `;
-    
-    showCustomInfoModal(data.username || 'Member Details', content);
-}
-
-// NEW: Function to View All Clan Quests (Wiki)
+// NEW: Function to View All Clan Quests (Wiki) - FETCHING GLOBAL QUESTS
 window.viewAllQuests = async () => {
-    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
+    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all possible quests from the game...</div>');
     
     try {
         const res = await fetchData('/clans/quests/all');
@@ -382,53 +234,63 @@ window.viewAllQuests = async () => {
              return;
         }
 
-        // Generate HTML for All Quests Grid
-        let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
-        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
-        html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
+        let html = '<div style="max-height: 75vh; overflow-y: auto; padding-right:10px; padding-bottom: 20px;">';
+        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:20px; text-align:center;">This list shows all clan quests existing in Wolvesville, including non-purchasable special events.</p>';
+        html += '<div class="quest-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">';
         
         if (Array.isArray(res)) {
             html += res.map(q => {
                 const isGem = q.purchasableWithGems;
-                let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
+                const costLabel = isGem 
+                    ? '<span style="color:#d8b4fe; font-size:0.75rem; display:flex; align-items:center; gap:3px;"><span class="material-icons" style="font-size:14px;">diamond</span> Gem Quest</span>' 
+                    : '<span style="color:#fcd34d; font-size:0.75rem; display:flex; align-items:center; gap:3px;"><span class="material-icons" style="font-size:14px;">monetization_on</span> Gold Quest</span>';
                 
-                // Construct Image URL with Fallback
-                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
+                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200x120?text=No+Image';
                 
-                // Render Rewards Mini
-                let rewardsMini = '';
-                if(q.rewards && q.rewards.length > 0) {
-                   rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
+                let rewardsHtml = '';
+                if (q.rewards && q.rewards.length > 0) {
+                    rewardsHtml = '<div style="display:flex; gap:4px; margin-top:8px; flex-wrap:wrap;">';
+                    q.rewards.slice(0, 4).forEach(r => {
+                        let rImg = 'https://cdn.wolvesville.com/static/items/calavera.png';
+                        if (r.type === 'AVATAR_ITEM') {
+                            rImg = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                        } else if (r.type === 'GOLD') {
+                            rImg = 'https://cdn.wolvesville.com/static/gold.png';
+                        } else if (r.type === 'GEM' || r.type === 'GEMS') {
+                            rImg = 'https://cdn.wolvesville.com/static/gem.png';
+                        }
+                        rewardsHtml += `<img src="${rImg}" style="width:20px; height:20px; object-fit:contain; background:rgba(255,255,255,0.1); border-radius:4px; padding:2px;" title="${r.type} x${r.amount}">`;
+                    });
+                    if (q.rewards.length > 4) {
+                        rewardsHtml += `<span style="font-size:0.65rem; color:white; align-self:center;">+${q.rewards.length - 4}</span>`;
+                    }
+                    rewardsHtml += '</div>';
                 }
 
                 return `
-                    <div class="quest-card-large" style="min-height: 160px; cursor: default;">
-                          <img src="${imgUrl}" class="quest-card-large-img" style="height: 100px;">
-                          <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
-                            <div style="padding: 5px;">
-                                 <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
-                                 ${rewardsMini}
-                            </div>
-                          </div>
+                    <div class="quest-card-large" style="height: 180px; cursor: default; border: 1px solid #334155; position: relative; overflow: hidden; border-radius: 12px;">
+                        <img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:1;">
+                        <div style="position:absolute; bottom:0; left:0; right:0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 70%, transparent 100%); padding: 10px; z-index: 2; min-height: 60px;">
+                            <div style="font-weight:bold; color:white; font-size:0.85rem; text-shadow: 0 1px 2px black; margin-bottom:2px;">${q.id.substring(0,8)}...</div>
+                            ${costLabel}
+                            ${rewardsHtml}
+                        </div>
+                        ${!isGem && q.purchasableWithGems === false ? '<div style="position:absolute; top:5px; right:5px; background:rgba(239, 68, 68, 0.8); color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px; z-index:3;">EVENT ONLY</div>' : ''}
                     </div>
                 `;
             }).join('');
         }
         
         html += '</div></div>';
-        
-        // Remove loading modal
         document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-        // Show new large modal
-        showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
-
+        showCustomInfoModal('📚 Global Clan Quests Wiki', html, true);
     } catch(e) {
-        console.error(e);
-        showCustomAlert('Error', 'Error fetching quests');
+        console.error('[Wiki] Error:', e);
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        showCustomAlert('Error', 'An unexpected error occurred while fetching quests.');
     }
 };
 
-// NEW: Function to Show Quest Details Modal
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
     if (!quest) return showCustomAlert('Error', 'Quest details not found.');
@@ -436,7 +298,6 @@ window.showQuestModal = (questId) => {
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
     
-    // Rewards - Updated Layout to Grid based on columns (calculating for 2 rows)
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
@@ -446,22 +307,14 @@ window.showQuestModal = (questId) => {
 
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
-                // Use Cached Item or Default Construction
                 imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
                 const cachedItem = avatarItemsCache.get(itemId);
-                if (cachedItem && cachedItem.imageUrl) {
-                    imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
-                }
+                if (cachedItem && cachedItem.imageUrl) imgUrl = cachedItem.imageUrl;
                 label = 'Avatar Item';
-                // subLabel = ''; // Show just count or nothing
                 if (r.amount <= 1) subLabel = '';
-            } else if (r.type === 'GOLD') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
-            } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
-            }
+            } else if (r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
+            else if (r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
 
-            // Card Style for Grid - Image Centered, No Label Text
             return `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
@@ -471,14 +324,10 @@ window.showQuestModal = (questId) => {
             `;
         }).join('');
 
-        // Grid Layout: Determine columns to fit into 2 rows
-        // e.g., 6 items -> 3 cols (3x2), 8 items -> 4 cols (4x2)
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
-        
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    // Votes
     let votesHtml = '<p style="color:#64748b;">No votes yet</p>';
     if (clanVotesCache.votes && clanVotesCache.votes[questId]) {
         const voterIds = clanVotesCache.votes[questId];
@@ -491,7 +340,6 @@ window.showQuestModal = (questId) => {
         }
     }
 
-    // Quest Modal Content - Show just image at top
     const content = `
         <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
@@ -503,435 +351,74 @@ window.showQuestModal = (questId) => {
     showCustomInfoModal(title, content);
 };
 
-window.sendClanAnnouncement = async (clanId) => {
-    const input = document.getElementById('clan-announcement-input');
-    if (!input) return;
+// Member Details Modal
+function showMemberModal(data) {
+    let avatarUrl = 'https://via.placeholder.com/150';
+    if(data.equippedAvatar?.url) avatarUrl = data.equippedAvatar.url;
+    else if(data.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${data.profileIconId}`;
+
+    const creationDate = formatDateThai(data.creationTime);
+    const lastOnline = formatDateThai(data.lastOnline);
+    const don = data.donated || {};
+    const xpDur = data.xpDurations || {};
     
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    try {
-        console.log(`[Announcement] Sending to clan ${clanId}:`, msg);
-        input.disabled = true;
-        
-        const res = await sendPayload(`/clans/${clanId}/announcements`, 'POST', { message: msg });
-        
-        input.disabled = false;
-        
-        if (res.error) {
-            let errorMsg = res.message || 'Unknown error';
-            if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
-            showCustomAlert('Error', '❌ Failed to post announcement: ' + errorMsg);
-        } else {
-            input.value = ''; // Clear input
-            showCustomAlert('Success', '✅ Announcement posted successfully!');
-            fetchClanData(clanId, true, true); 
-        }
-    } catch (e) {
-        console.error('[Announcement] Error:', e);
-        showCustomAlert('Error', '❌ Error: ' + e.message);
-        if(input) input.disabled = false;
-    }
-};
-
-window.sendClanChatMessage = async (clanId) => {
-    const input = document.getElementById('clan-chat-input');
-    if (!input) return;
+    let statusClass = 'offline';
+    let statusLabel = data.status || 'UNKNOWN';
+    if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
+    else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
     
-    const msg = input.value.trim();
-    if (!msg) return;
+    const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
+    const fmt = (n) => (n || 0).toLocaleString();
+    const safeUsername = escapeJsString(data.username);
 
-    try {
-        console.log(`[Chat] Sending message to clan ${clanId}:`, msg);
-        input.disabled = true;
-        
-        const res = await sendPayload(`/clans/${clanId}/chat`, 'POST', { message: msg });
-        
-        input.disabled = false;
-        
-        if (res.error) {
-            let errorMsg = res.message || 'Unknown error';
-            if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
-            showCustomAlert('Error', '❌ Failed to send message: ' + errorMsg);
-        } else {
-            input.value = ''; // Clear input
-            input.focus();
-            fetchClanData(clanId, true, true);
-        }
-    } catch (e) {
-        console.error('[Chat] Error:', e);
-        showCustomAlert('Error', '❌ Error: ' + e.message);
-        if(input) input.disabled = false;
-    }
-};
-
-window.blockMemberFromList = async (clanId, playerId, username) => {
-    const confirmed = await showCustomConfirm(
-        'Block Member',
-        `⚠️ Are you sure you want to <strong>BLOCK</strong> <span style="color:#ef4444; font-weight:bold;">${username}</span> from the clan?<br><br>They will be removed and added to the blocklist.`,
-        true 
-    );
-
-    if (!confirmed) return;
-
-    try {
-        console.log(`[BlockMember] Blocking ${username} (${playerId})...`);
-        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
-        
-        if (res.error) {
-             showCustomAlert('Block Failed', '❌ ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', `✅ Member <strong>${username}</strong> blocked.`);
-            fetchClanData(clanId, true, true); 
-        }
-    } catch (e) {
-        console.error('[BlockMember] Error:', e);
-        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
-    }
-};
-
-window.unblockMember = async (clanId, playerId) => {
-    try {
-        console.log(`[UnblockMember] Unblocking ${playerId}...`);
-        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/unblock`, 'POST', {});
-        
-        if (res.error) {
-             showCustomAlert('Unblock Failed', '❌ ' + (res.message || 'Unknown error'));
-        } else {
-            console.log('Unblocked successfully');
-            fetchClanData(clanId, true, true); 
-        }
-    } catch (e) {
-        console.error('[UnblockMember] Error:', e);
-        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
-    }
-};
-
-window.manualAddToBlocklist = async (clanId) => {
-    const playerId = document.getElementById('manual-block-input').value.trim();
-    if (!playerId) return alert('Please enter a Player ID');
-    if (!isUUID(playerId)) return alert('Invalid Player ID format (UUID required)');
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
-        if (res.error) {
-            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', `✅ ID ${playerId} added to blocklist.`);
-            document.getElementById('manual-block-input').value = '';
-            fetchClanData(clanId, true, true);
-        }
-    } catch (e) {
-        showCustomAlert('Error', e.message);
-    }
-};
-
-window.kickMemberFromList = async (clanId, playerId, username) => {
-    const confirmed = await showCustomConfirm(
-        'Kick Member',
-        `⚠️ Are you sure you want to <strong>KICK</strong> member <span style="color:#ef4444; font-weight:bold;">${username}</span>?<br><br>This action cannot be undone.`,
-        true 
-    );
-
-    if (!confirmed) return;
-
-    try {
-        console.log(`[KickMember] Kicking ${username} (${playerId})...`);
-        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/kick`, 'POST', {});
-        
-        if (res.error) {
-             let errMsg = res.message || 'Unknown error';
-             if (res.status === 403) errMsg = 'Forbidden: You do not have permission to kick this member.';
-             showCustomAlert('Kick Failed', '❌ ' + errMsg);
-        } else {
-            showCustomAlert('Success', `✅ Member <strong>${username}</strong> has been kicked.`);
-            fetchClanData(clanId, true, true);
-        }
-    } catch (e) {
-        console.error('[KickMember] Error:', e);
-        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
-    }
-};
-
-window.toggleQuestFromList = async (clanId, playerId, currentStatus, btnElement) => {
-    const newStatus = !currentStatus;
-    const originalIcon = btnElement.innerText;
-    const originalClass = btnElement.className;
-    
-    // UI Feedback (Spinning)
-    btnElement.innerText = 'sync';
-    btnElement.className = 'material-icons quest-inline-icon loading';
-    btnElement.style.pointerEvents = 'none'; 
-    
-    const res = await sendPayload(`/clans/${clanId}/members/${playerId}/participateInQuests`, 'PUT', { participateInQuests: newStatus });
-    
-    if (res.error) {
-        btnElement.innerText = originalIcon;
-        btnElement.className = originalClass;
-        btnElement.style.pointerEvents = 'auto';
-        showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
-    } else {
-        // Success: Update Icon state
-        btnElement.innerText = newStatus ? 'check_circle' : 'cancel';
-        btnElement.className = `material-icons quest-inline-icon clickable ${newStatus ? 'on' : 'off'}`;
-        btnElement.style.pointerEvents = 'auto';
-        btnElement.setAttribute('onclick', `event.stopPropagation(); window.toggleQuestFromList('${clanId}', '${playerId}', ${newStatus}, this)`);
-
-        // NEW: Update Price Animation on Client Side (Without Reload)
-        const change = newStatus ? 1 : -1;
-        currentParticipatingCount += change;
-        if(currentParticipatingCount < 0) currentParticipatingCount = 0;
-        
-        // Trigger Animation
-        updatePricesClientSide();
-    }
-};
-
-// NEW: Helper to animate number change
-function animateValue(obj, start, end, duration) {
-    if (start === end) return;
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        // Add comma separators
-        obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        }
-    };
-    window.requestAnimationFrame(step);
-}
-
-// NEW: Update Price Displays
-function updatePricesClientSide() {
-    const n = currentParticipatingCount;
-    
-    // Update Active Quest Action Prices
-    // Cost: 300 + 30 * members
-    const actionCost = 300 + (30 * n);
-    document.querySelectorAll('.dynamic-action-price').forEach(el => {
-        const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
-        animateValue(el, currentVal, actionCost, 500);
-    });
-
-    // Update Available Quest Buy Prices
-    document.querySelectorAll('.dynamic-buy-price').forEach(el => {
-        const isGem = el.dataset.currency === 'gem';
-        // Gold: 2000 + 400 * members, Gem: 350 + 135 * members
-        const cost = isGem ? (350 + 135 * n) : (2000 + 400 * n);
-        const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
-        animateValue(el, currentVal, cost, 500);
-    });
-}
-
-window.editFlairFromList = async (clanId, playerId, currentFlair) => {
-    const newFlair = await showCustomPrompt('Edit Flair', 'Enter new flair (nickname) for this member:', currentFlair);
-    if (newFlair === null) return; 
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/flair`, 'PUT', { flair: newFlair });
-        
-        if (res.error) {
-            let errMsg = res.message || 'Unknown error';
-            if (res.status === 403) errMsg = 'Forbidden: You do not have permission.';
-            else if (res.status === 404) errMsg = 'Member not found.';
-            showCustomAlert('Error', '❌ Failed to update flair:\n' + errMsg);
-        } else {
-            showCustomAlert('Success', '✅ Flair Updated Successfully!');
-            fetchClanData(clanId, true, true);
-        }
-    } catch (e) {
-        console.error('[EditFlair] Critical Error:', e);
-        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
-    }
-};
-
-window.toggleAllQuestParticipation = async (clanId, isParticipating) => {
-    const action = isParticipating ? 'ENABLE' : 'DISABLE';
-    const confirmed = await showCustomConfirm(
-        'Confirm Action', 
-        `⚠️ Are you sure you want to <strong>${action}</strong> quest participation for <strong>ALL</strong> members?`, 
-        !isParticipating 
-    );
-    
-    if(!confirmed) return;
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/members/all/participateInQuests`, 'PUT', { participateInQuests: isParticipating });
-        
-        if (res.error) {
-            showCustomAlert('Failed', '❌ Failed: ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', `✅ Successfully <strong>${action}D</strong> participation for everyone!`);
-            setTimeout(() => { fetchClanData(clanId, true, true); }, 1000); 
-        }
-    } catch (e) {
-        showCustomAlert('Error', '❌ Error: ' + e.message);
-    }
-};
-
-window.shuffleClanQuests = async (clanId) => {
-    const confirmed = await showCustomConfirm(
-        'Shuffle Quests',
-        '⚠️ <strong>Cost: 500 Gold</strong><br>Are you sure you want to shuffle the available quests?',
-        false 
-    );
-
-    if (!confirmed) return;
-
-    try {
-        console.log(`[Shuffle] Shuffling quests for clan ${clanId}...`);
-        const res = await sendPayload(`/clans/${clanId}/quests/available/shuffle`, 'POST', {});
-
-        if (res.error) {
-            let errorMsg = res.message || 'Unknown error';
-            showCustomAlert('Shuffle Failed', '❌ ' + errorMsg);
-        } else {
-            showCustomAlert('Success', '✅ Quests shuffled successfully!');
-            fetchClanData(clanId, true, true); 
-        }
-    } catch (e) {
-        console.error('[Shuffle] Error:', e);
-        showCustomAlert('Error', '❌ Error: ' + e.message);
-    }
-};
-
-window.skipQuestWaitingTime = async (clanId) => {
-    const confirmed = await showCustomConfirm('Skip Wait Time', '⚠️ ต้องการใช้ Gold/Gems เพื่อข้ามเวลาการรอหรือไม่?', false);
-    if (!confirmed) return;
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/quests/active/skipWaitingTime`, 'POST', {});
-        if (res.error) {
-            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', '✅ Skipped waiting time!');
-            fetchClanData(clanId, true, true);
-        }
-    } catch(e) {
-        showCustomAlert('Error', e.message);
-    }
-};
-
-window.claimQuestExtraTime = async (clanId) => {
-    const confirmed = await showCustomConfirm('Add Time', '⚠️ ต้องการใช้ Gold/Gems เพื่อเพิ่มเวลาทำเควสหรือไม่? (ทำได้ครั้งเดียวต่อขั้น)', false);
-    if (!confirmed) return;
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/quests/active/claimTime`, 'POST', {});
-        if (res.error) {
-            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', '✅ Added extra time!');
-            fetchClanData(clanId, true, true);
-        }
-    } catch(e) {
-        showCustomAlert('Error', e.message);
-    }
-};
-
-window.cancelActiveQuest = async (clanId) => {
-    const confirmed = await showCustomConfirm('Cancel Quest', '⚠️ ยืนยันที่จะยกเลิกเควสปัจจุบันหรือไม่? (ได้คืนค่าใช้จ่ายบางส่วน)', true);
-    if (!confirmed) return;
-
-    try {
-        const res = await sendPayload(`/clans/${clanId}/quests/active/cancel`, 'POST', {});
-        if (res.error) {
-            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
-        } else {
-            showCustomAlert('Success', '✅ Quest cancelled!');
-            fetchClanData(clanId, true, true);
-        }
-    } catch(e) {
-        showCustomAlert('Error', e.message);
-    }
-};
-
-window.claimClanQuest = async (clanId, questId, questTitle) => {
-    const confirmed = await showCustomConfirm(
-        'Buy Quest',
-        `⚠️ ต้องการซื้อเควส <strong>${questTitle}</strong> หรือไม่?<br>การกระทำนี้จะใช้ Gold/Gems ของแคลน!`,
-        false 
-    );
-
-    if (!confirmed) return;
-
-    try {
-        console.log(`[ClaimQuest] Claiming quest ${questId} for clan ${clanId}...`);
-        const res = await sendPayload(`/clans/${clanId}/quests/claim`, 'POST', { questId: questId });
-
-        if (res.error) {
-            let errorMsg = res.message || 'Unknown error';
-            showCustomAlert('Claim Failed', '❌ ' + errorMsg);
-        } else {
-            showCustomAlert('Success', '✅ ซื้อเควสสำเร็จ!');
-            setTimeout(() => {
-                fetchClanData(clanId, true, true); 
-            }, 3000);
-        }
-    } catch (e) {
-        console.error('[ClaimQuest] Error:', e);
-        showCustomAlert('Error', '❌ Error: ' + e.message);
-    }
-};
-
-// [UPDATED] FETCH MEMBER DETAILS (CLICK HANDLER)
-async function fetchMemberDetails(clanId, playerId, canEdit) {
-    if (!playerId) return;
-
-    // Check Cache first to see if we already have detailed info (e.g. from fetchClanData)
-    let memberData = clanMembersDetailedMap.get(playerId) || {};
-    // If we have 'donated' field, it means we have detailed info.
-    const hasDetailedInfo = memberData.donated !== undefined;
-
-    if (!hasDetailedInfo) {
-        // Show initial loading modal if we don't have detailed info yet
-        showCustomInfoModal(
-            'Loading Member...', 
-            '<div style="text-align:center; padding:20px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching details...</div>'
-        );
-        
-        try {
-            // Parallel Fetch: Detailed list (to find one) + specific player (for avatar/status)
-            // Note: API doesn't support fetching one detailed member, so we fetch list or assume we are bot.
-            const [detailedRes, playerRes] = await Promise.all([
-                fetchData(`/clans/${clanId}/members/detailed`),
-                fetchData(`/players/${playerId}`)
-            ]);
-
-            // If detailed list works, find the member
-            if (!detailedRes.error && Array.isArray(detailedRes)) {
-                const found = detailedRes.find(m => m.playerId === playerId);
-                if (found) memberData = found;
-            }
-
-            // Merge with player profile (playerRes usually has equippedAvatar if detailedRes doesn't)
-            if (!playerRes.error) {
-                memberData = { ...playerRes, ...memberData };
-            }
-
-            // Close loading modal (remove last overlay)
-            const overlays = document.querySelectorAll('.modal-overlay');
-            if (overlays.length > 0) overlays[overlays.length - 1].remove();
-        } catch (e) {
-             console.error('[MemberDetails] Error:', e);
-             showCustomAlert('Error', 'Failed to load member details.');
-             return;
-        }
-    } else {
-        // We have detailed info, but let's do a quick fetch of player profile to ensure online status/avatar is fresh
-        // without blocking the UI
-        try {
-             const playerRes = await fetchData(`/players/${playerId}`);
-             if (!playerRes.error) {
-                 memberData = { ...memberData, ...playerRes };
-             }
-        } catch(e) { console.error('Background player fetch failed', e); }
-    }
-    
-    // Show actual data
-    showMemberModal(memberData);
+    const content = `
+        <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
+            <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
+                onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')">
+                ${data.username}
+            </h2>
+            <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
+            <div style="margin-top:5px;">
+                <span class="status-badge ${statusClass}" style="font-size:0.7rem; padding:2px 8px;">${statusLabel}</span>
+                <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">LVL ${data.level || 0}</span>
+            </div>
+            ${joinMsg}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Joined</div>
+                <div style="font-weight:600; font-size:0.9rem;">${creationDate.split(' ')[0]}</div>
+             </div>
+             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">Last Online</div>
+                <div style="font-weight:600; font-size:0.85rem;">${lastOnline}</div>
+             </div>
+        </div>
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">💰 Donations</h4>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; text-align:center; margin-bottom:15px; font-size:0.85rem;">
+            <div style="font-weight:bold; color:#64748b; font-size:0.75rem;">Period</div>
+            <div style="font-weight:bold; color:#d97706;">Gold</div>
+            <div style="font-weight:bold; color:#9333ea;">Gems</div>
+            <div style="color:#64748b;">Week</div><div style="color:#d97706;">${fmt(don.gold?.week)}</div><div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
+            <div style="color:#64748b;">Month</div><div style="color:#d97706;">${fmt(don.gold?.month)}</div><div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
+            <div style="color:#64748b;">All Time</div><div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div><div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
+        </div>
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-bottom:1px solid #eee; padding-bottom:5px;">⚔️ Activity</h4>
+        <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
+             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Week)</div><div style="font-weight:bold;">${fmt(xpDur.week)}</div></div>
+                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">XP (Month)</div><div style="font-weight:bold;">${fmt(xpDur.month)}</div></div>
+                 <div style="grid-column: span 2; text-align: center; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 5px;">
+                    <div style="color:#15803d; font-size:0.75rem; margin-bottom:2px; font-weight:bold;">✨ XP (All Time)</div>
+                    <div style="font-weight:bold; font-size:1.1rem; color:#15803d;">${fmt(data.xp)}</div>
+                 </div>
+                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gold Quests</div><div style="font-weight:bold;">${fmt(data.goldQuests)}</div></div>
+                 <div><div style="color:#166534; font-size:0.75rem; margin-bottom:2px;">Gem Quests</div><div style="font-weight:bold;">${fmt(data.gemQuests)}</div></div>
+             </div>
+        </div>
+    `;
+    showCustomInfoModal(data.username || 'Member Details', content);
 }
 
 // **********************************************
@@ -964,25 +451,19 @@ function formatDateThai(dateString) {
 function getQuestResetTimeDisplay() {
     const now = new Date();
     let reset = new Date();
-    
     const day = now.getDay();
     const diff = (day < 1) ? 1 : (1 + 7 - day) % 7; 
-    
     const isTodayReset = diff === 0 && now.getHours() < 7;
-    
     reset.setDate(now.getDate() + (isTodayReset ? 0 : diff)); 
     reset.setHours(7, 0, 0, 0); 
-
     if (reset < now) {
         reset.setDate(reset.getDate() + (diff === 0 ? 7 : 0));
         if (reset < now) reset.setDate(reset.getDate() + 7);
     }
-
     const timeDiff = reset - now;
     const d = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-
     return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">Refreshes in: ${d}d ${h}h ${m}m (Mon 07:00)</span>`;
 }
 
@@ -1003,12 +484,11 @@ async function fetchData(endpoint, isStatusCheck = false, isRequest = true) {
         const timestamp = new Date().getTime();
         const url = `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent(endpoint)}&apiKey=${encodeURIComponent(key)}&_t=${timestamp}`;
         const res = await fetch(url);
-        
         if (res.ok) {
             if (isRequest) sendIncrementSignal('requests');
             return await res.json();
         } else {
-            return { error: true, status: res.status };
+            return { error: true, status: res.status, message: await res.text() };
         }
     } catch (e) {
         return { error: true, message: e.message };
@@ -1019,32 +499,23 @@ async function sendPayload(endpoint, method, payload) {
     const key = localStorage.getItem('wolvesville_api_key');
     if (!key) return { error: true, message: 'Missing API Key' };
 
-    const url = `${localServerUrl}/api/wolvesville`; 
-    
     try {
-        const res = await fetch(url, {
+        const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 endpoint: endpoint,
                 apiKey: key,
                 method: method,
-                data: payload,
-                body: payload,
-                headers: { 'Content-Type': 'application/json' }
+                data: payload
             })
         });
-        
         if (res.ok) {
             sendIncrementSignal('requests');
             const text = await res.text();
             return text ? JSON.parse(text) : { success: true };
         } else {
-            const txt = await res.text();
-            if (res.status === 404 && txt.includes('Cannot POST')) {
-                return { error: true, status: 404, message: 'Proxy Error: Your local server does not accept POST requests. Please add a POST handler to your server.js.' };
-            }
-            return { error: true, status: res.status, message: txt };
+            return { error: true, status: res.status, message: await res.text() };
         }
     } catch (e) {
         return { error: true, message: e.message };
@@ -1053,28 +524,16 @@ async function sendPayload(endpoint, method, payload) {
 
 async function fetchTotalItemsCount(force = false) {
     if (!force && itemDataCache) return itemDataCache;
-
     if (isFetchingItems) return { count: '...', error: false };
     isFetchingItems = true;
-
     try {
         const key = localStorage.getItem('wolvesville_api_key');
-        if (!key) throw new Error('No API Key');
-
         const response = await fetch(`${localServerUrl}/api/items/total?apiKey=${encodeURIComponent(key)}`);
         const data = await response.json();
-
-        if (data.error) {
-             itemDataCache = { count: '-', error: true };
-        } else {
-             itemDataCache = { count: data.count, error: false };
-             console.log(`[Items] Count loaded: ${data.count} (Source: ${data.fromCache ? 'Server Cache' : 'Live API'})`);
-        }
+        itemDataCache = data.error ? { count: '-', error: true } : { count: data.count, error: false };
     } catch (e) {
-        console.error('[Items] Error fetching total:', e);
         itemDataCache = { count: '-', error: true };
     }
-    
     isFetchingItems = false;
     return itemDataCache;
 }
@@ -1086,18 +545,10 @@ async function fetchAndDisplayStatsOnly() {
             const stats = await res.json();
             const req = stats.requests;
             const vis = stats.visitors;
-            
             if(requestsTodayOnly) requestsTodayOnly.textContent = req.count_today.toLocaleString();
-            
             if(requestsFullToday) requestsFullToday.textContent = req.count_today.toLocaleString();
-            if(requestsFullThisMonth) requestsFullThisMonth.textContent = req.count_month.toLocaleString();
-            if(requestsFullThisYear) requestsFullThisYear.textContent = req.count_year.toLocaleString();
             if(requestsFullLifetime) requestsFullLifetime.textContent = (req.count_lifetime||0).toLocaleString();
-
             if(visitorsFullToday) visitorsFullToday.textContent = vis.count_today.toLocaleString();
-            if(visitorsFullThisMonth) visitorsFullThisMonth.textContent = vis.count_month.toLocaleString();
-            if(visitorsFullThisYear) visitorsFullThisYear.textContent = vis.count_year.toLocaleString();
-            if(visitorsFullLifetime) visitorsFullLifetime.textContent = (vis.count_lifetime||0).toLocaleString();
         }
     } catch (e) { console.error(e); }
 }
@@ -1106,43 +557,27 @@ async function fetchAndDisplayStatsOnly() {
 // 7. DASHBOARD & PLAYER LOGIC
 // **********************************************
 
-// REMOVED REFRESH FUNCTIONS as requested
-
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
-    if(availableItems) availableItems.textContent = '...';
     if(apiStatusText) apiStatusText.textContent = 'Checking...';
-    if(apiStatusDot) apiStatusDot.style.backgroundColor = '#FFD700';
-
     const check = await fetchData('/announcements', true, false);
     if (!check.error) {
         if(apiStatusDot) { apiStatusDot.classList.add('connected'); apiStatusDot.style.backgroundColor = '#4CAF50'; }
         if(apiStatusText) apiStatusText.textContent = 'ออนไลน์ (200 OK)';
-        
         const items = await fetchTotalItemsCount();
-        if(availableItems) {
-             availableItems.innerHTML = `
-                ${items.error ? 'Error' : items.count.toLocaleString()}
-                <!-- Removed Refresh Button -->
-             `;
-        }
+        if(availableItems) availableItems.textContent = items.error ? 'Error' : items.count.toLocaleString();
     } else {
         if(apiStatusDot) { apiStatusDot.classList.remove('connected'); apiStatusDot.style.backgroundColor = '#D32F2F'; }
         if(apiStatusText) apiStatusText.textContent = 'เชื่อมต่อไม่ได้';
-        if(availableItems) availableItems.textContent = '-';
     }
 }
 
-async function searchAndDisplayPlayer() {
-    // Also attach to window to be safe
-    window.searchAndDisplayPlayer = searchAndDisplayPlayer;
-    
+window.searchAndDisplayPlayer = async () => {
     const input = usernameInput.value.trim();
     if (!input) return;
     if (!localStorage.getItem('wolvesville_api_key')) return alert('กรุณาใส่ API Key');
 
     playerProfileContainer.innerHTML = '<div style="text-align:center; padding:30px;">⏳ กำลังค้นหาข้อมูล...</div>';
-
     let id = input;
     if (!isUUID(input)) {
         const search = await fetchData(`/players/search?username=${encodeURIComponent(input)}`);
@@ -1153,176 +588,53 @@ async function searchAndDisplayPlayer() {
             return;
         }
     }
-
     const data = await fetchData(`/players/${id}`);
     if (data && !data.error) {
         if (data.clanId) {
             const clan = await fetchData(`/clans/${data.clanId}/info`);
-            if (!clan.error) {
-                data.clanName = clan.name;
-                data.clanTag = clan.tag;
-            }
+            if (!clan.error) { data.clanName = clan.name; data.clanTag = clan.tag; }
         }
         renderPlayerProfile(data);
     } else {
         playerProfileContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">ดึงข้อมูลล้มเหลว</div>';
     }
-    fetchAndDisplayStatsOnly();
-}
-
-// Make sure it's globally available
-window.searchAndDisplayPlayer = searchAndDisplayPlayer;
+};
 
 function renderPlayerProfile(data) {
     const stats = data.gameStats || {};
     const roles = data.roleCards || [];
-    
     const total = (stats.totalWinCount||0) + (stats.totalLoseCount||0) + (stats.totalTieCount||0);
     const winRate = total > 0 ? ((stats.totalWinCount/total)*100).toFixed(1) : 0;
-    
-    const rankTotal = (data.rankedWins||0) + (data.rankedLosses||0);
-    const rankWR = rankTotal > 0 ? ((data.rankedWins/rankTotal)*100).toFixed(1) : 0;
-    const rankSkill = data.rankedSeasonSkill || '-';
-    const rankMaxSkill = data.rankedSeasonMaxSkill || '-';
-    const bestRank = data.rankedSeasonBestRank ? `#${data.rankedSeasonBestRank.toLocaleString()}` : '-';
-
-    const calcWR = (w, l) => { const t = (w||0)+(l||0); return t > 0 ? ((w/t)*100).toFixed(0) : 0; };
-    const vilWR = calcWR(stats.villageWinCount, stats.villageLoseCount);
-    const wolfWR = calcWR(stats.werewolfWinCount, stats.werewolfLoseCount);
-    const voteWR = calcWR(stats.votingWinCount, stats.votingLoseCount);
-
     const rawStatus = (data.status || 'OFFLINE').toUpperCase();
-    let statusBadge = '';
+    
+    let statusBadge = `<span class="status-badge ${rawStatus.toLowerCase()}">${rawStatus}</span>`;
+    let clanHtml = data.clanName ? `<span class="clan-tag">[${data.clanTag}] ${data.clanName}</span>` : '';
 
-    if (rawStatus === 'PLAY') {
-        statusBadge = '<span class="status-badge play"><span class="material-icons">sports_esports</span> Playing</span>';
-    } else if (rawStatus === 'ONLINE' || rawStatus === 'DEFAULT') { 
-        statusBadge = '<span class="status-badge online"><span class="material-icons">fiber_manual_record</span> DEFAULT</span>';
-    } else if (rawStatus === 'DO_NOT_DISTURB' || rawStatus === 'DND') { 
-        statusBadge = '<span class="status-badge dnd"><span class="material-icons">do_not_disturb_on</span> Do Not Disturb</span>';
-    } else if (rawStatus === 'OFFLINE') {
-        statusBadge = '<span class="status-badge offline"><span class="material-icons">cloud_off</span> INVISIBLE</span>';
-    } else {
-        statusBadge = `<span class="status-badge offline">${data.status}</span>`;
-    }
-
-    let clanHtml = '';
-    if (data.clanName) clanHtml = `<span class="clan-tag" title="${data.clanId}">[${data.clanTag||'CLAN'}] ${data.clanName}</span>`;
-    else if (data.clanId) clanHtml = `<span class="clan-tag error">Clan ID Only</span>`;
-
-    const achievements = stats.achievements || [];
-    const topRoles = achievements
-        .sort((a, b) => b.level - a.level || b.points - a.points)
-        .slice(0, 3)
-        .map(a => `
-            <div class="achievement-tag">
-                <strong>${a.roleId.replace(/-/g,' ').toUpperCase()}</strong>
-                <span class="achievement-lvl">Lv.${a.level}</span>
-            </div>
-        `).join('');
-
-    const cardsHtml = roles.map(c => {
-        const advancedList = (c.roleIdsAdvanced || [])
-            .map(id => `<span style="display:inline-block; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin:2px 2px 2px 0; font-size:0.7rem; border:1px solid #e2e8f0; color:#475569;">${id.replace(/-/g, ' ')}</span>`)
-            .join('');
-
-        return `
+    const cardsHtml = roles.map(c => `
         <div class="game-card">
-            <div class="card-top rarity-${c.rarity}">
-                <span class="material-icons" style="color:rgba(255,255,255,0.8);">style</span>
-            </div>
             <div class="card-body">
-                <div class="card-title">${c.roleId1.replace(/-/g,' ').toUpperCase()}</div>
+                <div class="card-title">${c.roleId1.toUpperCase()}</div>
                 <div class="card-subtitle">${c.rarity}</div>
-                ${advancedList ? `<div style="margin-bottom:8px; display:flex; flex-wrap:wrap;">${advancedList}</div>` : ''}
-                <ul class="ability-list">${[c.abilityId1,c.abilityId2,c.abilityId3,c.abilityId4].filter(x=>x).map(a=>`<li class="ability-item">${a.replace(/-/g,' ')}</li>`).join('')}</ul>
             </div>
         </div>
-    `}).join('');
-
-    const rawJson = JSON.stringify(data, null, 4);
+    `).join('');
 
     playerProfileContainer.innerHTML = `
         <div class="profile-header-card">
-            <div class="profile-avatar-wrapper">
-                <img src="${data.equippedAvatar?.url || 'https://via.placeholder.com/150'}" class="profile-avatar-lg">
-                <div class="level-badge">LV. ${data.level}</div>
-            </div>
+            <img src="${data.equippedAvatar?.url || ''}" class="profile-avatar-lg">
             <div class="profile-main-info">
                 <div class="player-name">${data.username} ${clanHtml}</div>
-                <div style="margin-bottom:10px;">${statusBadge}</div>
-                
-                <div style="margin-bottom: 10px;">
-                    <span class="rose-stat" title="Received"><span class="material-icons">favorite</span> ${data.receivedRosesCount?.toLocaleString() || 0}</span>
-                    <span class="rose-stat" title="Sent"><span class="material-icons">volunteer_activism</span> ${data.sentRosesCount?.toLocaleString() || 0}</span>
-                </div>
-
+                <div>${statusBadge}</div>
                 <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
-                <div style="font-size:0.8rem; color:#94a3b8; margin-top:10px;">
-                    ID: ${data.id} <br>
-                    Joined: ${formatDateThai(data.creationTime)} | Last: ${formatDateThai(data.lastOnline)}
-                </div>
             </div>
         </div>
-
-        <h3 class="stats-section-title"><span class="material-icons">analytics</span> สถิติ (Statistics)</h3>
         <div class="stats-grid-container">
             <div class="stat-box">
-                <h4 class="box-title">Overview</h4>
-                <div class="stat-row"><span class="stat-label">Games</span><span class="stat-val">${total.toLocaleString()}</span></div>
-                <div class="stat-row"><span class="stat-label">Time</span><span class="stat-val">${((stats.totalPlayTimeInMinutes||0)/60).toFixed(1)} hrs</span></div>
-                <div class="progress-container">
-                    <div class="progress-label"><span>Win Rate</span><span>${winRate}%</span></div>
-                    <div class="progress-track"><div class="progress-fill fill-win" style="width:${winRate}%"></div></div>
-                </div>
-                
-                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee;">
-                    <span class="stat-label" style="display:block; margin-bottom:5px;">Top Roles (Best Level):</span>
-                    <div class="achievements-list">${topRoles}</div>
-                </div>
-            </div>
-
-            <div class="stat-box">
-                <h4 class="box-title">Ranked Season</h4>
-                ${rankTotal > 0 ? `
-                    <div class="stat-row"><span class="stat-label">Skill / Max</span><span class="stat-val">${rankSkill} / ${rankMaxSkill}</span></div>
-                    <div class="stat-row"><span class="stat-label">Best Rank</span><span class="stat-val" style="color:var(--warning)">${bestRank}</span></div>
-                    <div class="stat-row"><span class="stat-label">Wins / Loss</span><span class="stat-val"><span class="value-green">${data.rankedWins}</span> / <span class="value-red">${data.rankedLosses}</span></span></div>
-                    <div class="progress-container">
-                        <div class="progress-label"><span>Win Rate</span><span>${rankWR}%</span></div>
-                        <div class="progress-track"><div class="progress-fill fill-solo" style="width:${rankWR}%"></div></div>
-                    </div>
-                ` : '<div style="padding:20px; text-align:center; color:#ccc">No Ranked Data</div>'}
-            </div>
-
-            <div class="stat-box">
-                <h4 class="box-title">Performance</h4>
-                <div class="progress-container" style="margin-bottom:8px">
-                    <div class="progress-label"><span>Village</span><span>${vilWR}%</span></div>
-                    <div class="progress-track"><div class="progress-fill fill-win" style="width:${vilWR}%"></div></div>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-label"><span>Werewolf</span><span>${wolfWR}%</span></div>
-                    <div class="progress-track"><div class="progress-fill fill-wolf" style="width:${wolfWR}%"></div></div>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-label"><span>Voting / Solo</span><span>${voteWR}%</span></div>
-                    <div class="progress-track"><div class="progress-fill fill-solo" style="width:${voteWR}%"></div></div>
-                </div>
+                <h4>Games: ${total}</h4>
+                <h4>Win Rate: ${winRate}%</h4>
             </div>
         </div>
-
-        ${roles.length ? `<h3 class="stats-section-title"><span class="material-icons">style</span> Role Cards (${roles.length})</h3><div class="role-cards-wrapper">${cardsHtml}</div>` : ''}
-
-        <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <details>
-                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
-                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
-                    Debug: Raw Player Data (JSON)
-                </summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
-            </details>
-        </div>
+        <div class="role-cards-wrapper">${cardsHtml}</div>
     `;
 }
 
@@ -1331,31 +643,15 @@ function renderPlayerProfile(data) {
 // **********************************************
 
 async function fetchMyClan() {
-    if (!localStorage.getItem('wolvesville_api_key')) return showCustomAlert('Error', 'Missing API Key');
-    
     stopClanPolling();
-    
-    // Initial Loader
-    clanContentContainer.innerHTML = `
-        <div class="loading-container">
-            <div style="font-size:24px; margin-bottom:10px;">🛡️</div>
-            <h3 style="color:#1e293b; margin:0;">Loading My Clan...</h3>
-            <div class="loading-bar-track">
-                <div class="loading-bar-fill" style="width: 5%;"></div>
-            </div>
-            <div class="loading-text">Initializing...</div>
-        </div>
-    `;
-    
+    clanContentContainer.innerHTML = '<div class="loading-container">🛡️ Loading My Clan...</div>';
     const authRes = await fetchData('/clans/authorized');
     if (authRes.error || !authRes.length) {
-        clanContentContainer.innerHTML = '<div style="text-align:center; color:red; padding:30px;">❌ คุณไม่ได้อยู่ในแคลน</div>';
+        clanContentContainer.innerHTML = '❌ คุณไม่ได้อยู่ในแคลน';
         return;
     }
-    
     const myClanId = authRes[0].id;
     await fetchClanData(myClanId, true);
-    
     startClanPolling(myClanId, true);
 }
 
@@ -1363,936 +659,88 @@ async function searchClan() {
     stopClanPolling();
     const name = clanNameInput.value.trim();
     if (!name) return;
-    
-    clanContentContainer.innerHTML = `
-        <div class="loading-container">
-            <div style="font-size:24px; margin-bottom:10px;">🔍</div>
-            <h3 style="color:#1e293b; margin:0;">Searching Clan...</h3>
-            <div class="loading-bar-track">
-                <div class="loading-bar-fill" style="width: 10%;"></div>
-            </div>
-            <div class="loading-text">Looking for "${name}"...</div>
-        </div>
-    `;
-    
+    clanContentContainer.innerHTML = '🔍 Searching Clan...';
     const searchRes = await fetchData(`/clans/search?name=${encodeURIComponent(name)}`);
     if (searchRes.error || !searchRes.length) {
-        clanContentContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">❌ ไม่พบแคลนนี้</div>';
+        clanContentContainer.innerHTML = '❌ ไม่พบแคลนนี้';
         return;
     }
-    
     await fetchClanData(searchRes[0].id, false);
 }
 
-// Global polling functions
 function startClanPolling(clanId, isMyClan) {
     if (clanPollingInterval) clearInterval(clanPollingInterval);
-    
     currentViewingClanId = clanId;
     isCurrentViewMyClan = isMyClan;
-    isFirstRender = true;
-
-    console.log('[Auto-Update] Enabled (60s interval for everything).');
-    
     clanPollingInterval = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            fetchClanData(clanId, isMyClan, true); 
-        }
-    }, 60000); 
+        if (document.visibilityState === 'visible') fetchClanData(clanId, isMyClan, true);
+    }, 60000);
 }
 
 function stopClanPolling() {
-    if (clanPollingInterval) {
-        clearInterval(clanPollingInterval);
-        clanPollingInterval = null;
-    }
-    currentViewingClanId = null;
-    isFirstRender = true;
+    if (clanPollingInterval) clearInterval(clanPollingInterval);
+    clanPollingInterval = null;
 }
 
-// [UPDATED] Sequential Loading Function with Progress Bar
 async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
-    const totalSteps = isMyClan ? 14 : 9; // Approximate steps
-    let currentStep = 0;
-
-    // Helper to update progress bar
-    const updateProgress = (text) => {
-        if(!isBackground) {
-            currentStep++;
-            const percent = Math.min(100, Math.round((currentStep / totalSteps) * 100));
-            
-            const loaderHtml = `
-                <div class="loading-container">
-                    <div style="font-size:24px; margin-bottom:10px; animation: bounce 1s infinite;">🛡️</div>
-                    <h3 style="color:#1e293b; margin:0;">Loading Clan Data...</h3>
-                    <div class="loading-bar-track">
-                        <div class="loading-bar-fill" style="width: ${percent}%;"></div>
-                    </div>
-                    <div class="loading-text">${text} (${percent}%)</div>
-                </div>
-            `;
-            clanContentContainer.innerHTML = loaderHtml;
-        }
-    };
-
-    if(!isBackground) {
-        isFirstRender = true;
-        updateProgress('Initializing...');
-    }
+    if(!isBackground) clanContentContainer.innerHTML = '🛡️ Fetching Clan Data...';
+    await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
     
-    // Parallel fetching for assets
-    await Promise.all([
-        fetchAndCacheEmojis(),
-        fetchAndCacheAvatarItems() // NEW: Fetch Avatar Items
-    ]);
-    
-    // 1. Info
-    updateProgress('Fetching Clan Info...');
     const info = await fetchData(`/clans/${clanId}/info`);
-    if (info.error) {
-        if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
-        return;
-    }
-
-    // 2. Members (Updated to try Detailed fetch first)
-    updateProgress('Fetching Members List...');
-    // Try detailed fetch first (available for bots)
-    let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
-    
-    if (membersRaw.error) {
-         console.log('[Clan] Detailed members fetch failed (likely not a bot), falling back to standard.');
-         // Fallback to standard members list
-         membersRaw = await fetchData(`/clans/${clanId}/members`);
-    } else {
-         console.log('[Clan] Detailed members fetched successfully.');
-    }
-    
-    // Update Detailed Cache
-    if (!membersRaw.error && Array.isArray(membersRaw)) {
-        clanMembersDetailedMap.clear();
-        membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
-    }
-    
-    // 3. Active Quests
-    updateProgress('Fetching Active Quests...');
+    const membersRaw = await fetchData(`/clans/${clanId}/members`);
     const quests = await fetchData(`/clans/${clanId}/quests/active`);
-
-    // 4. Chat
-    updateProgress('Fetching Chat History...');
     const chat = await fetchData(`/clans/${clanId}/chat`);
-
-    // 5. Logs
-    updateProgress('Fetching Logs...');
     const logs = await fetchData(`/clans/${clanId}/logs`);
-
-    // 6. Ledger
-    updateProgress('Fetching Ledger...');
-    const ledger = await fetchData(`/clans/${clanId}/ledger`);
-
-    // 7. History
-    updateProgress('Fetching Quest History...');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
-
-    // 8. Announcements
-    updateProgress('Fetching Announcements...');
-    const announcements = await fetchData(`/clans/${clanId}/announcements`);
-
-    let blockedMembers = { error: true };
-    let availableQuests = { error: true };
-    let votesData = { error: true };
-
+    
+    let availableQuests = [], votesData = {};
     if(isMyClan) {
-        updateProgress('Fetching Blocklist...');
-        const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
-
-        // Handle Blocklist Logic (Moved from original array access)
-        if (!blocklistRes.error && Array.isArray(blocklistRes)) {
-            const extractId = (item) => {
-                if (typeof item === 'string') return item;
-                return item.playerId || item.id || item.targetPlayerId;
-            };
-            
-            const playersData = [];
-            // Update loading for blocklist processing
-            updateProgress('Processing Blocked Players...');
-            for (const item of blocklistRes.slice(0, 50)) {
-                const pid = extractId(item);
-                if (pid) {
-                    const pData = await fetchData(`/players/${pid}`);
-                    playersData.push(pData);
-                } else {
-                    playersData.push({ error: true });
-                }
-            }
-            
-            blockedMembers = playersData.map((p, idx) => {
-                const originalItem = blocklistRes[idx];
-                const originalId = extractId(originalItem) || 'Unknown ID';
-                if (p.error) return { id: originalId, username: 'Unknown ID', error: true };
-                return p;
-            });
-        } else {
-             blockedMembers = blocklistRes;
-        }
-
-        updateProgress('Fetching Available Quests...');
         availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
-        // Cache Available Quests
-        if (Array.isArray(availableQuests)) {
-            availableQuests.forEach(q => questDetailsCache.set(q.id, q));
-        }
-
-        updateProgress('Fetching Votes...');
         votesData = await fetchData(`/clans/${clanId}/quests/votes`);
+        if (Array.isArray(availableQuests)) availableQuests.forEach(q => questDetailsCache.set(q.id, q));
         clanVotesCache = votesData;
     }
 
-    // Process Members (Heavy lifting)
-    let members = membersRaw;
-    if (!membersRaw.error && Array.isArray(membersRaw)) {
-        updateProgress(`Processing Member Avatars (${membersRaw.length})...`);
-        const membersList = [];
-        for (const m of membersRaw) {
-            if (playerAvatarCache.has(m.playerId)) {
-                membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
-            } else {
-                const detail = await fetchData(`/players/${m.playerId}`);
-                if (!detail.error) {
-                    playerAvatarCache.set(m.playerId, detail);
-                    membersList.push({ ...m, ...detail });
-                } else {
-                    membersList.push(m);
-                }
-            }
-        }
-        members = membersList;
-    }
-
-    // Cache Members for Vote Name Resolution
-    if (Array.isArray(members)) {
-        members.forEach(m => {
-            clanMembersCache[m.playerId] = m.username;
-        });
-    }
-
-    let participatingMemberCount = 0;
-    if (Array.isArray(members)) {
-        participatingMemberCount = members.filter(m => m.participateInClanQuests).length;
-    }
-    currentParticipatingCount = participatingMemberCount;
-
-    // Final Render
-    updateProgress('Rendering Dashboard...');
-    setTimeout(() => {
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
-    }, 500); 
+    renderClanDashboard(info, membersRaw, quests, chat, logs, history, availableQuests, votesData, clanId, isMyClan);
 }
 
-function renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, canEdit = false, isBackground = false, participatingMemberCount = 0) { 
-    const memberMap = {};
-    if (!members.error && Array.isArray(members)) {
-        members.forEach(m => {
-            memberMap[m.playerId] = m.username;
-        });
-    }
-
-    // 1. ACTIVE QUEST HTML (BATTLE PASS STYLE - UPDATED)
-    let questsHtml = '<div style="text-align:center; color:#ccc; padding:20px;">No Active Quests</div>';
-    let hasActiveQuest = false;
-    
-    if (!quests.error && (quests.quest || (quests.id && (quests.promoImageUrl || quests.rewards)))) {
-        hasActiveQuest = true;
-        const qData = quests.quest ? quests : { quest: quests, ...quests }; 
-        const qInfo = qData.quest || qData; 
-        
-        const progress = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
-        const target = qData.xpPerReward || qInfo.xpPerReward || 1;
-        const percent = Math.min(100, Math.round((progress / target) * 100));
-        const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
-        const activeParticipants = members.filter(m => m.participateInClanQuests).length;
-        const actionCost = 300 + (30 * activeParticipants);
-
-        // --- BATTLE PASS TRACK (UNIFIED) ---
-        let rewardsTrackHtml = '';
-        if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
-            const currentTierIndex = (qData.tier || 0);
-            
-            // [FIXED] PROGRESS BAR LOGIC
-            const totalSegments = Math.max(1, qInfo.rewards.length - 1);
-            let relativeProgress = currentTierIndex + (progress / target);
-            
-            // Cap progress at 100% of the track
-            if (relativeProgress > totalSegments) relativeProgress = totalSegments;
-            
-            const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
-
-            rewardsTrackHtml = `
-                <div class="battle-pass-hub">
-                    <!-- The Progress Bar is now inside the Track Hub -->
-                    <div class="xp-progress-wrapper">
-                        <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
-                    </div>
-
-                    <div class="battle-pass-track">
-            `;
-            
-            qInfo.rewards.forEach((r, idx) => {
-                let imgUrl = 'https://via.placeholder.com/60?text=?';
-                if(r.type === 'AVATAR_ITEM') {
-                    // Try to get from cache first
-                    const item = avatarItemsCache.get(r.avatarItemId);
-                    if (item && item.imageUrl) {
-                        imgUrl = item.imageUrl; // Use the image URL from API
-                    } else {
-                        imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
-                    }
-                }
-                else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
-                
-                let statusClass = '';
-                if (idx < currentTierIndex) statusClass = 'completed-tier';
-                else if (idx === currentTierIndex) statusClass = 'active-tier';
-
-                rewardsTrackHtml += `
-                    <div class="reward-step ${statusClass}">
-                        <div class="reward-icon-box">
-                            ${idx === currentTierIndex ? `<div class="xp-label-floating">${progress.toLocaleString()} / ${target.toLocaleString()} XP</div>` : ''}
-                            <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="background:#f1f5f9; border-radius:10px;">
-                            ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
-                        </div>
-                        <div class="tier-label">Tier ${idx + 1}</div>
-                    </div>
-                `;
-            });
-            rewardsTrackHtml += '</div></div>';
-        }
-
-        let actionsHtml = '';
-        if (canEdit) {
-            actionsHtml = `
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px;">
-                    <button onclick="window.claimQuestExtraTime('${clanId}')" title="Add Time" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        <span class="material-icons" style="font-size:18px;">alarm_add</span> 
-                        Add Time (<span class="dynamic-action-price">${actionCost}</span>)
-                    </button>
-                    <button onclick="window.skipQuestWaitingTime('${clanId}')" title="Skip Wait" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        <span class="material-icons" style="font-size:18px;">fast_forward</span> 
-                        Skip Wait (<span class="dynamic-action-price">${actionCost}</span>)
-                    </button>
-                    <button onclick="window.cancelActiveQuest('${clanId}')" title="Cancel Quest" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        <span class="material-icons" style="font-size:18px;">cancel</span> Cancel
-                    </button>
-                </div>
-            `;
-        }
-
-        questsHtml = `
-            <div class="active-quest-container">
-                <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
-                    <div class="active-quest-overlay">
-                        <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${qInfo.title || 'Active Clan Quest'} (Tier ${tier})</h2>
-                        <div class="active-quest-meta-lg">
-                            <span class="material-icons" style="font-size:16px;">schedule</span> Ends: ${formatDateThai(qData.tierEndTime || qInfo.tierEndTime)}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="active-quest-body">
-                    <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
-                        <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> 
-                        Quest Rewards Progression
-                    </h4>
-
-                    ${rewardsTrackHtml}
-                    ${actionsHtml}
-                </div>
-            </div>
-        `;
-    } 
-
-    // 2. AVAILABLE QUESTS
-    let availableQuestsHtml = '';
-    if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
-        
-        let shuffleVotesHtml = '';
-        if (!votesData.error && votesData.shuffleVotes && Array.isArray(votesData.shuffleVotes) && votesData.shuffleVotes.length > 0) {
-             const voterIds = votesData.shuffleVotes;
-             const voterNames = voterIds.map(vid => memberMap[vid] || 'Unknown').join(', ');
-             shuffleVotesHtml = `
-                <div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;">
-                    <span style="font-weight:bold;">🗳️ Shuffle Votes (${voterIds.length}):</span> ${voterNames}
-                </div>
-             `;
-        }
-
-        availableQuestsHtml = `
-        <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <h3 style="margin:0; color:#334155; font-size:1.1rem; align-self:center;">🛒 Available to Purchase</h3>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        ${getQuestResetTimeDisplay()}
-                        
-                        <button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                            <span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> Quest Wiki
-                        </button>
-
-                        <button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                            <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)
-                        </button>
-                    </div>
-                    ${shuffleVotesHtml}
-                </div>
-            </div>
+function renderClanDashboard(info, members, quests, chat, logs, history, availableQuests, votesData, clanId, canEdit) {
+    let mainHtml = `
+        <div class="profile-header-card">
+            <h2>[${info.tag}] ${info.name}</h2>
+            <p>${info.description || ''}</p>
         </div>
-        `;
-        
-        availableQuestsHtml += '<div class="quest-grid">';
-        
-        availableQuestsHtml += availableQuests.map(q => {
-            const isGem = q.purchasableWithGems;
-            
-            let buyCost = 0;
-            if (isGem) {
-                buyCost = 350 + (135 * participatingMemberCount);
-            } else {
-                buyCost = 2000 + (400 * participatingMemberCount);
-            }
-
-            let voteHtml = '';
-            if (!votesData.error && votesData.votes && votesData.votes[q.id]) {
-                const voterIds = votesData.votes[q.id]; 
-                const voteCount = voterIds.length;
-                
-                if (voteCount > 0) {
-                    voteHtml = `
-                        <div class="quest-votes-badge">
-                            <span class="material-icons" style="font-size:14px;">how_to_vote</span> ${voteCount}
-                        </div>
-                    `;
-                }
-            }
-
-            const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
-            let claimBtn = '';
-            if (!hasActiveQuest) {
-                claimBtn = `
-                    <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-                        <span class="material-icons" style="font-size:18px; margin-right:4px;">shopping_cart</span> Buy
-                    </button>
-                `;
-            }
-
-            return `
-                <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                      <img src="${q.promoImageUrl}" class="quest-card-large-img">
-                      ${voteHtml}
-                      <div class="quest-card-overlay">
-                        <div>
-                             <div class="quest-price-tag" style="color: ${isGem ? '#d8b4fe' : '#fcd34d'};">
-                                <span class="material-icons" style="font-size:16px;">${isGem ? 'diamond' : 'monetization_on'}</span>
-                                <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
-                             </div>
-                        </div>
-                        ${claimBtn}
-                      </div>
-                </div>
-            `;
-        }).join('');
-        
-        availableQuestsHtml += '</div>';
-    }
-
-    // 3. ANNOUNCEMENTS
-    let announceSectionHtml = '';
-    let announceListContent = ''; 
-    
-    if (canEdit) {
-        const formHtml = `
-            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow: var(--shadow-sm);">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; display:flex; align-items:center;">
-                    <span class="material-icons" style="margin-right:5px;">campaign</span> Post Announcement
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <textarea id="clan-announcement-input" placeholder="Type your announcement here..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; resize:vertical; min-height:60px; font-family:inherit;"></textarea>
-                    <button onclick="window.sendClanAnnouncement('${clanId}')" style="background:var(--primary-color); color:white; border:none; padding:0 20px; border-radius:6px; cursor:pointer; align-self:flex-end; height:40px; font-weight:bold;">POST</button>
-                </div>
-            </div>
-        `;
-
-        if (!announcements.error && Array.isArray(announcements) && announcements.length > 0) {
-             announceListContent = announcements.map(a => `
-                <div style="background:#fefce8; border-left:4px solid #eab308; padding:15px; border-radius:8px; box-shadow:var(--shadow-sm);">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <strong style="color:#854d0e;">${a.author || a.playerUsername || 'Leader'}</strong>
-                        <span style="font-size:0.75rem; color:#a16207;">${formatDateThai(a.timestamp || a.creationTime)}</span>
-                    </div>
-                    <div style="color:#4b5563; font-size:0.95rem;">${linkify(a.content || a.msg || a.message)}</div>
-                </div>
-            `).join('');
-        } else {
-            announceListContent = '<div style="color:#94a3b8; text-align:center; padding:10px;">No announcements yet.</div>';
-        }
-
-        announceSectionHtml = `
-            ${formHtml}
-            <div style="margin-bottom:20px;">
-                <h3 class="stats-section-title"><span class="material-icons">history_edu</span> Recent Announcements</h3>
-                <div id="clan-announcements-container" style="display:grid; gap:10px;">
-                    ${announceListContent}
-                </div>
-            </div>
-        `;
-    }
-
-    // 4. MEMBERS
-    let membersHtml = '<div style="text-align:center; padding:20px;">No Members Data</div>';
-    if (!members.error && Array.isArray(members)) {
-        membersHtml = members.map(m => {
-            let statusColor = '#ccc';
-            let statusText = m.playerStatus || m.status || 'OFFLINE';
-            if (statusText === 'ONLINE' || statusText === 'DEFAULT') { statusColor = 'var(--success)'; statusText = 'DEFAULT'; }
-            else if (statusText === 'PLAY') { statusColor = '#1e40af'; statusText = 'PLAY'; }
-            else if (statusText === 'DND' || statusText === 'DO_NOT_DISTURB') { statusColor = '#ef444'; statusText = 'DO NOT DISTURB'; }
-            else if (statusText === 'OFFLINE') { statusColor = '#ccc'; statusText = 'INVISIBLE'; }
-
-            const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
-            const avatarElemId = `member-avatar-${m.playerId}`;
-
-            let roleBadge = '';
-            let cardClass = '';
-            if (info.leaderId === m.playerId) { roleBadge = '<span class="role-badge leader">Leader</span>'; cardClass = 'leader'; }
-            else if (m.isCoLeader) { roleBadge = '<span class="role-badge coleader">Co-Leader</span>'; cardClass = 'coleader'; }
-
-            const isQuest = m.participateInClanQuests;
-            let questIconHtml = '';
-            if (canEdit) {
-                questIconHtml = `
-                    <span class="material-icons quest-inline-icon clickable ${isQuest ? 'on' : 'off'}" 
-                        onclick="event.stopPropagation(); window.toggleQuestFromList('${clanId}', '${m.playerId}', ${isQuest}, this)"
-                        title="Toggle Quest Participation">
-                        ${isQuest ? 'check_circle' : 'cancel'}
-                    </span>
-                `;
-            } else {
-                questIconHtml = `
-                    <span class="material-icons quest-inline-icon ${isQuest ? 'on' : 'off'}" title="Quest Status">
-                        ${isQuest ? 'check_circle' : 'cancel'}
-                    </span>
-                `;
-            }
-
-            const safeFlair = escapeJsString(m.flair);
-            let flairHtml = '';
-            const displayFlair = m.flair ? m.flair : '<span style="opacity:0.5; font-style:italic;">No Flair</span>';
-            
-            if (canEdit) {
-                flairHtml = `
-                    <span class="member-flair flair-editable" 
-                        onclick="event.stopPropagation(); window.editFlairFromList('${clanId}', '${m.playerId}', '${safeFlair}')"
-                        title="Click to Edit Flair">
-                        ${displayFlair} <span class="material-icons" style="font-size:12px; vertical-align:middle; opacity:0.5;">edit</span>
-                    </span>
-                `;
-            } else {
-                flairHtml = m.flair ? `<span class="member-flair">${m.flair}</span>` : '';
-            }
-
-            let adminActionsHtml = '';
-            if (canEdit && m.playerId !== info.leaderId) {
-                adminActionsHtml = `
-                    <span class="material-icons action-icon kick-icon" 
-                        onclick="event.stopPropagation(); window.kickMemberFromList('${clanId}', '${m.playerId}', '${m.username}')"
-                        title="Kick Member">
-                        person_remove
-                    </span>
-                    <span class="material-icons action-icon block-icon" 
-                        onclick="event.stopPropagation(); window.blockMemberFromList('${clanId}', '${m.playerId}', '${m.username}')"
-                        title="Block Member">
-                        block
-                    </span>
-                `;
-            }
-
-            const safeUsername = escapeJsString(m.username);
-
-            return `
-                <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details">
-                    <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
-                    <div class="member-details">
-                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" 
-                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
-                                  title="Search Player">
-                                ${m.username || 'Unknown'}
-                            </span> 
-                            ${roleBadge}
-                            ${questIconHtml}
-                            ${adminActionsHtml} <!-- Added Actions -->
-                        </div>
-                        <div class="member-meta">
-                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span>
-                            ${statusText}
-                            ${flairHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // 5. CHAT
-    let chatHtml = '<div style="padding:15px; color:#ccc;">(No permission to view chat)</div>';
-    if (!chat.error && Array.isArray(chat)) {
-        chatHtml = chat.reverse().map(msg => {
-            const isBot = !!msg.playerBotId;
-            const username = isBot ? `[BOT] ${msg.playerBotOwnerUsername}` : (msg.player?.username || memberMap[msg.playerId] || 'Unknown');
-            const botStyle = isBot ? 'background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;' : '';
-            
-            let content = '';
-            if (msg.emojiId) {
-                const emojiData = globalEmojiMap.get(msg.emojiId);
-                const emojiUrl = emojiData?.preview || `https://cdn.wolvesville.com/emojis/previews/emoji_${msg.emojiId}.png`; 
-                content = `<img src="${emojiUrl}" class="chat-emoji-img" alt="Emoji" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '[${msg.emojiId}]')">`;
-            } else {
-                content = linkify(msg.msg || '');
-            }
-
-            const safeUsername = escapeJsString(username);
-            
-            // Logic for clickable username
-            const nameStyle = isBot ? `color:var(--primary-color); ${botStyle}` : `color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;`;
-            const clickAttr = isBot ? '' : `onclick="window.goToPlayerSearch('${safeUsername}')"`;
-
-            return `
-            <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="${nameStyle}" ${clickAttr}>${username}</strong>: 
-                <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
-                <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
-            </div>
-        `}).join('');
-    }
-
-    // 6. LOGS
-    let logsHtml = '<div style="padding:15px; color:#ccc;">(No permission to view logs)</div>';
-    if (!logs.error && Array.isArray(logs)) {
-        logsHtml = logs.map(l => `
-            <div style="margin-bottom:5px; font-size:0.85rem;">
-                <span style="color:#64748b;">[${formatDateThai(l.creationTime)}]</span> 
-                <strong>${l.playerUsername || 'System'}</strong>: ${l.action || l.type} 
-                ${l.targetPlayerUsername ? `-> ${l.targetPlayerUsername}` : ''}
-            </div>
-        `).join('');
-    }
-
-    // 7. LEDGER
-    let ledgerHtml = '<div style="padding:15px; color:#ccc;">(No permission to view ledger)</div>';
-    if (!ledger.error && Array.isArray(ledger)) {
-        ledgerHtml = '<div class="ledger-list">';
-        ledgerHtml += ledger.slice(0, 50).map(l => `
-            <div class="ledger-item">
-                <div class="ledger-meta">
-                    <strong>${l.playerUsername || 'System'}</strong>
-                    <span class="ledger-time">${formatDateThai(l.creationTime)}</span>
-                </div>
-                <div class="ledger-amount ${l.gold > 0 || l.gems > 0 ? 'income' : 'expense'}">
-                    ${l.gold ? `<span>${l.gold > 0 ? '+' : ''}${l.gold.toLocaleString()} Gold</span>` : ''}
-                    ${l.gems ? `<span>${l.gems > 0 ? '+' : ''}${l.gems.toLocaleString()} Gems</span>` : ''}
-                </div>
-            </div>
-        `).join('');
-        ledgerHtml += '</div>';
-    }
-
-    // 8. HISTORY
-    let historyHtml = '<div style="padding:15px; color:#ccc; text-align:center;">No Unclaimed Quests</div>';
-    
-    if (!history.error && Array.isArray(history) && history.length > 0) {
-        const unclaimedQuests = history.filter(h => !h.claimedTime);
-
-        if (unclaimedQuests.length > 0) { 
-            historyHtml = '<div class="history-list">';
-            historyHtml += unclaimedQuests.map(h => {
-                 const questTitle = h.quest?.title || `Quest Tier ${h.tier}`;
-                 const endDate = h.tierEndTime || h.endTime;
-                 const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
-
-                 let participantsHtml = '';
-                 if (h.participants && Array.isArray(h.participants)) {
-                     const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
-                     participantsHtml = sortedParts.map((p, index) => {
-                         const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
-                         const safeUsername = escapeJsString(p.username);
-                         return `
-                             <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                                 <span>${medal} <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
-                                 <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
-                             </div>
-                          `;
-                      }).join('');
-                 }
-
-                 return `
-                    <div class="history-item" style="border-left:4px solid var(--warning); display:block;">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
-                            <div style="display:flex; flex-direction:column; flex:1;">
-                                <div style="font-weight:600; color:#334155;">${questTitle}</div>
-                                <div style="font-size:0.75rem; color:#94a3b8;">End: ${formatDateThai(endDate)}</div>
-                            </div>
-                        </div>
-                        
-                        <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
-                            <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">รายชื่อผู้เข้าร่วม (Participants)</summary>
-                            <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
-                                ${participantsHtml || '<div style="color:#ccc; font-size:0.8rem;">No participants data</div>'}
-                            </div>
-                        </details>
-                    </div>
-                 `;
-            }).join('');
-            historyHtml += '</div>';
-        }
-    }
-
-    if (isBackground && isFirstRender === false) {
-        
-        const chatContainer = document.getElementById('clan-chat-container');
-        if (chatContainer && chatContainer.innerHTML !== chatHtml) {
-            const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
-            chatContainer.innerHTML = chatHtml;
-            // initLottieAnimations(); 
-            if (isAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        const announceContainer = document.getElementById('clan-announcements-container');
-        if (announceContainer && announceContainer.innerHTML !== announceListContent) {
-            announceContainer.innerHTML = announceListContent;
-        }
-
-        const membersContainer = document.getElementById('clan-members-list');
-        if (membersContainer && membersContainer.innerHTML !== membersHtml) {
-            membersContainer.innerHTML = membersHtml;
-        }
-
-        const logsContainer = document.getElementById('clan-logs-list');
-        if (logsContainer && logsContainer.innerHTML !== logsHtml) {
-            logsContainer.innerHTML = logsHtml;
-        }
-
-        const questsContainer = document.getElementById('clan-quests-container');
-        const questsContent = `${questsHtml}${availableQuestsHtml}`; 
-        if (questsContainer && questsContainer.innerHTML !== questsContent) {
-            questsContainer.innerHTML = questsContent;
-        }
-
-        const timerContainer = document.getElementById('quest-reset-timer');
-        if (timerContainer) {
-            timerContainer.outerHTML = getQuestResetTimeDisplay();
-        }
-
-        const ledgerContainer = document.getElementById('clan-ledger-list');
-        if (ledgerContainer && ledgerContainer.innerHTML !== ledgerHtml) {
-            ledgerContainer.innerHTML = ledgerHtml;
-        }
-
-        const historyContainer = document.getElementById('clan-history-list');
-        if (historyContainer && historyContainer.innerHTML !== historyHtml) {
-            historyContainer.innerHTML = historyHtml;
-        }
-
-        return; 
-    }
-
-    isFirstRender = false;
-    
-    const profileHeader = `
-        <div class="profile-header-card" style="border-left-color:#eab308;">
-            <div class="profile-avatar-wrapper" style="display:flex; justify-content:center; align-items:center; width:100px; height:100px; background:#fefce8; border-radius:50%; font-size:50px; border:4px solid #eab308;">
-                ${info.tag || '🛡️'}
-            </div>
-            <div class="profile-main-info">
-                <h2 class="player-name">[${info.tag}] ${info.name}</h2>
-                <div class="clan-wallet">
-                    <span class="currency-badge gold"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#d97706;">monetization_on</span> ${info.gold?.toLocaleString() || 0}</span>
-                    <span class="currency-badge gems"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#9333ea;">diamond</span> ${info.gems?.toLocaleString() || 0}</span>
-                </div>
-                <div class="clan-bio">${linkify(info.description || 'No description')}</div>
-                <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
-                    Language: <strong>${info.language}</strong> | Members: <strong>${info.memberCount}</strong> | XP: <strong>${info.xp?.toLocaleString()}</strong> | Created: ${formatDateThai(info.creationTime)}
-                </div>
-            </div>
+        <button onclick="window.viewAllQuests()" class="btn-modal btn-confirm">📚 View All Global Quests</button>
+        <div id="clan-members-list" class="member-list">
+            ${Array.isArray(members) ? members.map(m => `<div class="member-card">${m.username}</div>`).join('') : ''}
         </div>
     `;
-
-    const apiConsole = `
-        <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <details>
-                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
-                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
-                    Debug: Raw Clan Data (JSON)
-                </summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${JSON.stringify({ info, members, quests, chat, logs, ledger, history, announcements }, null, 4)}</pre>
-            </details>
-        </div>
-    `;
-
-    let mainContent = `
-        ${announceSectionHtml}
-
-        <div class="stats-grid stats-grid-row2">
-            <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><span class="material-icons">flag</span> Active Quests</span>
-                    <!-- REMOVED REFRESH BUTTON HERE -->
-                </h3>
-                <div id="clan-quests-container">
-                    ${questsHtml}
-                    ${availableQuestsHtml} 
-                </div>
-            </div>
-            <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><span class="material-icons">group</span> Members (${info.memberCount})</span>
-                    <div style="font-size:0.75rem;">
-                        Quest: 
-                        <button onclick="window.toggleAllQuestParticipation('${clanId}', true)" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">All ON</button>
-                        <button onclick="window.toggleAllQuestParticipation('${clanId}', false)" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; cursor:pointer;">All OFF</button>
-                    </div>
-                </h3>
-                <div id="clan-members-list" class="member-list" style="max-height:500px; overflow-y:auto; padding-right:5px;">
-                    ${membersHtml}
-                </div>
-            </div>
-        </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">💬 Clan Chat (Recent)</div>
-                <div id="clan-chat-container" class="clan-scroll-area">${chatHtml}</div>
-                    <div style="display:flex; gap:10px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <input type="text" id="clan-chat-input" placeholder="Type a message..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key==='Enter') window.sendClanChatMessage('${clanId}')">
-                    <button onclick="window.sendClanChatMessage('${clanId}')" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;"><span class="material-icons">send</span></button>
-                </div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">📜 Clan Logs</div>
-                <div id="clan-logs-list" class="clan-scroll-area">${logsHtml}</div>
-            </div>
-        </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">💰 Clan Ledger (Finance)</div>
-                <div id="clan-ledger-list" class="clan-scroll-area">${ledgerHtml}</div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">📜 Quest History (Unclaimed Only)</div>
-                <div id="clan-history-list" class="clan-scroll-area">${historyHtml}</div>
-            </div>
-        </div>
-
-        ${canEdit ? `
-        <div style="margin-top:20px; background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-            <h3 class="stats-section-title" style="color:#ef4444;"><span class="material-icons">block</span> Blocklist Manager</h3>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="manual-block-input" placeholder="Enter Player ID (UUID) to block..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                <button onclick="window.manualAddToBlocklist('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Block ID</button>
-            </div>
-            <div class="blocklist-grid">
-                ${blockedMembers.length > 0 && !blockedMembers.error 
-                    ? blockedMembers.map(m => {
-                        const safeUsername = escapeJsString(m.username);
-                        // Construct Avatar URL
-                        let avatarUrl = 'https://via.placeholder.com/40';
-                        if(m.equippedAvatar?.url) avatarUrl = m.equippedAvatar.url;
-                        else if(m.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${m.profileIconId}`;
-                        
-                        return `
-                        <div class="blocked-member-card">
-                            <div class="blocked-member-info">
-                                <img src="${avatarUrl}" class="blocked-avatar" onerror="this.src='https://via.placeholder.com/40'">
-                                <span class="blocked-name" onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" title="View Profile">${m.username || 'Unknown'}</span>
-                            </div>
-                            <button class="btn-unblock-icon" onclick="window.unblockMember('${clanId}', '${m.id}')" title="Unblock">
-                                <span class="material-icons" style="font-size:18px;">lock_open</span>
-                            </button>
-                        </div>
-                      `;
-                    }).join('') 
-                    : '<div style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:20px;">No blocked members found.</div>'}
-            </div>
-        </div>
-        ` : ''}
-    `;
-
-    clanContentContainer.innerHTML = profileHeader + mainContent + apiConsole;
-
-    const finalChatContainer = document.getElementById('clan-chat-container');
-    if (finalChatContainer) {
-        finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
-    }
+    clanContentContainer.innerHTML = mainHtml;
 }
 
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
-    sendIncrementSignal('visitors');
     fetchAndDisplayData();
-
     const k = localStorage.getItem('wolvesville_api_key');
-    if(k) { apiKeyInput.value = k; if(apiKeyStatus) apiKeyStatus.innerHTML = '✅ Saved'; }
+    if(k) apiKeyInput.value = k;
 
     navLinks.forEach(l => {
         l.addEventListener('click', (e) => {
-            e.preventDefault();
             navLinks.forEach(n => n.classList.remove('active'));
             l.classList.add('active');
             const t = l.dataset.page;
-            pages.forEach(p => {
-                p.style.display = p.id === t ? 'block' : 'none';
-                if(p.id === t) p.classList.add('active-page');
-            });
-            if(window.innerWidth<=768) {
-                appContainer.classList.remove('sidebar-pushed');
-                if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
-            }
+            pages.forEach(p => p.style.display = p.id === t ? 'block' : 'none');
             if(t==='dashboard') fetchAndDisplayData();
-            else if(t==='settings') {
-                const cur = localStorage.getItem('wolvesville_api_key');
-                if(cur) apiKeyInput.value = cur;
-            }
         });
     });
-
-    if(hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            appContainer.classList.toggle('sidebar-pushed');
-            hamburgerBtn.querySelector('.material-icons').textContent = appContainer.classList.contains('sidebar-pushed') ? 'menu_open' : 'menu';
-        });
-        document.addEventListener('click', (e) => {
-            if(window.innerWidth<=768 && appContainer.classList.contains('sidebar-pushed') && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
-                appContainer.classList.remove('sidebar-pushed');
-                hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
-            }
-        });
-    }
 
     if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', () => {
         const v = apiKeyInput.value.trim();
-        if(v.length>10) { localStorage.setItem('wolvesville_api_key',v); alert('Saved!'); fetchAndDisplayData(); }
-        else alert('Key too short');
+        if(v.length>10) { localStorage.setItem('wolvesville_api_key',v); fetchAndDisplayData(); }
     });
-    if(searchPlayerBtn) searchPlayerBtn.addEventListener('click', searchAndDisplayPlayer);
-    if(usernameInput) usernameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchAndDisplayPlayer(); });
-
+    if(searchPlayerBtn) searchPlayerBtn.addEventListener('click', window.searchAndDisplayPlayer);
     if(searchClanBtn) searchClanBtn.addEventListener('click', searchClan);
     if(myClanBtn) myClanBtn.addEventListener('click', fetchMyClan);
-    if(clanNameInput) clanNameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchClan(); });
-
-    document.querySelector('.nav-link[data-page="dashboard"]')?.click();
 });
 
 console.log('--- script.js: Loading Finished ---');
