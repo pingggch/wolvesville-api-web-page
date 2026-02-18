@@ -434,7 +434,23 @@ window.viewAllQuests = async () => {
             }).join('');
         }
         
-        html += '</div></div>';
+        html += '</div>';
+
+        // ADDED: Raw JSON Debug Section in Modal
+        const rawJson = JSON.stringify(res, null, 4);
+        html += `
+            <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
+                <details>
+                    <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
+                        <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
+                        Debug: Raw Quests Data (JSON)
+                    </summary>
+                    <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
+                </details>
+            </div>
+        `;
+        
+        html += '</div>';
         
         // Remove loading modal
         document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
@@ -2360,7 +2376,21 @@ function renderWikiGrid(quests) {
         `;
     }).join('');
 
-    container.innerHTML = html;
+    // ADDED: Raw JSON Debug Section at the bottom of the grid
+    const rawJson = JSON.stringify(quests, null, 4);
+    const debugHtml = `
+        <div class="api-console" style="grid-column: 1 / -1; margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
+            <details>
+                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
+                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
+                    Debug: Raw Quests Data (JSON)
+                </summary>
+                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
+            </details>
+        </div>
+    `;
+
+    container.innerHTML = html + debugHtml;
 }
 
 // Initialize on Load
