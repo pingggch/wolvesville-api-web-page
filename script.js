@@ -496,7 +496,7 @@ window.showQuestModal = (questId) => {
                 imgUrl = EMBEDDED_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
                 imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
-            } else if (r.type === 'ROSE' || r.type === 'ROSES') {
+            } else if (r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') {
                 imgUrl = EMBEDDED_ICONS.ROSE;
             }
 
@@ -1687,7 +1687,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 }
                 else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
                 else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
-                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
+                else if(r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
