@@ -34,6 +34,14 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
+// RESOURCE ICONS (External URLs) - Using Icons8 for reliable, high-quality icons
+const RESOURCE_ICONS = {
+    GOLD: "https://img.icons8.com/fluency/96/gold-coin.png",
+    GEM: "https://img.icons8.com/fluency/96/gem-stone.png",
+    ROSE: "https://img.icons8.com/fluency/96/rose.png",
+    UNKNOWN: "https://img.icons8.com/fluency/96/question-mark.png"
+};
+
 // **********************************************
 // 2. CUSTOM UI HELPERS
 // **********************************************
@@ -372,7 +380,7 @@ window.showQuestModal = (questId) => {
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
-            let imgUrl = 'https://via.placeholder.com/60?text=?';
+            let imgUrl = RESOURCE_ICONS.UNKNOWN; // Default
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
@@ -385,21 +393,20 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
-                // subLabel = ''; // Show just count or nothing
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
+                imgUrl = RESOURCE_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+                imgUrl = RESOURCE_ICONS.GEM;
             } else if (r.type === 'ROSE' || r.type === 'ROSES') {
-                imgUrl = 'https://cdn.wolvesville.com/static/rose.png';
+                imgUrl = RESOURCE_ICONS.ROSE;
             }
 
             // Card Style for Grid - Image Centered, No Label Text
             return `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    <img src="${imgUrl}" onerror="this.src='${RESOURCE_ICONS.UNKNOWN}'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
                     ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
@@ -1570,7 +1577,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             `;
             
             qInfo.rewards.forEach((r, idx) => {
-                let imgUrl = 'https://via.placeholder.com/60?text=?';
+                let imgUrl = RESOURCE_ICONS.UNKNOWN; // Default fallback
                 if(r.type === 'AVATAR_ITEM') {
                     // Try to get from cache first
                     const item = avatarItemsCache.get(r.avatarItemId);
@@ -1580,9 +1587,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                     }
                 }
-                else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
-                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = 'https://cdn.wolvesville.com/static/rose.png'; // Added Rose handling
+                else if(r.type === 'GOLD') imgUrl = RESOURCE_ICONS.GOLD;
+                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = RESOURCE_ICONS.GEM;
+                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = RESOURCE_ICONS.ROSE; // Added Rose handling
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
