@@ -35,10 +35,12 @@ lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lot
 document.head.appendChild(lottieScript);
 
 // FIXED ICONS (Embedded SVG Base64 for reliability)
-// ใช้สำหรับ Gold และ Rose โดยแปลงเป็น Base64 เพื่อให้มั่นใจว่าแสดงผลได้แน่นอน
+// ใช้สำหรับ Gold, Rose และ Gem เพื่อให้มั่นใจว่าแสดงผลได้แน่นอน 100%
 const EMBEDDED_ICONS = {
     GOLD: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRkZENzAwIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6bS4zMS04Ljg2Yy0xLjc3LS40NS0yLjM0LS45NC0yLjM0LTEuNjcgMC0uODQuNzktMS40MyAyLjEtMS40MyAxLjM4IDAgMS45LjY2IDEuOTQgMS42NGgxLjcxYy0uMDUtMS4zNC0uODctMi41Ny0yLjQ5LTIuOTdWNUgxMC45djEuNjljLTEuNTEuMzItMi43MiAxLjMtMi43MiAyLjgxIDAgMS43OSAxLjQ5IDIuNjkgMy42NiAzLjIxIDEuOTUuNDYgMi4zNCAxLjE1IDIuMzQgMS44NyAwIC41My0uMzkgMS4zOS0yLjEgMS4zOS0xLjYgMC0yLjIzLS43Mi0yLjMyLTEuNjRIOC4wNGMuMSAxLjcgMS4zNiAyLjY2IDIuODYgMi45N1YxOWgyLjM0di0xLjY3YzEuNTItLjI5IDIuNzItMS4xNiAyLjczLTIuNzctLjAxLTIuMi0xLjktMi45Ni0zLjY2LTMuNDJ6Ii8+PC9zdmc+",
-    ROSE: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRTkxRTYzIj48cGF0aCBkPSJNMTIgMkM5IDIgNyAzLjUgNyA1LjVjMCAuMy4wNS42LjE1LjktMS45LjMtMy42NSAxLjUtNC42NSAzLjEtLjkgMS40LS45IDMgMCA0LjQgMSAxLjYgMi43NSAyLjggNC42NSAzLjEtLjEuMy0uMTUuNi0uMTUuOSAwIDIgMiAzLjUgNSAzLjVzNS0xLjUgNS0zLjVjMC0uMy0uMDUtLjYtLjE1LS45IDEuOS0uMyAzLjY1LTEuNSA0LjY1LTMuMS45LTEuNC45LTMgMC00LjQtMS0xLjYtMi43NS0yLjgtNC42NS0zLjEuMS0uMy4xNS0uNi4xNS0uOSAwLTItMi0zLjUtNS0zLjV6bTAgMTVjLTEuMyAwLTIuNC0uOC0yLjgtMmg1LjZjLS40IDEuMi0xLjUgMi0yLjggMnptNC0zSDhjLS44IDAtMS41LS4yLTIuMS0uNS43LS43IDEuNS0xLjUgMi4xLTIuNWg4Yy42IDEgMS40IDEuOCAyLjEgMi41LS42LjMtMS4zLjUtMi4xLjV6bS00LTEwYzEuMyAwIDIuNC44IDIuOCAySDkuMmMuNC0xLjIgMS41LTIgMi44LTJ6Ii8+PC9zdmc+"
+    ROSE: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjRTkxRTYzIj48cGF0aCBkPSJNMTIgMkM5IDIgNyAzLjUgNyA1LjVjMCAuMy4wNS42LjE1LjktMS45LjMtMy42NSAxLjUtNC42NSAzLjEtLjkgMS40LS45IDMgMCA0LjQgMSAxLjYgMi43NSAyLjggNC42NSAzLjEtLjEuMy0uMTUuNi0uMTUuOSAwIDIgMiAzLjUgNSAzLjVzNS0xLjUgNS0zLjVjMC0uMy0uMDUtLjYtLjE1LS45IDEuOS0uMyAzLjY1LTEuNSA0LjY1LTMuMS45LTEuNC45LTMgMC00LjQtMS0xLjYtMi43NS0yLjgtNC42NS0zLjEuMS0uMy4xNS0uNi4xNS0uOSAwLTItMi0zLjUtNS0zLjV6bTAgMTVjLTEuMyAwLTIuNC0uOC0yLjgtMmg1LjZjLS40IDEuMi0xLjUgMi0yLjggMnptNC0zSDhjLS44IDAtMS41LS4yLTIuMS0uNS43LS43IDEuNS0xLjUgMi4xLTIuNWg4Yy42IDEgMS40IDEuOCAyLjEgMi41LS42LjMtMS4zLjUtMi4xLjV6bS00LTEwYzEuMyAwIDIuNC44IDIuOCAySDkuMmMuNC0xLjIgMS41LTIgMi44LTJ6Ii8+PC9zdmc+",
+    GEM: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBmaWxsPSIjOUMyN0IwIj48cGF0aCBkPSJNMTkgM0g1Yy0xLjEgMC0yIC45LTIgMnYxNGMwIDEuMS45IDIgMiAyaDE0YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bS02IDE0bC0zLTQuNUw3IDE3VjdsNC41IDMgMy00LjVMMTcgN3YxMGwtNCAweiIvPjwvc3ZnPg==",
+    UNKNOWN: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI0JEQkRCQyI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTEgMTdoLTJ2LTZoMnY2em0wLThoLTJWN2gydjJ6Ii8+PC9zdmc+"
 };
 
 // **********************************************
@@ -194,26 +196,14 @@ window.goToPlayerSearch = (username) => {
     if(input) {
         input.value = username;
         // Click the nav link to switch tabs
-        // [FIXED] Updated selector to match 'player-search' from HTML
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
-        } else {
-            console.error('Player tab not found! Please check data-page attribute in HTML.');
         }
         
         // Trigger the search function
-        // Check if function exists globally or locally
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
-        } else {
-            console.warn('searchAndDisplayPlayer function not found globally, trying local scope...');
-            // Fallback: This might fail if called from a pure string onclick context depending on scope
-            try {
-                searchAndDisplayPlayer();
-            } catch (e) {
-                console.error('Could not execute search:', e);
-            }
         }
     }
 };
@@ -293,7 +283,7 @@ function showMemberModal(data) {
 
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-            <img src="${avatarUrl}" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
+            <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
             <!-- Clickable Name to Search -->
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
@@ -413,7 +403,7 @@ window.viewAllQuests = async () => {
 
                 return `
                     <div class="quest-card-large" style="min-height: 160px; cursor: default;">
-                          <img src="${imgUrl}" class="quest-card-large-img" style="height: 100px;">
+                          <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 100px;">
                           <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
                             <div style="padding: 5px;">
                                  <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
@@ -454,6 +444,9 @@ window.showQuestModal = (questId) => {
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
+            // Add onerror fallback
+            const fallback = `this.onerror=null;this.src='${EMBEDDED_ICONS.UNKNOWN}';`;
+
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
                 // Use Cached Item or Default Construction
@@ -463,12 +456,11 @@ window.showQuestModal = (questId) => {
                     imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
                 }
                 label = 'Avatar Item';
-                // subLabel = ''; // Show just count or nothing
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
                 imgUrl = EMBEDDED_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+                imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
             } else if (r.type === 'ROSE' || r.type === 'ROSES') {
                 imgUrl = EMBEDDED_ICONS.ROSE;
             }
@@ -477,14 +469,13 @@ window.showQuestModal = (questId) => {
             return `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="${fallback}" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
                     ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
         }).join('');
 
         // Grid Layout: Determine columns to fit into 2 rows
-        // e.g., 6 items -> 3 cols (3x2), 8 items -> 4 cols (4x2)
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
@@ -505,7 +496,7 @@ window.showQuestModal = (questId) => {
 
     // Quest Modal Content - Show just image at top
     const content = `
-        <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
+        <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
         ${rewardsHtml}
         <h4 style="margin:15px 0 10px 0; color:#334155;">🗳️ Votes (${(clanVotesCache.votes?.[questId] || []).length})</h4>
@@ -1660,7 +1651,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     }
                 }
                 else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
                 else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
                 
                 let statusClass = '';
@@ -1671,7 +1662,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div class="reward-step ${statusClass}">
                         <div class="reward-icon-box">
                             ${idx === currentTierIndex ? `<div class="xp-label-floating">${progress.toLocaleString()} / ${target.toLocaleString()} XP</div>` : ''}
-                            <img src="${imgUrl}" onerror="this.src='https://cdn.wolvesville.com/static/items/calavera.png'" style="background:#f1f5f9; border-radius:10px;">
+                            <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'" style="background:#f1f5f9; border-radius:10px;">
                             ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
                         </div>
                         <div class="tier-label">Tier ${idx + 1}</div>
@@ -1800,7 +1791,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                      <img src="${q.promoImageUrl}" class="quest-card-large-img">
+                      <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
                       ${voteHtml}
                       <div class="quest-card-overlay">
                         <div>
@@ -1968,7 +1959,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (msg.emojiId) {
                 const emojiData = globalEmojiMap.get(msg.emojiId);
                 const emojiUrl = emojiData?.preview || `https://cdn.wolvesville.com/emojis/previews/emoji_${msg.emojiId}.png`; 
-                content = `<img src="${emojiUrl}" class="chat-emoji-img" alt="Emoji" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '[${msg.emojiId}]')">`;
+                content = `<img src="${emojiUrl}" referrerpolicy="no-referrer" class="chat-emoji-img" alt="Emoji" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '[${msg.emojiId}]')">`;
             } else {
                 content = linkify(msg.msg || '');
             }
