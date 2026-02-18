@@ -880,3 +880,76 @@ details summary:active { transform: scale(0.99); }
 .btn-unblock { background: none; border: none; color: #22c55e; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
 .chat-emoji-img { width: 64px; height: 64px; vertical-align: middle; object-fit: contain; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Blocklist Manager */
+.blocklist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.blocked-member-card {
+    background: #fef2f2; /* Light red background */
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+}
+
+.blocked-member-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-color: #ef4444;
+}
+
+.blocked-member-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.blocked-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    object-fit: cover;
+}
+
+.blocked-name {
+    font-weight: 600;
+    color: #991b1b;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.blocked-name:hover {
+    text-decoration: underline;
+}
+
+.btn-unblock-icon {
+    background: #ffffff;
+    border: 1px solid #fca5a5;
+    color: #ef4444;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-unblock-icon:hover {
+    background: #ef4444;
+    color: white;
+}
