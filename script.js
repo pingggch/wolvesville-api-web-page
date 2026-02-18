@@ -2249,6 +2249,9 @@ async function initQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
     const searchInput = document.getElementById('quest-search-input');
     
+    // Start fetching avatar items mapping in background (critical for correct images)
+    fetchAndCacheAvatarItems(); 
+    
     // ถ้าเคยโหลดมาแล้ว ไม่ต้องโหลดซ้ำ (ประหยัด API call)
     if (allQuestsCache.length > 0) {
         renderWikiGrid(allQuestsCache);
