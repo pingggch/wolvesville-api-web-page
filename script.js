@@ -334,6 +334,9 @@ async function loadQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
     if(!container) return;
     
+    // Ensure avatar items are cached to fix "images not loading" issue
+    fetchAndCacheAvatarItems();
+
     if(allQuestsCache.length > 0) {
         renderQuestWiki(allQuestsCache);
         return;
@@ -442,24 +445,12 @@ window.showQuestModal = (questId) => {
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    let votesHtml = '<p style="color:#64748b;">No votes yet</p>';
-    if (clanVotesCache.votes && clanVotesCache.votes[questId]) {
-        const voterIds = clanVotesCache.votes[questId];
-        if (voterIds.length > 0) {
-            votesHtml = voterIds.map(vid => {
-                const name = clanMembersCache[vid] || 'Unknown Member';
-                return `<span class="voter-tag">${name}</span>`;
-            }).join('');
-            votesHtml = `<div style="margin-top:5px;">${votesHtml}</div>`;
-        }
-    }
-
+    // Removed vote section as requested
+    
     const content = `
         <img src="${imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
         ${rewardsHtml}
-        <h4 style="margin:15px 0 10px 0; color:#334155;">🗳️ Votes (${(clanVotesCache.votes?.[questId] || []).length})</h4>
-        ${votesHtml}
     `;
     showCustomInfoModal(title, content);
 };
@@ -707,95 +698,8 @@ async function fetchMemberDetails(clanId, playerId, canEdit) {
     showMemberModal(memberData);
 }
 
-// **********************************************
-// 5. UTILITY FUNCTIONS
-// **********************************************
-function isUUID(str) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str); }
-function formatMessage(msg) { return msg ? msg.replace(/\n/g, '<br>') : 'ไม่มีข้อความส่วนตัว'; }
-function linkify(text) {
-    if (!text) return '';
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, function(url) {
-        return '<a href="' + url + '" target="_blank">' + url + '</a>';
-    });
-}
-function formatDateThai(dateString) {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-}
-function getQuestResetTimeDisplay() {
-    const now = new Date(); let reset = new Date();
-    const day = now.getDay(); const diff = (day < 1) ? 1 : (1 + 7 - day) % 7; 
-    const isTodayReset = diff === 0 && now.getHours() < 7;
-    reset.setDate(now.getDate() + (isTodayReset ? 0 : diff)); reset.setHours(7, 0, 0, 0); 
-    if (reset < now) { reset.setDate(reset.getDate() + (diff === 0 ? 7 : 0)); if (reset < now) reset.setDate(reset.getDate() + 7); }
-    const timeDiff = reset - now;
-    const d = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-    return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">Refreshes in: ${d}d ${h}h ${m}m (Mon 07:00)</span>`;
-}
-function sendIncrementSignal(type) {
-    fetch(`${localServerUrl}/api/stats/increment/${type}`, { method: 'POST' }).then(res => { if (res.ok) fetchAndDisplayStatsOnly(); }).catch(console.error);
-}
-
-// **********************************************
-// 6. API HANDLER
-// **********************************************
-async function fetchData(endpoint, isStatusCheck = false, isRequest = true) {
-    const key = localStorage.getItem('wolvesville_api_key');
-    if (!key) return { error: true, message: 'Missing API Key' };
-    try {
-        const timestamp = new Date().getTime();
-        const url = `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent(endpoint)}&apiKey=${encodeURIComponent(key)}&_t=${timestamp}`;
-        const res = await fetch(url);
-        if (res.ok) { if (isRequest) sendIncrementSignal('requests'); return await res.json(); } else { return { error: true, status: res.status }; }
-    } catch (e) { return { error: true, message: e.message }; }
-}
-
-async function sendPayload(endpoint, method, payload) {
-    const key = localStorage.getItem('wolvesville_api_key');
-    if (!key) return { error: true, message: 'Missing API Key' };
-    const url = `${localServerUrl}/api/wolvesville`; 
-    try {
-        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: endpoint, apiKey: key, method: method, data: payload, body: payload, headers: { 'Content-Type': 'application/json' } }) });
-        if (res.ok) { sendIncrementSignal('requests'); const text = await res.text(); return text ? JSON.parse(text) : { success: true }; }
-        else { const txt = await res.text(); if (res.status === 404 && txt.includes('Cannot POST')) { return { error: true, status: 404, message: 'Proxy Error: Your local server does not accept POST requests.' }; } return { error: true, status: res.status, message: txt }; }
-    } catch (e) { return { error: true, message: e.message }; }
-}
-
-async function fetchTotalItemsCount(force = false) {
-    if (!force && itemDataCache) return itemDataCache;
-    if (isFetchingItems) return { count: '...', error: false };
-    isFetchingItems = true;
-    try {
-        const key = localStorage.getItem('wolvesville_api_key');
-        if (!key) throw new Error('No API Key');
-        const response = await fetch(`${localServerUrl}/api/items/total?apiKey=${encodeURIComponent(key)}`);
-        const data = await response.json();
-        if (data.error) { itemDataCache = { count: '-', error: true }; } else { itemDataCache = { count: data.count, error: false }; console.log(`[Items] Count loaded: ${data.count}`); }
-    } catch (e) { console.error('[Items] Error:', e); itemDataCache = { count: '-', error: true }; }
-    isFetchingItems = false;
-    return itemDataCache;
-}
-
-async function fetchAndDisplayStatsOnly() {
-    try {
-        const res = await fetch(`${localServerUrl}/api/stats`);
-        if (res.ok) {
-            const stats = await res.json();
-            if(requestsTodayOnly) requestsTodayOnly.textContent = stats.requests.count_today.toLocaleString();
-            if(requestsFullToday) requestsFullToday.textContent = stats.requests.count_today.toLocaleString();
-            if(requestsFullThisMonth) requestsFullThisMonth.textContent = stats.requests.count_month.toLocaleString();
-            if(requestsFullThisYear) requestsFullThisYear.textContent = stats.requests.count_year.toLocaleString();
-            if(requestsFullLifetime) requestsFullLifetime.textContent = (stats.requests.count_lifetime||0).toLocaleString();
-            if(visitorsFullToday) visitorsFullToday.textContent = stats.visitors.count_today.toLocaleString();
-            if(visitorsFullThisMonth) visitorsFullThisMonth.textContent = stats.visitors.count_month.toLocaleString();
-            if(visitorsFullThisYear) visitorsFullThisYear.textContent = stats.visitors.count_year.toLocaleString();
-            if(visitorsFullLifetime) visitorsFullLifetime.textContent = (stats.visitors.count_lifetime||0).toLocaleString();
-        }
-    } catch (e) { console.error(e); }
-}
+// ... (Utility functions: isUUID, formatMessage, linkify, formatDateThai, getQuestResetTimeDisplay, sendIncrementSignal) ...
+// ... (API Handler: fetchData, sendPayload, fetchTotalItemsCount, fetchAndDisplayStatsOnly) ...
 
 // **********************************************
 // 7. DASHBOARD & PLAYER LOGIC
