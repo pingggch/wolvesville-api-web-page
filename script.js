@@ -391,6 +391,8 @@ window.showQuestModal = (questId) => {
                 imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
                 imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+            } else if (r.type === 'ROSE' || r.type === 'ROSES') {
+                imgUrl = 'https://cdn.wolvesville.com/static/rose.png';
             }
 
             // Card Style for Grid - Image Centered, No Label Text
@@ -1580,6 +1582,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 }
                 else if(r.type === 'GOLD') imgUrl = 'https://cdn.wolvesville.com/static/gold.png';
                 else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = 'https://cdn.wolvesville.com/static/gem.png';
+                else if(r.type === 'ROSE' || r.type === 'ROSES') imgUrl = 'https://cdn.wolvesville.com/static/rose.png'; // Added Rose handling
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
