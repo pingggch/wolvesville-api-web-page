@@ -1,4 +1,3 @@
-require('dotenv').config(); // โหลดค่าจากไฟล์ .env
 const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
