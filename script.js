@@ -9,7 +9,6 @@ const localServerUrl = window.location.origin;
 let itemDataCache = null; 
 let isFetchingItems = false; 
 let globalEmojiMap = new Map(); 
-let avatarItemsCache = new Map(); 
 let playerAvatarCache = new Map(); 
 let clanMembersDetailedMap = new Map(); 
 let questDetailsCache = new Map(); 
@@ -195,14 +194,22 @@ window.goToPlayerSearch = (username) => {
         
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
-        } else {
-            try {
-                searchAndDisplayPlayer();
-            } catch (e) {
-                console.error('Could not execute search:', e);
-            }
         }
     }
+};
+
+window.fetchMemberDetails = async (clanId, playerId, canEdit) => {
+    let data = clanMembersDetailedMap.get(playerId);
+    if (!data) {
+        data = await fetchData(`/players/${playerId}`);
+        if (!data.error) {
+            clanMembersDetailedMap.set(playerId, data);
+        } else {
+            showCustomAlert('Error', 'ไม่สามารถดึงข้อมูลผู้เล่นได้');
+            return;
+        }
+    }
+    showMemberModal(data);
 };
 
 function escapeJsString(str) {
@@ -218,16 +225,6 @@ async function fetchAndCacheEmojis() {
                 preview: emoji.urlPreview,
                 anim: emoji.urlAnimation 
             }); 
-        });
-    }
-}
-
-async function fetchAndCacheAvatarItems() {
-    if (avatarItemsCache.size > 0) return;
-    const res = await fetchData('/items/avatarItems', false, false);
-    if (!res.error && Array.isArray(res)) {
-        res.forEach(item => {
-            avatarItemsCache.set(item.id, item);
         });
     }
 }
@@ -537,7 +534,12 @@ async function searchAndDisplayPlayer() {
                 data.clanTag = clan.tag;
             }
         }
-        renderPlayerProfile(data);
+        try {
+            renderPlayerProfile(data);
+        } catch (err) {
+            console.error('Render Profile Error:', err);
+            playerProfileContainer.innerHTML = `<div style="text-align:center; color:red; padding:20px;">เกิดข้อผิดพลาดในการแสดงผล: ${err.message}</div>`;
+        }
     } else {
         playerProfileContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">ดึงข้อมูลล้มเหลว</div>';
     }
@@ -587,7 +589,7 @@ function renderPlayerProfile(data) {
         .slice(0, 3)
         .map(a => `
             <div class="achievement-tag">
-                <strong>${a.roleId.replace(/-/g,' ').toUpperCase()}</strong>
+                <strong>${(a.roleId || '').replace(/-/g,' ').toUpperCase()}</strong>
                 <span class="achievement-lvl">Lv.${a.level}</span>
             </div>
         `).join('');
@@ -603,10 +605,10 @@ function renderPlayerProfile(data) {
                 <span class="material-icons" style="color:rgba(255,255,255,0.8);">style</span>
             </div>
             <div class="card-body">
-                <div class="card-title">${c.roleId1.replace(/-/g,' ').toUpperCase()}</div>
+                <div class="card-title">${(c.roleId || c.id || 'UNKNOWN').replace(/-/g,' ').toUpperCase()}</div>
                 <div class="card-subtitle">${c.rarity}</div>
                 ${advancedList ? `<div style="margin-bottom:8px; display:flex; flex-wrap:wrap;">${advancedList}</div>` : ''}
-                <ul class="ability-list">${[c.abilityId1,c.abilityId2,c.abilityId3,c.abilityId4].filter(x=>x).map(a=>`<li class="ability-item">${a.replace(/-/g,' ')}</li>`).join('')}</ul>
+                <ul class="ability-list">${[c.abilityId1,c.abilityId2,c.abilityId3,c.abilityId4].filter(x=>typeof x === 'string').map(a=>`<li class="ability-item">${a.replace(/-/g,' ')}</li>`).join('')}</ul>
             </div>
         </div>
     `}).join('');
@@ -810,10 +812,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         updateProgress('Initializing...');
     }
     
-    await Promise.all([
-        fetchAndCacheEmojis(),
-        fetchAndCacheAvatarItems() 
-    ]);
+    await fetchAndCacheEmojis();
     
     updateProgress('Fetching Clan Info...');
     const info = await fetchData(`/clans/${clanId}/info`);
@@ -932,7 +931,12 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
+        try {
+            renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
+        } catch (err) {
+            console.error('[Render Dashboard Error]', err);
+            clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">เกิดข้อผิดพลาดในการแสดงผล: ${err.message}</div>`;
+        }
     }, 500); 
 }
 
@@ -957,7 +961,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const target = qData.xpPerReward || qInfo.xpPerReward || 1;
         const percent = Math.min(100, Math.round((progress / target) * 100));
         const tier = (qData.tier !== undefined ? qData.tier + 1 : (qInfo.tier !== undefined ? qInfo.tier + 1 : 1));
-        const activeParticipants = members.filter(m => m.participateInClanQuests).length;
+        const activeParticipants = Array.isArray(members) ? members.filter(m => m.participateInClanQuests).length : 0;
         const actionCost = 300 + (30 * activeParticipants);
 
         let rewardsTrackHtml = '';
@@ -980,9 +984,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             qInfo.rewards.forEach((r, idx) => {
                 let imgUrl = 'https://via.placeholder.com/60?text=?';
                 if(r.type === 'AVATAR_ITEM') {
-                    const item = avatarItemsCache.get(r.avatarItemId);
-                    if (item && item.imageUrl) imgUrl = item.imageUrl;
-                    else imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
+                    imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                 }
                 else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
                 else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM;
@@ -1582,15 +1584,12 @@ async function initQuestWiki() {
     container.innerHTML = `
         <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
             <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1; display:inline-block;">sync</span>
-            <div style="margin-top:15px; font-size:1.1rem;">กำลังดึงข้อมูลเควสและไอเทม...</div>
+            <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลเควส...</div>
         </div>
     `;
 
     try {
-        const [res, _] = await Promise.all([
-            fetchData('/clans/quests/all'),
-            fetchAndCacheAvatarItems() 
-        ]);
+        const res = await fetchData('/clans/quests/all');
 
         if (res.error) {
             container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Error: ${res.message}</div>`;
@@ -1685,10 +1684,6 @@ window.showQuestModal = (questId) => {
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
                 imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
-                const cachedItem = avatarItemsCache.get(itemId);
-                if (cachedItem && cachedItem.imageUrl) {
-                    imgUrl = cachedItem.imageUrl; 
-                }
                 label = 'Avatar Item';
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
@@ -1804,5 +1799,368 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashLink = document.querySelector('.nav-link[data-page="dashboard"]');
     if(dashLink) dashLink.click();
 });
+
+window.sendClanAnnouncement = async (clanId) => {
+    const input = document.getElementById('clan-announcement-input');
+    if (!input) return;
+    
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    try {
+        console.log(`[Announcement] Sending to clan ${clanId}:`, msg);
+        input.disabled = true;
+        
+        const res = await sendPayload(`/clans/${clanId}/announcements`, 'POST', { message: msg });
+        
+        input.disabled = false;
+        
+        if (res.error) {
+            let errorMsg = res.message || 'Unknown error';
+            if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
+            showCustomAlert('Error', '❌ Failed to post announcement: ' + errorMsg);
+        } else {
+            input.value = ''; 
+            showCustomAlert('Success', '✅ Announcement posted successfully!');
+            fetchClanData(clanId, true, true); 
+        }
+    } catch (e) {
+        console.error('[Announcement] Error:', e);
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+        if(input) input.disabled = false;
+    }
+};
+
+window.sendClanChatMessage = async (clanId) => {
+    const input = document.getElementById('clan-chat-input');
+    if (!input) return;
+    
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    try {
+        console.log(`[Chat] Sending message to clan ${clanId}:`, msg);
+        input.disabled = true;
+        
+        const res = await sendPayload(`/clans/${clanId}/chat`, 'POST', { message: msg });
+        
+        input.disabled = false;
+        
+        if (res.error) {
+            let errorMsg = res.message || 'Unknown error';
+            if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
+            showCustomAlert('Error', '❌ Failed to send message: ' + errorMsg);
+        } else {
+            input.value = ''; 
+            input.focus();
+            fetchClanData(clanId, true, true);
+        }
+    } catch (e) {
+        console.error('[Chat] Error:', e);
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+        if(input) input.disabled = false;
+    }
+};
+
+window.blockMemberFromList = async (clanId, playerId, username) => {
+    const confirmed = await showCustomConfirm(
+        'Block Member',
+        `⚠️ Are you sure you want to <strong>BLOCK</strong> <span style="color:#ef4444; font-weight:bold;">${username}</span> from the clan?<br><br>They will be removed and added to the blocklist.`,
+        true 
+    );
+
+    if (!confirmed) return;
+
+    try {
+        console.log(`[BlockMember] Blocking ${username} (${playerId})...`);
+        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
+        
+        if (res.error) {
+             showCustomAlert('Block Failed', '❌ ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', `✅ Member <strong>${username}</strong> blocked.`);
+            fetchClanData(clanId, true, true); 
+        }
+    } catch (e) {
+        console.error('[BlockMember] Error:', e);
+        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
+    }
+};
+
+window.unblockMember = async (clanId, playerId) => {
+    try {
+        console.log(`[UnblockMember] Unblocking ${playerId}...`);
+        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/unblock`, 'POST', {});
+        
+        if (res.error) {
+             showCustomAlert('Unblock Failed', '❌ ' + (res.message || 'Unknown error'));
+        } else {
+            console.log('Unblocked successfully');
+            fetchClanData(clanId, true, true); 
+        }
+    } catch (e) {
+        console.error('[UnblockMember] Error:', e);
+        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
+    }
+};
+
+window.manualAddToBlocklist = async (clanId) => {
+    const playerId = document.getElementById('manual-block-input').value.trim();
+    if (!playerId) return alert('Please enter a Player ID');
+    if (!isUUID(playerId)) return alert('Invalid Player ID format (UUID required)');
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
+        if (res.error) {
+            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', `✅ ID ${playerId} added to blocklist.`);
+            document.getElementById('manual-block-input').value = '';
+            fetchClanData(clanId, true, true);
+        }
+    } catch (e) {
+        showCustomAlert('Error', e.message);
+    }
+};
+
+window.kickMemberFromList = async (clanId, playerId, username) => {
+    const confirmed = await showCustomConfirm(
+        'Kick Member',
+        `⚠️ Are you sure you want to <strong>KICK</strong> member <span style="color:#ef4444; font-weight:bold;">${username}</span>?<br><br>This action cannot be undone.`,
+        true 
+    );
+
+    if (!confirmed) return;
+
+    try {
+        console.log(`[KickMember] Kicking ${username} (${playerId})...`);
+        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/kick`, 'POST', {});
+        
+        if (res.error) {
+             let errMsg = res.message || 'Unknown error';
+             if (res.status === 403) errMsg = 'Forbidden: You do not have permission to kick this member.';
+             showCustomAlert('Kick Failed', '❌ ' + errMsg);
+        } else {
+            showCustomAlert('Success', `✅ Member <strong>${username}</strong> has been kicked.`);
+            fetchClanData(clanId, true, true);
+        }
+    } catch (e) {
+        console.error('[KickMember] Error:', e);
+        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
+    }
+};
+
+window.toggleQuestFromList = async (clanId, playerId, currentStatus, btnElement) => {
+    const newStatus = !currentStatus;
+    const originalIcon = btnElement.innerText;
+    const originalClass = btnElement.className;
+    
+    // UI Feedback (Spinning)
+    btnElement.innerText = 'sync';
+    btnElement.className = 'material-icons quest-inline-icon loading-spinner';
+    btnElement.style.pointerEvents = 'none'; 
+    
+    const res = await sendPayload(`/clans/${clanId}/members/${playerId}/participateInQuests`, 'PUT', { participateInQuests: newStatus });
+    
+    if (res.error) {
+        btnElement.innerText = originalIcon;
+        btnElement.className = originalClass;
+        btnElement.style.pointerEvents = 'auto';
+        showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
+    } else {
+        btnElement.innerText = newStatus ? 'check_circle' : 'cancel';
+        btnElement.className = `material-icons quest-inline-icon clickable ${newStatus ? 'on' : 'off'}`;
+        btnElement.style.pointerEvents = 'auto';
+        btnElement.setAttribute('onclick', `event.stopPropagation(); window.toggleQuestFromList('${clanId}', '${playerId}', ${newStatus}, this)`);
+
+        const change = newStatus ? 1 : -1;
+        currentParticipatingCount += change;
+        if(currentParticipatingCount < 0) currentParticipatingCount = 0;
+        
+        updatePricesClientSide();
+    }
+};
+
+function animateValue(obj, start, end, duration) {
+    if (start === end) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+function updatePricesClientSide() {
+    const n = currentParticipatingCount;
+    
+    const actionCost = 300 + (30 * n);
+    document.querySelectorAll('.dynamic-action-price').forEach(el => {
+        const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
+        animateValue(el, currentVal, actionCost, 500);
+    });
+
+    document.querySelectorAll('.dynamic-buy-price').forEach(el => {
+        const isGem = el.dataset.currency === 'gem';
+        const cost = isGem ? (350 + 135 * n) : (2000 + 400 * n);
+        const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
+        animateValue(el, currentVal, cost, 500);
+    });
+}
+
+window.editFlairFromList = async (clanId, playerId, currentFlair) => {
+    const newFlair = await showCustomPrompt('Edit Flair', 'Enter new flair (nickname) for this member:', currentFlair);
+    if (newFlair === null) return; 
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/members/${playerId}/flair`, 'PUT', { flair: newFlair });
+        
+        if (res.error) {
+            let errMsg = res.message || 'Unknown error';
+            if (res.status === 403) errMsg = 'Forbidden: You do not have permission.';
+            else if (res.status === 404) errMsg = 'Member not found.';
+            showCustomAlert('Error', '❌ Failed to update flair:\n' + errMsg);
+        } else {
+            showCustomAlert('Success', '✅ Flair Updated Successfully!');
+            fetchClanData(clanId, true, true);
+        }
+    } catch (e) {
+        console.error('[EditFlair] Critical Error:', e);
+        showCustomAlert('Error', '❌ Critical Error: ' + e.message);
+    }
+};
+
+window.toggleAllQuestParticipation = async (clanId, isParticipating) => {
+    const action = isParticipating ? 'ENABLE' : 'DISABLE';
+    const confirmed = await showCustomConfirm(
+        'Confirm Action', 
+        `⚠️ Are you sure you want to <strong>${action}</strong> quest participation for <strong>ALL</strong> members?`, 
+        !isParticipating 
+    );
+    
+    if(!confirmed) return;
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/members/all/participateInQuests`, 'PUT', { participateInQuests: isParticipating });
+        
+        if (res.error) {
+            showCustomAlert('Failed', '❌ Failed: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', `✅ Successfully <strong>${action}D</strong> participation for everyone!`);
+            setTimeout(() => { fetchClanData(clanId, true, true); }, 1000); 
+        }
+    } catch (e) {
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+    }
+};
+
+window.shuffleClanQuests = async (clanId) => {
+    const confirmed = await showCustomConfirm(
+        'Shuffle Quests',
+        '⚠️ <strong>Cost: 500 Gold</strong><br>Are you sure you want to shuffle the available quests?',
+        false 
+    );
+
+    if (!confirmed) return;
+
+    try {
+        console.log(`[Shuffle] Shuffling quests for clan ${clanId}...`);
+        const res = await sendPayload(`/clans/${clanId}/quests/available/shuffle`, 'POST', {});
+
+        if (res.error) {
+            let errorMsg = res.message || 'Unknown error';
+            showCustomAlert('Shuffle Failed', '❌ ' + errorMsg);
+        } else {
+            showCustomAlert('Success', '✅ Quests shuffled successfully!');
+            fetchClanData(clanId, true, true); 
+        }
+    } catch (e) {
+        console.error('[Shuffle] Error:', e);
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+    }
+};
+
+window.skipQuestWaitingTime = async (clanId) => {
+    const confirmed = await showCustomConfirm('Skip Wait Time', '⚠️ ต้องการใช้ Gold/Gems เพื่อข้ามเวลาการรอหรือไม่?', false);
+    if (!confirmed) return;
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/quests/active/skipWaitingTime`, 'POST', {});
+        if (res.error) {
+            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', '✅ Skipped waiting time!');
+            fetchClanData(clanId, true, true);
+        }
+    } catch(e) {
+        showCustomAlert('Error', e.message);
+    }
+};
+
+window.claimQuestExtraTime = async (clanId) => {
+    const confirmed = await showCustomConfirm('Add Time', '⚠️ ต้องการใช้ Gold/Gems เพื่อเพิ่มเวลาทำเควสหรือไม่? (ทำได้ครั้งเดียวต่อขั้น)', false);
+    if (!confirmed) return;
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/quests/active/claimTime`, 'POST', {});
+        if (res.error) {
+            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', '✅ Added extra time!');
+            fetchClanData(clanId, true, true);
+        }
+    } catch(e) {
+        showCustomAlert('Error', e.message);
+    }
+};
+
+window.cancelActiveQuest = async (clanId) => {
+    const confirmed = await showCustomConfirm('Cancel Quest', '⚠️ ยืนยันที่จะยกเลิกเควสปัจจุบันหรือไม่? (ได้คืนค่าใช้จ่ายบางส่วน)', true);
+    if (!confirmed) return;
+
+    try {
+        const res = await sendPayload(`/clans/${clanId}/quests/active/cancel`, 'POST', {});
+        if (res.error) {
+            showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', '✅ Quest cancelled!');
+            fetchClanData(clanId, true, true);
+        }
+    } catch(e) {
+        showCustomAlert('Error', e.message);
+    }
+};
+
+window.claimClanQuest = async (clanId, questId, questTitle) => {
+    const confirmed = await showCustomConfirm(
+        'Buy Quest',
+        `⚠️ ต้องการซื้อเควส <strong>${questTitle}</strong> หรือไม่?<br>การกระทำนี้จะใช้ Gold/Gems ของแคลน!`,
+        false 
+    );
+
+    if (!confirmed) return;
+
+    try {
+        console.log(`[ClaimQuest] Claiming quest ${questId} for clan ${clanId}...`);
+        const res = await sendPayload(`/clans/${clanId}/quests/claim`, 'POST', { questId: questId });
+
+        if (res.error) {
+            let errorMsg = res.message || 'Unknown error';
+            showCustomAlert('Claim Failed', '❌ ' + errorMsg);
+        } else {
+            showCustomAlert('Success', '✅ ซื้อเควสสำเร็จ!');
+            setTimeout(() => {
+                fetchClanData(clanId, true, true); 
+            }, 3000);
+        }
+    } catch (e) {
+        console.error('[ClaimQuest] Error:', e);
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+    }
+};
 
 console.log('--- script.js: Loading Finished ---');
