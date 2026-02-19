@@ -8,14 +8,13 @@ const localServerUrl = window.location.origin;
 // Global Caches
 let itemDataCache = null; 
 let isFetchingItems = false; 
-let globalEmojiMap = new Map(); // Cache for Emoji URLs
-let avatarItemsCache = new Map(); // NEW: Cache for Avatar Items from API
-let playerAvatarCache = new Map(); // Cache for player avatars
-let clanMembersDetailedMap = new Map(); // NEW: Cache for Detailed Member Data
-let questDetailsCache = new Map(); // Cache for Quest Details
-let clanVotesCache = {}; // Cache for Votes
-let clanMembersCache = {}; // Map playerId -> username
-let allQuestsCache = []; // Cache for Wiki
+let globalEmojiMap = new Map(); 
+let avatarItemsCache = new Map(); 
+let playerAvatarCache = new Map(); 
+let clanMembersDetailedMap = new Map(); 
+let questDetailsCache = new Map(); 
+let clanMembersCache = {}; 
+let allQuestsCache = []; 
 
 // Polling & State
 let clanPollingInterval = null;
@@ -29,7 +28,7 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
-// FIXED ICONS (Using user provided external links)
+// FIXED ICONS
 const EMBEDDED_ICONS = {
     GOLD: "https://static.wikia.nocookie.net/werewolf-online/images/6/6d/Coin.png/revision/latest/scale-to-width-down/20?cb=20190630074706",
     ROSE: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdApY9XQWX18BrmYNYj1ifzw1lrcOrzizAgQ&s",
@@ -183,19 +182,16 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // 4. GLOBAL FUNCTIONS
 // **********************************************
 
-// Helper for navigation
 window.goToPlayerSearch = (username) => {
     console.log('Navigating to search for:', username);
     const input = document.getElementById('username-input');
     if(input) {
         input.value = username;
-        // Click the nav link to switch tabs
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
         }
         
-        // Trigger the search function
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
         } else {
@@ -208,17 +204,13 @@ window.goToPlayerSearch = (username) => {
     }
 };
 
-// Helper to escape strings for JS arguments in HTML
 function escapeJsString(str) {
     return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 async function fetchAndCacheEmojis() {
     if (globalEmojiMap.size > 0) return; 
-    
-    console.log('[Emojis] Fetching emojis list...');
     const res = await fetchData('/items/emojis', false, false);
-    
     if (!res.error && Array.isArray(res)) {
         res.forEach(emoji => {
             globalEmojiMap.set(emoji.id, {
@@ -226,32 +218,20 @@ async function fetchAndCacheEmojis() {
                 anim: emoji.urlAnimation 
             }); 
         });
-        console.log(`[Emojis] Cached ${globalEmojiMap.size} emojis.`);
-    } else {
-        console.error('[Emojis] Failed to fetch:', res);
     }
 }
 
-// NEW: Fetch Avatar Items from API
 async function fetchAndCacheAvatarItems() {
     if (avatarItemsCache.size > 0) return;
-    
-    console.log('[Items] Fetching avatar items list...');
     const res = await fetchData('/items/avatarItems', false, false);
-    
     if (!res.error && Array.isArray(res)) {
         res.forEach(item => {
             avatarItemsCache.set(item.id, item);
         });
-        console.log(`[Items] Cached ${avatarItemsCache.size} avatar items.`);
-    } else {
-        console.error('[Items] Failed to fetch avatar items:', res);
     }
 }
 
-// NEW: Show Member Details Modal
 function showMemberModal(data) {
-    // Determine Avatar URL
     let avatarUrl = 'https://via.placeholder.com/150';
     if(data.equippedAvatar?.url) avatarUrl = data.equippedAvatar.url;
     else if(data.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${data.profileIconId}`;
@@ -259,17 +239,14 @@ function showMemberModal(data) {
     const creationDate = formatDateThai(data.creationTime);
     const lastOnline = formatDateThai(data.lastOnline);
     
-    // Donation Stats
     const don = data.donated || {};
     const xpDur = data.xpDurations || {};
     
-    // Status Badge
     let statusClass = 'offline';
     let statusLabel = data.status || 'UNKNOWN';
     if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = 'ONLINE'; }
     else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = 'PLAYING'; }
     
-    // Join Message
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
 
     const fmt = (n) => (n || 0).toLocaleString();
@@ -309,17 +286,14 @@ function showMemberModal(data) {
             <div style="font-weight:bold; color:#d97706;">Gold</div>
             <div style="font-weight:bold; color:#9333ea;">Gems</div>
             
-            <!-- Week -->
             <div style="color:#64748b;">Week</div>
             <div style="color:#d97706;">${fmt(don.gold?.week)}</div>
             <div style="color:#9333ea;">${fmt(don.gems?.week)}</div>
 
-            <!-- Month -->
             <div style="color:#64748b;">Month</div>
             <div style="color:#d97706;">${fmt(don.gold?.month)}</div>
             <div style="color:#9333ea;">${fmt(don.gems?.month)}</div>
 
-            <!-- All Time -->
             <div style="color:#64748b;">All Time</div>
             <div style="color:#d97706; font-weight:bold;">${fmt(don.gold?.allTime)}</div>
             <div style="color:#9333ea; font-weight:bold;">${fmt(don.gems?.allTime)}</div>
@@ -337,7 +311,6 @@ function showMemberModal(data) {
                     <div style="font-weight:bold; font-size:1rem;">${fmt(xpDur.month)}</div>
                  </div>
                  
-                 <!-- NEW: XP Lifetime -->
                  <div style="grid-column: span 2; text-align: center; background: rgba(255,255,255,0.5); border-radius: 6px; padding: 5px;">
                     <div style="color:#15803d; font-size:0.75rem; margin-bottom:2px; font-weight:bold;">✨ XP (All Time)</div>
                     <div style="font-weight:bold; font-size:1.1rem; color:#15803d;">${fmt(data.xp)}</div>
@@ -362,12 +335,11 @@ function showMemberModal(data) {
     showCustomInfoModal(data.username || 'Member Details', content);
 }
 
-// NEW: Function to View All Clan Quests (Wiki)
+// Function to View All Clan Quests (Wiki)
 window.viewAllQuests = async () => {
     showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
     
     try {
-        // Parallel Fetch
         const [res, _] = await Promise.all([
             fetchData('/clans/quests/all'),
             fetchAndCacheAvatarItems() 
@@ -387,19 +359,20 @@ window.viewAllQuests = async () => {
             html += res.map(q => {
                 const isGem = q.purchasableWithGems;
                 const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-                const currencyColor = isGem ? '#a855f7' : '#d97706'; // Purple / Gold
+                const currencyColor = isGem ? '#a855f7' : '#d97706'; 
                 const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
                 const rewardCount = q.rewards ? q.rewards.length : 0;
 
+                // CLEAN STYLE FOR MODAL LIST
                 return `
                     <div class="quest-card-large" style="min-height: 140px; cursor: pointer;" onclick="window.showQuestModal('${q.id}')">
                         <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 90px;">
-                        <div class="quest-card-overlay">
+                        <div class="quest-card-footer" style="padding: 8px;">
                             <div class="quest-price-tag" style="color: ${currencyColor}; font-size:0.8rem; padding: 4px 8px;">
                                 <span class="material-icons" style="font-size:14px;">${currencyIcon}</span>
                                 <span>${isGem ? 'Gem' : 'Gold'}</span>
                             </div>
-                            <div style="font-size:0.75rem; font-weight:bold; color:white;">
+                            <div style="font-size:0.75rem; font-weight:bold; color:#64748b;">
                                 ${rewardCount} Rewards
                             </div>
                         </div>
@@ -411,7 +384,6 @@ window.viewAllQuests = async () => {
         
         html += '</div>';
 
-        // JSON Debug
         const rawJson = JSON.stringify(res, null, 4);
         html += `
             <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
@@ -436,7 +408,7 @@ window.viewAllQuests = async () => {
     }
 };
 
-// NEW: Function to Show Quest Details Modal
+// Function to Show Quest Details Modal WITHOUT Votes
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
     if (!quest) return showCustomAlert('Error', 'Quest details not found.');
@@ -451,7 +423,6 @@ window.showQuestModal = (questId) => {
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
-            // Add onerror fallback
             let fallback = `this.onerror=null;this.src='${EMBEDDED_ICONS.UNKNOWN}';`;
 
             if (r.type === 'AVATAR_ITEM') {
@@ -468,7 +439,7 @@ window.showQuestModal = (questId) => {
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
                 imgUrl = EMBEDDED_ICONS.GEM; 
             } else if (r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') {
-                imgUrl = EMBEDDED_ICONS.ROSE; // Fixed ROSE_PACKAGE
+                imgUrl = EMBEDDED_ICONS.ROSE;
             }
 
             return `
@@ -483,6 +454,8 @@ window.showQuestModal = (questId) => {
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
+
+    // REMOVED VOTES HTML SECTION ENTIRELY
 
     const content = `
         <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
@@ -661,30 +634,25 @@ window.toggleQuestFromList = async (clanId, playerId, currentStatus, btnElement)
         btnElement.style.pointerEvents = 'auto';
         showCustomAlert('Error', '❌ Failed: ' + (res.message || 'Unknown error'));
     } else {
-        // Success: Update Icon state
         btnElement.innerText = newStatus ? 'check_circle' : 'cancel';
         btnElement.className = `material-icons quest-inline-icon clickable ${newStatus ? 'on' : 'off'}`;
         btnElement.style.pointerEvents = 'auto';
         btnElement.setAttribute('onclick', `event.stopPropagation(); window.toggleQuestFromList('${clanId}', '${playerId}', ${newStatus}, this)`);
 
-        // NEW: Update Price Animation on Client Side (Without Reload)
         const change = newStatus ? 1 : -1;
         currentParticipatingCount += change;
         if(currentParticipatingCount < 0) currentParticipatingCount = 0;
         
-        // Trigger Animation
         updatePricesClientSide();
     }
 };
 
-// NEW: Helper to animate number change
 function animateValue(obj, start, end, duration) {
     if (start === end) return;
     let startTimestamp = null;
     const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        // Add comma separators
         obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
         if (progress < 1) {
             window.requestAnimationFrame(step);
@@ -693,22 +661,17 @@ function animateValue(obj, start, end, duration) {
     window.requestAnimationFrame(step);
 }
 
-// NEW: Update Price Displays
 function updatePricesClientSide() {
     const n = currentParticipatingCount;
     
-    // Update Active Quest Action Prices
-    // Cost: 300 + 30 * members
     const actionCost = 300 + (30 * n);
     document.querySelectorAll('.dynamic-action-price').forEach(el => {
         const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
         animateValue(el, currentVal, actionCost, 500);
     });
 
-    // Update Available Quest Buy Prices
     document.querySelectorAll('.dynamic-buy-price').forEach(el => {
         const isGem = el.dataset.currency === 'gem';
-        // Gold: 2000 + 400 * members, Gem: 350 + 135 * members
         const cost = isGem ? (350 + 135 * n) : (2000 + 400 * n);
         const currentVal = parseInt(el.innerText.replace(/,/g, '')) || 0;
         animateValue(el, currentVal, cost, 500);
@@ -866,9 +829,6 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
     }
 };
 
-// **********************************************
-// 5. UTILITY FUNCTIONS
-// **********************************************
 function isUUID(str) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
@@ -1407,7 +1367,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     let blockedMembers = { error: true };
     let availableQuests = { error: true };
-    let votesData = { error: true };
+    // NO VOTES DATA NEEDED ANYMORE
 
     if(isMyClan) {
         updateProgress('Fetching Blocklist...');
@@ -1446,10 +1406,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         if (Array.isArray(availableQuests)) {
             availableQuests.forEach(q => questDetailsCache.set(q.id, q));
         }
-
-        updateProgress('Fetching Votes...');
-        votesData = await fetchData(`/clans/${clanId}/quests/votes`);
-        clanVotesCache = votesData;
     }
 
     let members = membersRaw;
@@ -1486,7 +1442,8 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
+        // PASS NULL FOR VOTES DATA
+        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, null, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
 }
 
@@ -1607,6 +1564,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         
+        // NO SHUFFLE VOTES HTML
+
         availableQuestsHtml = `
         <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
             <div style="display:flex; justify-content:space-between; align-items:start;">
@@ -1632,6 +1591,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
+            const currencyIcon = isGem ? 'diamond' : 'monetization_on';
+            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
             
             let buyCost = 0;
             if (isGem) {
@@ -1640,29 +1601,36 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 buyCost = 2000 + (400 * participatingMemberCount);
             }
 
+            // REMOVED VOTE HTML HERE
+            const rewardCount = q.rewards ? q.rewards.length : 0;
             const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
+            
             let claimBtn = '';
             if (!hasActiveQuest) {
                 claimBtn = `
                     <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; margin-top:10px; width:100%; justify-content:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:4px;">shopping_cart</span> Buy
                     </button>
                 `;
             }
 
+            // CLEAN WHITE CARD
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                      <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
-                      <div class="quest-card-overlay">
-                        <div>
-                             <div class="quest-price-tag" style="color: ${isGem ? '#d8b4fe' : '#fcd34d'};">
-                                <span class="material-icons" style="font-size:16px;">${isGem ? 'diamond' : 'monetization_on'}</span>
+                    <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
+                    <div class="quest-card-footer" style="flex-direction:column; align-items:stretch;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid #e2e8f0; background: #f8fafc; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem;">
+                                <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
                                 <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
-                             </div>
+                            </div>
+                            <div style="font-size:0.8rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px;">
+                                ${rewardCount} Rewards
+                            </div>
                         </div>
                         ${claimBtn}
-                      </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -2088,7 +2056,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 }
 
 // **********************************************
-// 9. QUEST WIKI LOGIC (ORIGINAL OVERLAY STYLE)
+// 9. QUEST WIKI LOGIC
 // **********************************************
 
 async function initQuestWiki() {
@@ -2150,19 +2118,20 @@ function renderWikiGrid(quests) {
     const html = quests.map(q => {
         const isGem = q.purchasableWithGems;
         const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // สว่างขึ้นให้เห็นชัดบนพื้นดำ
+        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
         const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/300x150?text=No+Image';
         const rewardCount = q.rewards ? q.rewards.length : 0;
 
+        // CLEAN WHITE CARD STYLE
         return `
             <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                 <img src="${imgUrl}" class="quest-card-large-img" loading="lazy">
-                <div class="quest-card-overlay">
-                    <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid rgba(255,255,255,0.15);">
+                <div class="quest-card-footer">
+                    <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid #e2e8f0; background: #f8fafc; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem;">
                         <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
                         <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
                     </div>
-                    <div style="font-size:0.8rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; backdrop-filter:blur(4px); color:white;">
+                    <div style="font-size:0.8rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px;">
                         ${rewardCount} Rewards
                     </div>
                 </div>
