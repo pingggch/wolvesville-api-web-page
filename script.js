@@ -394,12 +394,12 @@ window.viewAllQuests = async () => {
                 return `
                     <div class="quest-card-large" style="min-height: 140px; cursor: pointer;" onclick="window.showQuestModal('${q.id}')">
                         <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 90px;">
-                        <div class="quest-card-footer" style="padding: 8px;">
+                        <div class="quest-card-overlay">
                             <div class="quest-price-tag" style="color: ${currencyColor}; font-size:0.8rem; padding: 4px 8px;">
                                 <span class="material-icons" style="font-size:14px;">${currencyIcon}</span>
                                 <span>${isGem ? 'Gem' : 'Gold'}</span>
                             </div>
-                            <div style="font-size:0.75rem; font-weight:bold; color:#64748b;">
+                            <div style="font-size:0.75rem; font-weight:bold; color:white;">
                                 ${rewardCount} Rewards
                             </div>
                         </div>
@@ -1615,7 +1615,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         `;
     } 
 
-    // 2. AVAILABLE QUESTS (CLEAN WHITE CARD STYLE)
+    // 2. AVAILABLE QUESTS (ORIGINAL OVERLAY STYLE)
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         
@@ -1656,7 +1656,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
             const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-            const currencyColor = isGem ? '#a855f7' : '#d97706';
+            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // สว่างขึ้นสำหรับพื้นหลังดำ
             
             let buyCost = 0;
             if (isGem) {
@@ -1683,7 +1683,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (!hasActiveQuest) {
                 claimBtn = `
                     <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:4px;">shopping_cart</span> Buy
                     </button>
                 `;
@@ -1693,8 +1693,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                     <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
                     ${voteHtml}
-                    <div class="quest-card-footer">
-                        <div class="quest-price-tag" style="color: ${currencyColor}; border-color: ${currencyColor}; background: transparent;">
+                    <div class="quest-card-overlay">
+                        <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid rgba(255,255,255,0.15);">
                             <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
                             <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
                         </div>
@@ -2125,7 +2125,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 }
 
 // **********************************************
-// 9. QUEST WIKI LOGIC (CLEAN CARD STYLE)
+// 9. QUEST WIKI LOGIC (ORIGINAL OVERLAY STYLE)
 // **********************************************
 
 async function initQuestWiki() {
@@ -2187,19 +2187,19 @@ function renderWikiGrid(quests) {
     const html = quests.map(q => {
         const isGem = q.purchasableWithGems;
         const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-        const currencyColor = isGem ? '#a855f7' : '#d97706'; 
+        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // สว่างขึ้นให้เห็นชัดบนพื้นดำ
         const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/300x150?text=No+Image';
         const rewardCount = q.rewards ? q.rewards.length : 0;
 
         return `
             <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                 <img src="${imgUrl}" class="quest-card-large-img" loading="lazy">
-                <div class="quest-card-footer">
-                    <div class="quest-price-tag" style="color: ${currencyColor}; border-color: ${currencyColor}; background: transparent;">
+                <div class="quest-card-overlay">
+                    <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid rgba(255,255,255,0.15);">
                         <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
                         <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
                     </div>
-                    <div style="font-size:0.85rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 10px; border-radius:8px;">
+                    <div style="font-size:0.8rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; backdrop-filter:blur(4px); color:white;">
                         ${rewardCount} Rewards
                     </div>
                 </div>
