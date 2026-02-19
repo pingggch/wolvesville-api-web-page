@@ -1367,7 +1367,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     let blockedMembers = { error: true };
     let availableQuests = { error: true };
-    // NO VOTES DATA NEEDED ANYMORE
+    let votesData = { error: true }; // เอาระบบโหวตกลับมา
 
     if(isMyClan) {
         updateProgress('Fetching Blocklist...');
@@ -1406,6 +1406,10 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         if (Array.isArray(availableQuests)) {
             availableQuests.forEach(q => questDetailsCache.set(q.id, q));
         }
+
+        updateProgress('Fetching Votes...');
+        votesData = await fetchData(`/clans/${clanId}/quests/votes`);
+        clanVotesCache = votesData;
     }
 
     let members = membersRaw;
@@ -1442,8 +1446,8 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
-        // PASS NULL FOR VOTES DATA
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, null, clanId, isMyClan, isBackground, participatingMemberCount);
+        // ส่งข้อมูลการโหวตเข้าไปประมวลผล
+        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
 }
 
@@ -1564,7 +1568,16 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         
-        // NO SHUFFLE VOTES HTML
+        let shuffleVotesHtml = '';
+        if (votesData && !votesData.error && votesData.shuffleVotes && Array.isArray(votesData.shuffleVotes) && votesData.shuffleVotes.length > 0) {
+             const voterIds = votesData.shuffleVotes;
+             const voterNames = voterIds.map(vid => memberMap[vid] || 'Unknown').join(', ');
+             shuffleVotesHtml = `
+                <div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;">
+                    <span style="font-weight:bold;">🗳️ Shuffle Votes (${voterIds.length}):</span> ${voterNames}
+                </div>
+             `;
+        }
 
         availableQuestsHtml = `
         <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
@@ -1582,6 +1595,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)
                         </button>
                     </div>
+                    ${shuffleVotesHtml}
                 </div>
             </div>
         </div>
@@ -1592,7 +1606,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
             const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
+            const currencyColor = isGem ? '#a855f7' : '#d97706';
             
             let buyCost = 0;
             if (isGem) {
@@ -1601,7 +1615,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 buyCost = 2000 + (400 * participatingMemberCount);
             }
 
-            // REMOVED VOTE HTML HERE
+            let voteHtml = '';
+            if (votesData && !votesData.error && votesData.votes && votesData.votes[q.id]) {
+                const voterIds = votesData.votes[q.id]; 
+                const voteCount = voterIds.length;
+                if (voteCount > 0) {
+                    voteHtml = `
+                        <div class="quest-votes-badge">
+                            <span class="material-icons" style="font-size:14px;">how_to_vote</span> ${voteCount}
+                        </div>
+                    `;
+                }
+            }
+
             const rewardCount = q.rewards ? q.rewards.length : 0;
             const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
             
@@ -1619,6 +1645,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                     <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
+                    ${voteHtml}
                     <div class="quest-card-footer" style="flex-direction:column; align-items:stretch;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid #e2e8f0; background: #f8fafc; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem;">
@@ -1752,39 +1779,39 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const safeUsername = escapeJsString(m.username);
 
             return `
-                <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details">
-                    <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
-                    <div class="member-details">
-                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" 
-                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
-                                  title="Search Player">
-                                ${m.username || 'Unknown'}
-                            </span> 
-                            ${roleBadge}
-                            ${questIconHtml}
-                            ${adminActionsHtml}
-                        </div>
-                        <div class="member-meta">
-                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span>
-                            ${statusText}
-                            ${flairHtml}
-                        </div>
-                    </div>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
+                    <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
+                    <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="${fallback}" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
+                    ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
                 </div>
             `;
         }).join('');
+
+        const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
+        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    // 5. CHAT
-    let chatHtml = '<div style="padding:15px; color:#ccc;">(No permission to view chat)</div>';
-    if (!chat.error && Array.isArray(chat)) {
-        chatHtml = chat.reverse().map(msg => {
-            const isBot = !!msg.playerBotId;
-            const username = isBot ? `[BOT] ${msg.playerBotOwnerUsername}` : (msg.player?.username || memberMap[msg.playerId] || 'Unknown');
-            const botStyle = isBot ? 'background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;' : '';
-            
-            let content = '';
+    let votesHtml = '<p style="color:#64748b; font-style:italic;">ยังไม่มีการโหวต</p>';
+    if (clanVotesCache && clanVotesCache.votes && clanVotesCache.votes[questId]) {
+        const voterIds = clanVotesCache.votes[questId];
+        if (voterIds.length > 0) {
+            const voterNames = voterIds.map(vid => clanMembersCache[vid] || 'Unknown Member').join(', ');
+            votesHtml = `<div style="margin-top:5px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">${voterNames}</div>`;
+        }
+    }
+
+    const content = `
+        <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
+        <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
+        ${rewardsHtml}
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-top:1px dashed #eee; padding-top:15px;">🗳️ Votes (${(clanVotesCache?.votes?.[questId] || []).length})</h4>
+        ${votesHtml}
+    `;
+
+    showCustomInfoModal(title, content);
+};
+
+window.sendClanAnnouncement = async (clanId) => {
             if (msg.emojiId) {
                 const emojiData = globalEmojiMap.get(msg.emojiId);
                 const emojiUrl = emojiData?.preview || `https://cdn.wolvesville.com/emojis/previews/emoji_${msg.emojiId}.png`; 
