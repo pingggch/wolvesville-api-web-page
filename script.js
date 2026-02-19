@@ -386,24 +386,24 @@ window.viewAllQuests = async () => {
         if (Array.isArray(res)) {
             html += res.map(q => {
                 const isGem = q.purchasableWithGems;
-                let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
+                const currencyIcon = isGem ? 'diamond' : 'monetization_on';
+                const currencyColor = isGem ? '#a855f7' : '#d97706'; // Purple / Gold
                 const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
-                
-                let rewardsMini = '';
-                if(q.rewards && q.rewards.length > 0) {
-                   rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
-                }
+                const rewardCount = q.rewards ? q.rewards.length : 0;
 
                 return `
-                    <div class="quest-card-large" style="min-height: 160px; cursor: default;" onclick="window.showQuestModal('${q.id}')">
-                          <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 100px;">
-                          <div class="quest-card-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
-                            <div style="padding: 5px;">
-                                 <div style="font-size:0.8rem; font-weight:bold; color:white; text-shadow:0 1px 2px black;">${costLabel}</div>
-                                 ${rewardsMini}
+                    <div class="quest-card-large" style="min-height: 140px; cursor: pointer;" onclick="window.showQuestModal('${q.id}')">
+                        <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 90px;">
+                        <div class="quest-card-footer" style="padding: 8px;">
+                            <div class="quest-price-tag" style="color: ${currencyColor}; font-size:0.8rem; padding: 4px 8px;">
+                                <span class="material-icons" style="font-size:14px;">${currencyIcon}</span>
+                                <span>${isGem ? 'Gem' : 'Gold'}</span>
                             </div>
-                          </div>
-                          ${(() => { questDetailsCache.set(q.id, q); return ''; })()} 
+                            <div style="font-size:0.75rem; font-weight:bold; color:#64748b;">
+                                ${rewardCount} Rewards
+                            </div>
+                        </div>
+                        ${(() => { questDetailsCache.set(q.id, q); return ''; })()}
                     </div>
                 `;
             }).join('');
@@ -1052,8 +1052,6 @@ async function fetchAndDisplayStatsOnly() {
 // 7. DASHBOARD & PLAYER LOGIC
 // **********************************************
 
-// REMOVED REFRESH FUNCTIONS as requested
-
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
     if(availableItems) availableItems.textContent = '...';
@@ -1069,7 +1067,6 @@ async function fetchAndDisplayData() {
         if(availableItems) {
              availableItems.innerHTML = `
                 ${items.error ? 'Error' : items.count.toLocaleString()}
-                <!-- Removed Refresh Button -->
              `;
         }
     } else {
@@ -1080,7 +1077,6 @@ async function fetchAndDisplayData() {
 }
 
 async function searchAndDisplayPlayer() {
-    // Also attach to window to be safe
     window.searchAndDisplayPlayer = searchAndDisplayPlayer;
     
     const input = usernameInput.value.trim();
@@ -1116,7 +1112,6 @@ async function searchAndDisplayPlayer() {
     fetchAndDisplayStatsOnly();
 }
 
-// Make sure it's globally available
 window.searchAndDisplayPlayer = searchAndDisplayPlayer;
 
 function renderPlayerProfile(data) {
@@ -1330,7 +1325,6 @@ async function searchClan() {
     await fetchClanData(searchRes[0].id, false);
 }
 
-// Global polling functions
 function startClanPolling(clanId, isMyClan) {
     if (clanPollingInterval) clearInterval(clanPollingInterval);
     
@@ -1356,12 +1350,10 @@ function stopClanPolling() {
     isFirstRender = true;
 }
 
-// [UPDATED] Sequential Loading Function with Progress Bar
 async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
-    const totalSteps = isMyClan ? 14 : 9; // Approximate steps
+    const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
 
-    // Helper to update progress bar
     const updateProgress = (text) => {
         if(!isBackground) {
             currentStep++;
@@ -1386,13 +1378,11 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         updateProgress('Initializing...');
     }
     
-    // Parallel fetching for assets
     await Promise.all([
         fetchAndCacheEmojis(),
-        fetchAndCacheAvatarItems() // NEW: Fetch Avatar Items
+        fetchAndCacheAvatarItems() 
     ]);
     
-    // 1. Info
     updateProgress('Fetching Clan Info...');
     const info = await fetchData(`/clans/${clanId}/info`);
     if (info.error) {
@@ -1400,46 +1390,32 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         return;
     }
 
-    // 2. Members (Updated to try Detailed fetch first)
     updateProgress('Fetching Members List...');
-    // Try detailed fetch first (available for bots)
     let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
-    
     if (membersRaw.error) {
-         console.log('[Clan] Detailed members fetch failed (likely not a bot), falling back to standard.');
-         // Fallback to standard members list
          membersRaw = await fetchData(`/clans/${clanId}/members`);
-    } else {
-         console.log('[Clan] Detailed members fetched successfully.');
     }
     
-    // Update Detailed Cache
     if (!membersRaw.error && Array.isArray(membersRaw)) {
         clanMembersDetailedMap.clear();
         membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
     }
     
-    // 3. Active Quests
     updateProgress('Fetching Active Quests...');
     const quests = await fetchData(`/clans/${clanId}/quests/active`);
 
-    // 4. Chat
     updateProgress('Fetching Chat History...');
     const chat = await fetchData(`/clans/${clanId}/chat`);
 
-    // 5. Logs
     updateProgress('Fetching Logs...');
     const logs = await fetchData(`/clans/${clanId}/logs`);
 
-    // 6. Ledger
     updateProgress('Fetching Ledger...');
     const ledger = await fetchData(`/clans/${clanId}/ledger`);
 
-    // 7. History
     updateProgress('Fetching Quest History...');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
 
-    // 8. Announcements
     updateProgress('Fetching Announcements...');
     const announcements = await fetchData(`/clans/${clanId}/announcements`);
 
@@ -1451,7 +1427,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         updateProgress('Fetching Blocklist...');
         const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
 
-        // Handle Blocklist Logic (Moved from original array access)
         if (!blocklistRes.error && Array.isArray(blocklistRes)) {
             const extractId = (item) => {
                 if (typeof item === 'string') return item;
@@ -1459,7 +1434,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
             };
             
             const playersData = [];
-            // Update loading for blocklist processing
             updateProgress('Processing Blocked Players...');
             for (const item of blocklistRes.slice(0, 50)) {
                 const pid = extractId(item);
@@ -1483,7 +1457,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
         updateProgress('Fetching Available Quests...');
         availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
-        // Cache Available Quests
         if (Array.isArray(availableQuests)) {
             availableQuests.forEach(q => questDetailsCache.set(q.id, q));
         }
@@ -1493,7 +1466,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         clanVotesCache = votesData;
     }
 
-    // Process Members (Heavy lifting)
     let members = membersRaw;
     if (!membersRaw.error && Array.isArray(membersRaw)) {
         updateProgress(`Processing Member Avatars (${membersRaw.length})...`);
@@ -1514,7 +1486,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         members = membersList;
     }
 
-    // Cache Members for Vote Name Resolution
     if (Array.isArray(members)) {
         members.forEach(m => {
             clanMembersCache[m.playerId] = m.username;
@@ -1527,7 +1498,6 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     }
     currentParticipatingCount = participatingMemberCount;
 
-    // Final Render
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
@@ -1542,7 +1512,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         });
     }
 
-    // 1. ACTIVE QUEST HTML (BATTLE PASS STYLE - UPDATED)
+    // 1. ACTIVE QUEST HTML
     let questsHtml = '<div style="text-align:center; color:#ccc; padding:20px;">No Active Quests</div>';
     let hasActiveQuest = false;
     
@@ -1558,44 +1528,33 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const activeParticipants = members.filter(m => m.participateInClanQuests).length;
         const actionCost = 300 + (30 * activeParticipants);
 
-        // --- BATTLE PASS TRACK (UNIFIED) ---
         let rewardsTrackHtml = '';
         if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
             const currentTierIndex = (qData.tier || 0);
             
-            // [FIXED] PROGRESS BAR LOGIC
             const totalSegments = Math.max(1, qInfo.rewards.length - 1);
             let relativeProgress = currentTierIndex + (progress / target);
-            
-            // Cap progress at 100% of the track
             if (relativeProgress > totalSegments) relativeProgress = totalSegments;
-            
             const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
 
             rewardsTrackHtml = `
                 <div class="battle-pass-hub">
-                    <!-- The Progress Bar is now inside the Track Hub -->
                     <div class="xp-progress-wrapper">
                         <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
                     </div>
-
                     <div class="battle-pass-track">
             `;
             
             qInfo.rewards.forEach((r, idx) => {
-                let imgUrl = 'https://via.placeholder.com/60?text=?'; // Default fallback
+                let imgUrl = 'https://via.placeholder.com/60?text=?';
                 if(r.type === 'AVATAR_ITEM') {
-                    // Try to get from cache first
                     const item = avatarItemsCache.get(r.avatarItemId);
-                    if (item && item.imageUrl) {
-                        imgUrl = item.imageUrl; // Use the image URL from API
-                    } else {
-                        imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
-                    }
+                    if (item && item.imageUrl) imgUrl = item.imageUrl;
+                    else imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
                 }
                 else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
-                else if(r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
+                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM;
+                else if(r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') imgUrl = EMBEDDED_ICONS.ROSE;
                 
                 let statusClass = '';
                 if (idx < currentTierIndex) statusClass = 'completed-tier';
@@ -1644,13 +1603,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         </div>
                     </div>
                 </div>
-                
                 <div class="active-quest-body">
                     <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> 
                         Quest Rewards Progression
                     </h4>
-
                     ${rewardsTrackHtml}
                     ${actionsHtml}
                 </div>
@@ -1658,7 +1615,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         `;
     } 
 
-    // 2. AVAILABLE QUESTS
+    // 2. AVAILABLE QUESTS (CLEAN WHITE CARD STYLE)
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         
@@ -1693,12 +1650,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
             </div>
         </div>
+        <div class="quest-grid">
         `;
-        
-        availableQuestsHtml += '<div class="quest-grid">';
         
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
+            const currencyIcon = isGem ? 'diamond' : 'monetization_on';
+            const currencyColor = isGem ? '#a855f7' : '#d97706';
             
             let buyCost = 0;
             if (isGem) {
@@ -1711,7 +1669,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (!votesData.error && votesData.votes && votesData.votes[q.id]) {
                 const voterIds = votesData.votes[q.id]; 
                 const voteCount = voterIds.length;
-                
                 if (voteCount > 0) {
                     voteHtml = `
                         <div class="quest-votes-badge">
@@ -1734,17 +1691,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                      <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
-                      ${voteHtml}
-                      <div class="quest-card-overlay">
-                        <div>
-                             <div class="quest-price-tag" style="color: ${isGem ? '#d8b4fe' : '#fcd34d'};">
-                                <span class="material-icons" style="font-size:16px;">${isGem ? 'diamond' : 'monetization_on'}</span>
-                                <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
-                             </div>
+                    <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
+                    ${voteHtml}
+                    <div class="quest-card-footer">
+                        <div class="quest-price-tag" style="color: ${currencyColor}; border-color: ${currencyColor}; background: transparent;">
+                            <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
+                            <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
                         </div>
                         ${claimBtn}
-                      </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1771,7 +1726,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
         if (!announcements.error && Array.isArray(announcements) && announcements.length > 0) {
              announceListContent = announcements.map(a => `
-                <div style="background:#fefce8; border-left:4px solid #eab308; padding:15px; border-radius:8px; box-shadow:var(--shadow-sm);">
+                <div style="background:#fefce8; border-left:4px solid #eab308; padding:15px; border-radius:8px; box-shadow:var(--shadow-sm); margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                         <strong style="color:#854d0e;">${a.author || a.playerUsername || 'Leader'}</strong>
                         <span style="font-size:0.75rem; color:#a16207;">${formatDateThai(a.timestamp || a.creationTime)}</span>
@@ -1787,7 +1742,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             ${formHtml}
             <div style="margin-bottom:20px;">
                 <h3 class="stats-section-title"><span class="material-icons">history_edu</span> Recent Announcements</h3>
-                <div id="clan-announcements-container" style="display:grid; gap:10px;">
+                <div id="clan-announcements-container">
                     ${announceListContent}
                 </div>
             </div>
@@ -1877,7 +1832,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             </span> 
                             ${roleBadge}
                             ${questIconHtml}
-                            ${adminActionsHtml} <!-- Added Actions -->
+                            ${adminActionsHtml}
                         </div>
                         <div class="member-meta">
                             <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span>
@@ -1908,8 +1863,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             }
 
             const safeUsername = escapeJsString(username);
-            
-            // Logic for clickable username
             const nameStyle = isBot ? `color:var(--primary-color); ${botStyle}` : `color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;`;
             const clickAttr = isBot ? '' : `onclick="window.goToPlayerSearch('${safeUsername}')"`;
 
@@ -1955,10 +1908,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     // 8. HISTORY
     let historyHtml = '<div style="padding:15px; color:#ccc; text-align:center;">No Unclaimed Quests</div>';
-    
     if (!history.error && Array.isArray(history) && history.length > 0) {
         const unclaimedQuests = history.filter(h => !h.claimedTime);
-
         if (unclaimedQuests.length > 0) { 
             historyHtml = '<div class="history-list">';
             historyHtml += unclaimedQuests.map(h => {
@@ -1990,7 +1941,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                                 <div style="font-size:0.75rem; color:#94a3b8;">End: ${formatDateThai(endDate)}</div>
                             </div>
                         </div>
-                        
                         <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
                             <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">รายชื่อผู้เข้าร่วม (Participants)</summary>
                             <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
@@ -2005,12 +1955,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     }
 
     if (isBackground && isFirstRender === false) {
-        
         const chatContainer = document.getElementById('clan-chat-container');
         if (chatContainer && chatContainer.innerHTML !== chatHtml) {
             const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
             chatContainer.innerHTML = chatHtml;
-            // initLottieAnimations(); 
             if (isAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
@@ -2036,9 +1984,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         }
 
         const timerContainer = document.getElementById('quest-reset-timer');
-        if (timerContainer) {
-            timerContainer.outerHTML = getQuestResetTimeDisplay();
-        }
+        if (timerContainer) timerContainer.outerHTML = getQuestResetTimeDisplay();
 
         const ledgerContainer = document.getElementById('clan-ledger-list');
         if (ledgerContainer && ledgerContainer.innerHTML !== ledgerHtml) {
@@ -2049,7 +1995,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         if (historyContainer && historyContainer.innerHTML !== historyHtml) {
             historyContainer.innerHTML = historyHtml;
         }
-
         return; 
     }
 
@@ -2081,7 +2026,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
                     Debug: Raw Clan Data (JSON)
                 </summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${JSON.stringify({ info, members, quests, chat, logs, ledger, history, announcements }, null, 4)}</pre>
+                <pre class="json-output">${JSON.stringify({ info, members, quests, chat, logs, ledger, history, announcements }, null, 4)}</pre>
             </details>
         </div>
     `;
@@ -2093,7 +2038,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div>
                 <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span><span class="material-icons">flag</span> Active Quests</span>
-                    <!-- REMOVED REFRESH BUTTON HERE -->
                 </h3>
                 <div id="clan-quests-container">
                     ${questsHtml}
@@ -2152,7 +2096,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 ${blockedMembers.length > 0 && !blockedMembers.error 
                     ? blockedMembers.map(m => {
                         const safeUsername = escapeJsString(m.username);
-                        // Construct Avatar URL
                         let avatarUrl = 'https://via.placeholder.com/40';
                         if(m.equippedAvatar?.url) avatarUrl = m.equippedAvatar.url;
                         else if(m.profileIconId) avatarUrl = `https://cdn-avatars.wolvesville.com/${m.profileIconId}`;
@@ -2178,21 +2121,17 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     clanContentContainer.innerHTML = profileHeader + mainContent + apiConsole;
 
     const finalChatContainer = document.getElementById('clan-chat-container');
-    if (finalChatContainer) {
-        finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
-    }
+    if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
 }
 
 // **********************************************
-// 9. QUEST WIKI LOGIC (GET /clans/quests/all)
+// 9. QUEST WIKI LOGIC (CLEAN CARD STYLE)
 // **********************************************
 
-// ฟังก์ชันหลักสำหรับโหลดข้อมูล Quest Wiki
 async function initQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
     const searchInput = document.getElementById('quest-search-input');
     
-    // ถ้าเคยโหลดมาแล้ว ไม่ต้องโหลดซ้ำ (ประหยัด API call)
     if (allQuestsCache.length > 0) {
         renderWikiGrid(allQuestsCache);
         return;
@@ -2206,8 +2145,6 @@ async function initQuestWiki() {
     `;
 
     try {
-        // [UPDATED] เรียกใช้ API พร้อมกันทั้ง 2 ตัว: Quests และ Avatar Items (รอให้เสร็จทั้งคู่ก่อนแสดงผล)
-        // นี่คือจุดสำคัญที่จะทำให้รูปไอเทมแสดงผลถูกต้อง เพราะ Cache จะถูกสร้างเสร็จก่อน
         const [res, _] = await Promise.all([
             fetchData('/clans/quests/all'),
             fetchAndCacheAvatarItems() 
@@ -2219,16 +2156,15 @@ async function initQuestWiki() {
         }
 
         if (Array.isArray(res)) {
-            allQuestsCache = res; // เก็บลง Cache
-            renderWikiGrid(allQuestsCache); // สั่งแสดงผล
+            allQuestsCache = res; 
+            renderWikiGrid(allQuestsCache); 
 
-            // เพิ่ม Event Listener สำหรับช่องค้นหา
             if (searchInput) {
                 searchInput.addEventListener('keyup', (e) => {
                     const term = e.target.value.toLowerCase();
                     const filtered = allQuestsCache.filter(q => 
                         (q.title && q.title.toLowerCase().includes(term)) || 
-                        (q.name && q.name.toLowerCase().includes(term)) // บางที API อาจส่ง name แทน title
+                        (q.name && q.name.toLowerCase().includes(term)) 
                     );
                     renderWikiGrid(filtered);
                 });
@@ -2240,7 +2176,6 @@ async function initQuestWiki() {
     }
 }
 
-// ฟังก์ชันสำหรับสร้าง HTML Grid ของเควส
 function renderWikiGrid(quests) {
     const container = document.getElementById('quest-wiki-container');
     
@@ -2250,41 +2185,29 @@ function renderWikiGrid(quests) {
     }
 
     const html = quests.map(q => {
-        // ตรวจสอบว่าเป็นเควส Gem หรือ Gold
         const isGem = q.purchasableWithGems;
         const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // ม่วง หรือ เหลือง
-        
-        // ใช้ promoImagePrimaryColor เป็นสีขอบ (ถ้ามี)
-        const borderColor = q.promoImagePrimaryColor || '#e2e8f0';
-        
-        // รูปภาพ
+        const currencyColor = isGem ? '#a855f7' : '#d97706'; 
         const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/300x150?text=No+Image';
-
-        // นับจำนวนของรางวัล
         const rewardCount = q.rewards ? q.rewards.length : 0;
 
         return `
-            <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')" style="border-color:${borderColor};">
+            <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                 <img src="${imgUrl}" class="quest-card-large-img" loading="lazy">
-                <div class="quest-card-overlay">
-                    <div>
-                        <div class="quest-price-tag" style="color: ${currencyColor};">
-                            <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
-                            <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
-                        </div>
+                <div class="quest-card-footer">
+                    <div class="quest-price-tag" style="color: ${currencyColor}; border-color: ${currencyColor}; background: transparent;">
+                        <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
+                        <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
                     </div>
-                    <div style="font-size:0.8rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; backdrop-filter:blur(4px);">
+                    <div style="font-size:0.85rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 10px; border-radius:8px;">
                         ${rewardCount} Rewards
                     </div>
                 </div>
-                <!-- Pre-cache details for modal -->
                 ${(() => { questDetailsCache.set(q.id, q); return ''; })()} 
             </div>
         `;
     }).join('');
 
-    // ADDED: Raw JSON Debug Section at the bottom of the grid
     const rawJson = JSON.stringify(quests, null, 4);
     const debugHtml = `
         <div class="api-console" style="grid-column: 1 / -1; margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
@@ -2293,7 +2216,7 @@ function renderWikiGrid(quests) {
                     <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
                     Debug: Raw Quests Data (JSON)
                 </summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
+                <pre class="json-output">${rawJson}</pre>
             </details>
         </div>
     `;
@@ -2324,7 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
             }
             if(t==='dashboard') fetchAndDisplayData();
-            else if(t==='quest-wiki') initQuestWiki(); // <--- เรียกฟังก์ชันเมื่อกดแท็บ Wiki
+            else if(t==='quest-wiki') initQuestWiki(); 
             else if(t==='settings') {
                 const cur = localStorage.getItem('wolvesville_api_key');
                 if(cur) apiKeyInput.value = cur;
