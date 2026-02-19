@@ -338,7 +338,7 @@ function showMemberModal(data) {
 
 // Function to View All Clan Quests (Wiki)
 window.viewAllQuests = async () => {
-    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
+    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:40px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">Fetching all quests...</div></div>');
     
     try {
         const [res, _] = await Promise.all([
@@ -2106,9 +2106,9 @@ async function initQuestWiki() {
     }
 
     container.innerHTML = `
-        <div style="text-align:center; grid-column:1/-1; padding:40px;">
-            <div class="quest-inline-icon loading" style="font-size:40px;">sync</div>
-            <br>กำลังดึงข้อมูลเควสและไอเทม...
+        <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
+            <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
+            <div style="margin-top:15px; font-size:1.1rem;">กำลังดึงข้อมูลเควสและไอเทม...</div>
         </div>
     `;
 
