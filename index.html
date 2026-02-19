@@ -42,14 +42,13 @@
                             <span class="nav-text">Quest Wiki</span>
                         </a>
                     </li>
-                    <!-- NEW: DONATE MENU -->
                     <li>
                         <a href="#" class="nav-link" data-page="donate">
                             <span class="material-icons">favorite</span>
                             <span class="nav-text">สนับสนุน (Donate)</span>
                         </a>
                     </li>
-                    <li style="margin-top: auto;"> <!-- Push settings to bottom if needed -->
+                    <li style="margin-top: auto;">
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
                             <span class="nav-text">ตั้งค่า</span>
@@ -63,7 +62,7 @@
             
             <!-- DASHBOARD PAGE -->
             <section id="dashboard" class="page-content">
-                <h2><span class="material-icons" style="vertical-align: bottom; font-size: 32px; color: var(--primary-color); margin-right: 8px;">space_dashboard</span> ภาพรวม API</h2>
+                <h2>ภาพรวม API</h2>
                 <div class="stats-grid stats-grid-row1">
                     <div class="stat-card api-today-card">
                         <span class="material-icons">trending_up</span>
@@ -73,14 +72,14 @@
                         </div>
                     </div>
                     <div class="stat-card item-card">
-                        <span class="material-icons">inventory_2</span>
+                        <span class="material-icons">inventory</span>
                         <div class="stat-info">
                             <p class="stat-label">ไอเทมในเกม (จาก API)</p>
                             <h3 class="stat-value" id="available-items">...</h3>
                         </div>
                     </div>
                     <div class="stat-card api-status-card">
-                        <span class="material-icons">wifi_tethering</span>
+                        <span class="material-icons">link</span>
                         <div class="stat-info">
                             <p class="stat-label">สถานะการเชื่อมต่อ API</p>
                             <div class="status-indicator">
@@ -119,8 +118,8 @@
             <section id="player-search" class="page-content">
                 <h2>ค้นหาข้อมูลผู้เล่น</h2>
                 <div class="search-container">
-                    <span class="material-icons" style="color: var(--text-muted); margin-left: 10px;">search</span>
-                    <input type="text" id="username-input" placeholder="พิมพ์ชื่อผู้ใช้ หรือ Player ID...">
+                    <span class="material-icons">search</span>
+                    <input type="text" id="username-input" placeholder="ชื่อผู้ใช้ หรือ Player ID...">
                     <button id="search-player-btn">ค้นหา</button>
                 </div>
                 <div id="player-profile-container">
@@ -135,10 +134,10 @@
             <section id="clan-manager" class="page-content">
                 <h2>จัดการแคลน (Clan Manager)</h2>
                 <div class="search-container">
-                    <span class="material-icons" style="color: var(--text-muted); margin-left: 10px;">shield</span>
+                    <span class="material-icons">shield</span>
                     <input type="text" id="clan-name-input" placeholder="ชื่อแคลน หรือ Clan ID...">
                     <button id="search-clan-btn">ค้นหา</button>
-                    <button id="my-clan-btn" class="btn-warning">⭐ แคลนของฉัน</button>
+                    <button id="my-clan-btn" class="btn-warning" style="margin-left: 10px;">⭐ แคลนของฉัน</button>
                 </div>
                 <div id="clan-content-container">
                     <div class="empty-state">
@@ -151,15 +150,16 @@
             <!-- QUEST WIKI PAGE -->
             <section id="quest-wiki" class="page-content">
                 <h2>📚 Quest Wiki (All Quests)</h2>
+                
                 <div id="quest-wiki-container" class="quest-grid">
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <span class="material-icons loading-spinner">sync</span>
-                        <p>กำลังโหลดข้อมูลเควสจากเซิร์ฟเวอร์...</p>
+                    <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
+                        <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
+                        <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลเควส...</div>
                     </div>
                 </div>
             </section>
 
-            <!-- NEW: DONATE PAGE -->
+            <!-- DONATE PAGE -->
             <section id="donate" class="page-content">
                 <h2>สนับสนุนการพัฒนา (Donate)</h2>
                 <div class="donate-container">
@@ -170,15 +170,12 @@
                         <p class="donate-desc">หากคุณชื่นชอบ Wolvesville API Dashboard นี้ สามารถช่วยสนับสนุนค่าเซิร์ฟเวอร์ ค่ากาแฟ เพื่อให้ระบบพัฒนาต่อไปได้ครับ ❤️</p>
                         
                         <div class="donate-methods">
-                            <!-- ทรูมันนี่ หรือ พร้อมเพย์ 1 -->
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+PromptPay" alt="PromptPay" class="qr-code">
                                 <h4>พร้อมเพย์ (PromptPay)</h4>
                                 <p class="account-num">08x-xxx-xxxx</p>
                                 <span class="account-name">ชื่อบัญชี: นาย/นางสาว xxx</span>
                             </div>
-                            
-                            <!-- ทรูมันนี่ หรือ พร้อมเพย์ 2 -->
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+TrueMoney" alt="TrueMoney" class="qr-code">
                                 <h4>ทรูมันนี่ (TrueMoney)</h4>
@@ -191,16 +188,51 @@
                 </div>
             </section>
 
-            <!-- SETTINGS PAGE -->
+            <!-- SETTINGS PAGE (อัปเดตเพิ่ม GitHub Editor) -->
             <section id="settings" class="page-content">
-                <h2>ตั้งค่าระบบ</h2>
+                <h2>ตั้งค่าระบบ & ฐานข้อมูล</h2>
+                
                 <div class="settings-group">
-                    <span class="material-icons" style="font-size: 48px; color: var(--primary-color); margin-bottom: 15px;">vpn_key</span>
-                    <h3>Wolvesville API Key</h3>
-                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่เพื่อใช้งานฟีเจอร์ขั้นสูง</p>
+                    <h3><span class="material-icons" style="vertical-align: middle;">vpn_key</span> Wolvesville API Key</h3>
+                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
                     <input type="text" id="api-key-input" placeholder="Paste your API Key here...">
-                    <button id="save-api-key-btn">บันทึกคีย์ (Save Key)</button>
+                    <button id="save-api-key-btn">บันทึก Key</button>
                     <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
+                </div>
+
+                <!-- ระบบเชื่อมต่อ GitHub JSON -->
+                <div class="settings-group" style="margin-top: 30px; max-width: 800px;">
+                    <h3><span class="material-icons" style="vertical-align: middle;">data_object</span> แก้ไขฐานข้อมูล (GitHub JSON)</h3>
+                    <p style="margin-bottom: 15px;">ตั้งค่าเพื่อดึงและแก้ไขไฟล์ JSON บน GitHub ของคุณโดยตรง</p>
+                    
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">GitHub Personal Access Token (Classic)</label>
+                        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxx..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px; font-family: monospace;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; text-align: left;">
+                            <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">Repository (e.g., user/repo)</label>
+                            <input type="text" id="gh-repo-input" placeholder="username/my-database" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1; min-width: 200px; text-align: left;">
+                            <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">File Path (e.g., data.json)</label>
+                            <input type="text" id="gh-path-input" placeholder="data/config.json" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px;">
+                        </div>
+                    </div>
+
+                    <button id="gh-load-btn" style="width: 100%; background: #0ea5e9; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1rem;">
+                        <span class="material-icons" style="font-size: 20px;">cloud_download</span> โหลดข้อมูลจาก GitHub
+                    </button>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">JSON Content Editor</label>
+                        <textarea id="gh-content-input" rows="15" style="width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px; font-family: 'Consolas', monospace; font-size: 0.9rem; resize: vertical; background: #1e1e1e; color: #ce9178; box-sizing: border-box;" placeholder="เนื้อหาไฟล์ JSON จะแสดงที่นี่... (กรุณากดโหลดข้อมูลก่อน)"></textarea>
+                    </div>
+
+                    <button id="gh-save-btn" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1rem;">
+                        <span class="material-icons" style="font-size: 20px;">cloud_upload</span> บันทึกและ Commit ไปยัง GitHub
+                    </button>
                 </div>
             </section>
         </div>
