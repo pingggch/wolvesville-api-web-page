@@ -111,26 +111,50 @@ body {
 
 .app-container.sidebar-pushed .sidebar-header {
     justify-content: flex-start;
-    padding-left: 5px;
+    padding-left: 20px; /* ขยับให้ตรงกับปุ่มเมนูด้านล่างพอดี */
 }
 
 .hamburger-btn {
-    background: rgba(255,255,255,0.08);
-    border: none;
+    background: rgba(255, 255, 255, 0.05); /* โปร่งแสงให้ดูเป็นกระจก */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* ขอบบางๆ เพิ่มมิติ */
+    backdrop-filter: blur(8px); /* เบลอพื้นหลัง */
     color: white;
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: 16px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* เด้งสมูทๆ */
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* เงาลอยเบาๆ */
 }
 
-.app-container.sidebar-pushed .hamburger-btn { margin: 0; }
-.hamburger-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
+.app-container.sidebar-pushed .hamburger-btn { 
+    margin: 0; 
+    background: rgba(255, 255, 255, 0.1); /* สว่างขึ้นตอนกางเมนูออก */
+}
+
+.hamburger-btn:hover { 
+    background: rgba(255, 255, 255, 0.15); 
+    transform: translateY(-2px); /* ลอยขึ้นตอนชี้เมาส์ */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.hamburger-btn:active {
+    transform: translateY(1px) scale(0.95); /* ยุบลงตอนกด */
+}
+
+.hamburger-btn .material-icons {
+    font-size: 26px;
+    transition: transform 0.2s ease;
+}
+
+.hamburger-btn:hover .material-icons {
+    transform: scale(1.1); /* ไอคอนขยายตอนชี้เมาส์ */
+}
 
 nav ul {
     list-style: none;
