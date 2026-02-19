@@ -1,32 +1,27 @@
 // **********************************************
-// 1. CONFIGURATION
+// 1. CONFIGURATION & GLOBALS
 // **********************************************
 console.log('--- script.js: Loading Started ---'); 
 
 const localServerUrl = window.location.origin; 
 
+// Global Caches
 let itemDataCache = null; 
 let isFetchingItems = false; 
-let globalEmojiMap = new Map(); // Cache for Emoji URLs (Preview + Animation)
+let globalEmojiMap = new Map(); // Cache for Emoji URLs
 let avatarItemsCache = new Map(); // NEW: Cache for Avatar Items from API
 let playerAvatarCache = new Map(); // Cache for player avatars
 let clanMembersDetailedMap = new Map(); // NEW: Cache for Detailed Member Data
-
-// Global Cache for Quest Details & Votes
-let questDetailsCache = new Map();
-let clanVotesCache = {};
+let questDetailsCache = new Map(); // Cache for Quest Details
+let clanVotesCache = {}; // Cache for Votes
 let clanMembersCache = {}; // Map playerId -> username
+let allQuestsCache = []; // Cache for Wiki
 
-// Quest Wiki Cache
-let allQuestsCache = []; 
-
-// Polling Variables
+// Polling & State
 let clanPollingInterval = null;
 let currentViewingClanId = null;
 let isCurrentViewMyClan = false;
-let isFirstRender = true; // To track if we need to render full layout or just update content
-
-// Global State for Animation
+let isFirstRender = true; 
 let currentParticipatingCount = 0; 
 
 // Inject Lottie Player Script
@@ -34,7 +29,7 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
-// FIXED ICONS (Using user provided external links with Base64 Fallback)
+// FIXED ICONS (Using user provided external links)
 const EMBEDDED_ICONS = {
     GOLD: "https://static.wikia.nocookie.net/werewolf-online/images/6/6d/Coin.png/revision/latest/scale-to-width-down/20?cb=20190630074706",
     ROSE: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdApY9XQWX18BrmYNYj1ifzw1lrcOrzizAgQ&s",
@@ -155,6 +150,7 @@ const hamburgerBtn = document.querySelector('.hamburger-btn');
 const navLinks = document.querySelectorAll('.nav-link');
 const pages = document.querySelectorAll('.page-content');
 
+// Stats Elements
 const apiStatusDot = document.getElementById('api-status-dot');
 const apiStatusText = document.getElementById('api-status-text');
 const availableItems = document.getElementById('available-items'); 
@@ -169,6 +165,7 @@ const visitorsFullThisMonth = document.getElementById('visitors-full-this-month'
 const visitorsFullThisYear = document.getElementById('visitors-full-this-year');
 const visitorsFullLifetime = document.getElementById('visitors-full-lifetime'); 
 
+// Feature Elements
 const usernameInput = document.getElementById('username-input');
 const searchPlayerBtn = document.getElementById('search-player-btn');
 const playerProfileContainer = document.getElementById('player-profile-container');
@@ -192,10 +189,13 @@ window.goToPlayerSearch = (username) => {
     const input = document.getElementById('username-input');
     if(input) {
         input.value = username;
+        // Click the nav link to switch tabs
         const playerTab = document.querySelector('.nav-link[data-page="player-search"]');
         if (playerTab) {
             playerTab.click();
         }
+        
+        // Trigger the search function
         if (typeof window.searchAndDisplayPlayer === 'function') {
             window.searchAndDisplayPlayer();
         } else {
@@ -237,12 +237,10 @@ async function fetchAndCacheAvatarItems() {
     if (avatarItemsCache.size > 0) return;
     
     console.log('[Items] Fetching avatar items list...');
-    // This fetches the list of all avatar items to map ID to Image URL
     const res = await fetchData('/items/avatarItems', false, false);
     
     if (!res.error && Array.isArray(res)) {
         res.forEach(item => {
-            // Store item details in cache
             avatarItemsCache.set(item.id, item);
         });
         console.log(`[Items] Cached ${avatarItemsCache.size} avatar items.`);
@@ -261,9 +259,8 @@ function showMemberModal(data) {
     const creationDate = formatDateThai(data.creationTime);
     const lastOnline = formatDateThai(data.lastOnline);
     
-    // Donation Stats (Handle structure from API)
+    // Donation Stats
     const don = data.donated || {};
-    // Activity Stats
     const xpDur = data.xpDurations || {};
     
     // Status Badge
@@ -275,16 +272,12 @@ function showMemberModal(data) {
     // Join Message
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
 
-    // Helper for formatting numbers
     const fmt = (n) => (n || 0).toLocaleString();
-
-    // Escape username for onclick
     const safeUsername = escapeJsString(data.username);
 
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
             <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
-            <!-- Clickable Name to Search -->
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="คลิกเพื่อดูประวัติผู้เล่นแบบเต็ม">
@@ -374,8 +367,7 @@ window.viewAllQuests = async () => {
     showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching all quests...</div>');
     
     try {
-        // [UPDATED] เรียกใช้ API พร้อมกันทั้ง 2 ตัว: Quests และ Avatar Items (รอให้เสร็จทั้งคู่ก่อนแสดงผล)
-        // นี่คือจุดสำคัญที่จะทำให้รูปไอเทมแสดงผลถูกต้อง เพราะ Cache จะถูกสร้างเสร็จก่อน
+        // Parallel Fetch
         const [res, _] = await Promise.all([
             fetchData('/clans/quests/all'),
             fetchAndCacheAvatarItems() 
@@ -387,7 +379,6 @@ window.viewAllQuests = async () => {
              return;
         }
 
-        // Generate HTML for All Quests Grid
         let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
         html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
         html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
@@ -396,11 +387,8 @@ window.viewAllQuests = async () => {
             html += res.map(q => {
                 const isGem = q.purchasableWithGems;
                 let costLabel = isGem ? '<span style="color:#9333ea">💎 Gem Quest</span>' : '<span style="color:#d97706">💰 Gold Quest</span>';
-                
-                // Construct Image URL with Fallback
                 const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
                 
-                // Render Rewards Mini
                 let rewardsMini = '';
                 if(q.rewards && q.rewards.length > 0) {
                    rewardsMini = `<div style="font-size:0.7rem; color:#64748b; margin-top:5px;">${q.rewards.length} Rewards</div>`; 
@@ -415,7 +403,6 @@ window.viewAllQuests = async () => {
                                  ${rewardsMini}
                             </div>
                           </div>
-                          <!-- Pre-cache details for modal -->
                           ${(() => { questDetailsCache.set(q.id, q); return ''; })()} 
                     </div>
                 `;
@@ -424,7 +411,7 @@ window.viewAllQuests = async () => {
         
         html += '</div>';
 
-        // ADDED: Raw JSON Debug Section in Modal
+        // JSON Debug
         const rawJson = JSON.stringify(res, null, 4);
         html += `
             <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
@@ -440,9 +427,7 @@ window.viewAllQuests = async () => {
         
         html += '</div>';
         
-        // Remove loading modal
         document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-        // Show new large modal
         showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
 
     } catch(e) {
@@ -459,36 +444,33 @@ window.showQuestModal = (questId) => {
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
     
-    // Rewards - Updated Layout to Grid based on columns (calculating for 2 rows)
     let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
     if (quest.rewards && quest.rewards.length > 0) {
         const rewardsList = quest.rewards.map((r, idx) => {
-            let imgUrl = 'https://via.placeholder.com/60?text=?';
+            let imgUrl = EMBEDDED_ICONS.UNKNOWN;
             let label = r.type.replace(/_/g, ' ');
             let subLabel = `x${r.amount}`;
 
             // Add onerror fallback
-            const fallback = `this.onerror=null;this.src='${EMBEDDED_ICONS.UNKNOWN}';`;
+            let fallback = `this.onerror=null;this.src='${EMBEDDED_ICONS.UNKNOWN}';`;
 
             if (r.type === 'AVATAR_ITEM') {
                 const itemId = r.avatarItemId;
-                // Use Cached Item or Default Construction
                 imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
                 const cachedItem = avatarItemsCache.get(itemId);
                 if (cachedItem && cachedItem.imageUrl) {
-                    imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
+                    imgUrl = cachedItem.imageUrl; 
                 }
                 label = 'Avatar Item';
                 if (r.amount <= 1) subLabel = '';
             } else if (r.type === 'GOLD') {
                 imgUrl = EMBEDDED_ICONS.GOLD;
             } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = EMBEDDED_ICONS.GEM; // Use Embedded GEM
+                imgUrl = EMBEDDED_ICONS.GEM; 
             } else if (r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') {
-                imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
+                imgUrl = EMBEDDED_ICONS.ROSE; // Fixed ROSE_PACKAGE
             }
 
-            // Card Style for Grid - Image Centered, No Label Text
             return `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
                     <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
@@ -498,13 +480,10 @@ window.showQuestModal = (questId) => {
             `;
         }).join('');
 
-        // Grid Layout: Determine columns to fit into 2 rows
         const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
-        
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    // Votes
     let votesHtml = '<p style="color:#64748b;">No votes yet</p>';
     if (clanVotesCache.votes && clanVotesCache.votes[questId]) {
         const voterIds = clanVotesCache.votes[questId];
@@ -517,7 +496,6 @@ window.showQuestModal = (questId) => {
         }
     }
 
-    // Quest Modal Content - Show just image at top
     const content = `
         <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
@@ -901,64 +879,6 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
         showCustomAlert('Error', '❌ Error: ' + e.message);
     }
 };
-
-// [UPDATED] FETCH MEMBER DETAILS (CLICK HANDLER)
-async function fetchMemberDetails(clanId, playerId, canEdit) {
-    if (!playerId) return;
-
-    // Check Cache first to see if we already have detailed info (e.g. from fetchClanData)
-    let memberData = clanMembersDetailedMap.get(playerId) || {};
-    // If we have 'donated' field, it means we have detailed info.
-    const hasDetailedInfo = memberData.donated !== undefined;
-
-    if (!hasDetailedInfo) {
-        // Show initial loading modal if we don't have detailed info yet
-        showCustomInfoModal(
-            'Loading Member...', 
-            '<div style="text-align:center; padding:20px;"><div class="quest-inline-icon loading" style="font-size:40px;">sync</div><br>Fetching details...</div>'
-        );
-        
-        try {
-            // Parallel Fetch: Detailed list (to find one) + specific player (for avatar/status)
-            // Note: API doesn't support fetching one detailed member, so we fetch list or assume we are bot.
-            const [detailedRes, playerRes] = await Promise.all([
-                fetchData(`/clans/${clanId}/members/detailed`),
-                fetchData(`/players/${playerId}`)
-            ]);
-
-            // If detailed list works, find the member
-            if (!detailedRes.error && Array.isArray(detailedRes)) {
-                const found = detailedRes.find(m => m.playerId === playerId);
-                if (found) memberData = found;
-            }
-
-            // Merge with player profile (playerRes usually has equippedAvatar if detailedRes doesn't)
-            if (!playerRes.error) {
-                memberData = { ...playerRes, ...memberData };
-            }
-
-            // Close loading modal (remove last overlay)
-            const overlays = document.querySelectorAll('.modal-overlay');
-            if (overlays.length > 0) overlays[overlays.length - 1].remove();
-        } catch (e) {
-             console.error('[MemberDetails] Error:', e);
-             showCustomAlert('Error', 'Failed to load member details.');
-             return;
-        }
-    } else {
-        // We have detailed info, but let's do a quick fetch of player profile to ensure online status/avatar is fresh
-        // without blocking the UI
-        try {
-             const playerRes = await fetchData(`/players/${playerId}`);
-             if (!playerRes.error) {
-                 memberData = { ...memberData, ...playerRes };
-             }
-        } catch(e) { console.error('Background player fetch failed', e); }
-    }
-    
-    // Show actual data
-    showMemberModal(memberData);
-}
 
 // **********************************************
 // 5. UTILITY FUNCTIONS
@@ -2270,20 +2190,18 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 // ฟังก์ชันหลักสำหรับโหลดข้อมูล Quest Wiki
 async function initQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
-    // Removed searchInput functionality entirely
+    const searchInput = document.getElementById('quest-search-input');
     
-    // Start fetching avatar items mapping in background (critical for correct images)
-    fetchAndCacheAvatarItems(); 
-    
+    // ถ้าเคยโหลดมาแล้ว ไม่ต้องโหลดซ้ำ (ประหยัด API call)
     if (allQuestsCache.length > 0) {
         renderWikiGrid(allQuestsCache);
         return;
     }
 
     container.innerHTML = `
-        <div style="text-align:center; grid-column:1/-1; padding:60px;">
-            <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
-            <div style="margin-top:15px; font-size:1.1rem; color:#64748b;">กำลังดึงข้อมูลเควสและไอเทม...</div>
+        <div style="text-align:center; grid-column:1/-1; padding:40px;">
+            <div class="quest-inline-icon loading" style="font-size:40px;">sync</div>
+            <br>กำลังดึงข้อมูลเควสและไอเทม...
         </div>
     `;
 
@@ -2301,8 +2219,20 @@ async function initQuestWiki() {
         }
 
         if (Array.isArray(res)) {
-            allQuestsCache = res;
-            renderWikiGrid(allQuestsCache);
+            allQuestsCache = res; // เก็บลง Cache
+            renderWikiGrid(allQuestsCache); // สั่งแสดงผล
+
+            // เพิ่ม Event Listener สำหรับช่องค้นหา
+            if (searchInput) {
+                searchInput.addEventListener('keyup', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = allQuestsCache.filter(q => 
+                        (q.title && q.title.toLowerCase().includes(term)) || 
+                        (q.name && q.name.toLowerCase().includes(term)) // บางที API อาจส่ง name แทน title
+                    );
+                    renderWikiGrid(filtered);
+                });
+            }
         }
     } catch (e) {
         console.error(e);
@@ -2315,14 +2245,14 @@ function renderWikiGrid(quests) {
     const container = document.getElementById('quest-wiki-container');
     
     if (!quests || quests.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:#888; grid-column:1/-1; padding:20px;">ไม่พบเควส</div>`;
+        container.innerHTML = `<div style="text-align:center; color:#888; grid-column:1/-1; padding:20px;">ไม่พบเควสที่ค้นหา</div>`;
         return;
     }
 
     const html = quests.map(q => {
         // ตรวจสอบว่าเป็นเควส Gem หรือ Gold
         const isGem = q.purchasableWithGems;
-        const currencyIcon = isGem ? EMBEDDED_ICONS.GEM : EMBEDDED_ICONS.GOLD;
+        const currencyIcon = isGem ? 'diamond' : 'monetization_on';
         const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // ม่วง หรือ เหลือง
         
         // ใช้ promoImagePrimaryColor เป็นสีขอบ (ถ้ามี)
@@ -2340,8 +2270,8 @@ function renderWikiGrid(quests) {
                 <div class="quest-card-overlay">
                     <div>
                         <div class="quest-price-tag" style="color: ${currencyColor};">
-                            <img src="${currencyIcon}" style="width:16px; height:16px; margin-right:4px;">
-                            <span>${isGem ? 'Gem' : 'Gold'}</span>
+                            <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
+                            <span style="margin-left:4px;">${isGem ? 'Gem Quest' : 'Gold Quest'}</span>
                         </div>
                     </div>
                     <div style="font-size:0.8rem; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; backdrop-filter:blur(4px);">
@@ -2359,8 +2289,11 @@ function renderWikiGrid(quests) {
     const debugHtml = `
         <div class="api-console" style="grid-column: 1 / -1; margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
             <details>
-                <summary>Debug: Raw Quests Data (JSON)</summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; overflow:auto; max-height:400px;">${rawJson}</pre>
+                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
+                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
+                    Debug: Raw Quests Data (JSON)
+                </summary>
+                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
             </details>
         </div>
     `;
@@ -2368,254 +2301,7 @@ function renderWikiGrid(quests) {
     container.innerHTML = html + debugHtml;
 }
 
-window.showQuestModal = (questId) => {
-    const quest = questDetailsCache.get(questId);
-    if (!quest) return showCustomAlert('Error', 'Quest details not found.');
-
-    const title = quest.title || 'Clan Quest';
-    const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
-    
-    // Rewards - Updated Layout to Grid based on columns (calculating for 2 rows)
-    let rewardsHtml = '<p style="color:#64748b; font-style:italic;">No specific rewards</p>';
-    if (quest.rewards && quest.rewards.length > 0) {
-        const rewardsList = quest.rewards.map((r, idx) => {
-            let imgUrl = EMBEDDED_ICONS.UNKNOWN;
-            let label = r.type.replace(/_/g, ' ');
-            let subLabel = `x${r.amount}`;
-            
-            // Add onerror fallback
-            let fallback = `this.onerror=null;this.src='${EMBEDDED_ICONS.UNKNOWN}';`;
-
-            if (r.type === 'AVATAR_ITEM') {
-                const itemId = r.avatarItemId;
-                // Use Cached Item or Default Construction
-                imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${itemId}.png`; 
-                const cachedItem = avatarItemsCache.get(itemId);
-                if (cachedItem && cachedItem.imageUrl) {
-                    imgUrl = cachedItem.imageUrl; // Use API imageUrl if available
-                }
-                label = 'Avatar Item';
-                if (r.amount <= 1) subLabel = '';
-            } else if (r.type === 'GOLD') {
-                imgUrl = EMBEDDED_ICONS.GOLD;
-            } else if (r.type === 'GEM' || r.type === 'GEMS') {
-                imgUrl = EMBEDDED_ICONS.GEM; 
-            } else if (r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') {
-                imgUrl = EMBEDDED_ICONS.ROSE; // Added Rose handling
-            }
-
-            // Card Style for Grid - Image Centered, No Label Text
-            return `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
-                    <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="${fallback}" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
-                    ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
-                </div>
-            `;
-        }).join('');
-
-        // Grid Layout: Determine columns to fit into 2 rows
-        const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
-        
-        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
-    }
-
-    // Votes
-    let votesHtml = '<p style="color:#64748b;">No votes yet</p>';
-    if (clanVotesCache.votes && clanVotesCache.votes[questId]) {
-        const voterIds = clanVotesCache.votes[questId];
-        if (voterIds.length > 0) {
-            votesHtml = voterIds.map(vid => {
-                const name = clanMembersCache[vid] || 'Unknown Member';
-                return `<span class="voter-tag">${name}</span>`;
-            }).join('');
-            votesHtml = `<div style="margin-top:5px;">${votesHtml}</div>`;
-        }
-    }
-
-    // Quest Modal Content - Show just image at top
-    const content = `
-        <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
-        <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
-        ${rewardsHtml}
-        <h4 style="margin:15px 0 10px 0; color:#334155;">🗳️ Votes (${(clanVotesCache.votes?.[questId] || []).length})</h4>
-        ${votesHtml}
-    `;
-
-    showCustomInfoModal(title, content);
-};
-
-// **********************************************
-// 10. API HANDLER & CORE
-// **********************************************
-
-async function fetchData(endpoint, isStatusCheck = false, isRequest = true) {
-    const key = localStorage.getItem('wolvesville_api_key');
-    if (!key) return { error: true, message: 'Missing API Key' };
-
-    try {
-        const timestamp = new Date().getTime();
-        const url = `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent(endpoint)}&apiKey=${encodeURIComponent(key)}&_t=${timestamp}`;
-        const res = await fetch(url);
-        
-        if (res.ok) {
-            if (isRequest) sendIncrementSignal('requests');
-            return await res.json();
-        } else {
-            return { error: true, status: res.status };
-        }
-    } catch (e) {
-        return { error: true, message: e.message };
-    }
-}
-
-async function sendPayload(endpoint, method, payload) {
-    const key = localStorage.getItem('wolvesville_api_key');
-    if (!key) return { error: true, message: 'Missing API Key' };
-
-    const url = `${localServerUrl}/api/wolvesville`; 
-    
-    try {
-        const res = await fetch(url, {
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: endpoint,
-                apiKey: key,
-                method: method,
-                data: payload,
-                body: payload,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        });
-        
-        if (res.ok) {
-            sendIncrementSignal('requests');
-            const text = await res.text();
-            return text ? JSON.parse(text) : { success: true };
-        } else {
-            const txt = await res.text();
-            if (res.status === 404 && txt.includes('Cannot POST')) {
-                return { error: true, status: 404, message: 'Proxy Error: Your local server does not accept POST requests. Please add a POST handler to your server.js.' };
-            }
-            return { error: true, status: res.status, message: txt };
-        }
-    } catch (e) {
-        return { error: true, message: e.message };
-    }
-}
-
-async function fetchTotalItemsCount(force = false) {
-    if (!force && itemDataCache) return itemDataCache;
-
-    if (isFetchingItems) return { count: '...', error: false };
-    isFetchingItems = true;
-
-    try {
-        const key = localStorage.getItem('wolvesville_api_key');
-        if (!key) throw new Error('No API Key');
-
-        const response = await fetch(`${localServerUrl}/api/items/total?apiKey=${encodeURIComponent(key)}`);
-        const data = await response.json();
-
-        if (data.error) {
-             itemDataCache = { count: '-', error: true };
-        } else {
-             itemDataCache = { count: data.count, error: false };
-             console.log(`[Items] Count loaded: ${data.count} (Source: ${data.fromCache ? 'Server Cache' : 'Live API'})`);
-        }
-    } catch (e) {
-        console.error('[Items] Error fetching total:', e);
-        itemDataCache = { count: '-', error: true };
-    }
-    
-    isFetchingItems = false;
-    return itemDataCache;
-}
-
-async function fetchAndDisplayStatsOnly() {
-    try {
-        const res = await fetch(`${localServerUrl}/api/stats`);
-        if (res.ok) {
-            const stats = await res.json();
-            const req = stats.requests;
-            const vis = stats.visitors;
-            
-            if(requestsTodayOnly) requestsTodayOnly.textContent = req.count_today.toLocaleString();
-            
-            if(requestsFullToday) requestsFullToday.textContent = req.count_today.toLocaleString();
-            if(requestsFullThisMonth) requestsFullThisMonth.textContent = req.count_month.toLocaleString();
-            if(requestsFullThisYear) requestsFullThisYear.textContent = req.count_year.toLocaleString();
-            if(requestsFullLifetime) requestsFullLifetime.textContent = (req.count_lifetime||0).toLocaleString();
-
-            if(visitorsFullToday) visitorsFullToday.textContent = vis.count_today.toLocaleString();
-            if(visitorsFullThisMonth) visitorsFullThisMonth.textContent = vis.count_month.toLocaleString();
-            if(visitorsFullThisYear) visitorsFullThisYear.textContent = vis.count_year.toLocaleString();
-            if(visitorsFullLifetime) visitorsFullLifetime.textContent = (vis.count_lifetime||0).toLocaleString();
-        }
-    } catch (e) { console.error(e); }
-}
-
-function isUUID(str) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-}
-
-function formatMessage(msg) {
-    return msg ? msg.replace(/\n/g, '<br>') : 'ไม่มีข้อความส่วนตัว';
-}
-
-function linkify(text) {
-    if (!text) return '';
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, function(url) {
-        return '<a href="' + url + '" target="_blank">' + url + '</a>';
-    });
-}
-
-function formatDateThai(dateString) {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('th-TH', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit'
-    });
-}
-
-function getQuestResetTimeDisplay() {
-    const now = new Date();
-    let reset = new Date();
-    
-    const day = now.getDay();
-    const diff = (day < 1) ? 1 : (1 + 7 - day) % 7; 
-    
-    const isTodayReset = diff === 0 && now.getHours() < 7;
-    
-    reset.setDate(now.getDate() + (isTodayReset ? 0 : diff)); 
-    reset.setHours(7, 0, 0, 0); 
-
-    if (reset < now) {
-        reset.setDate(reset.getDate() + (diff === 0 ? 7 : 0));
-        if (reset < now) reset.setDate(reset.getDate() + 7);
-    }
-
-    const timeDiff = reset - now;
-    const d = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-
-    return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">Refreshes in: ${d}d ${h}h ${m}m (Mon 07:00)</span>`;
-}
-
-function sendIncrementSignal(type) {
-    fetch(`${localServerUrl}/api/stats/increment/${type}`, { method: 'POST' })
-        .then(res => { if (res.ok) fetchAndDisplayStatsOnly(); })
-        .catch(console.error);
-}
-
-
-// **********************************************
-// 11. INITIALIZATION
-// **********************************************
-
+// Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     sendIncrementSignal('visitors');
     fetchAndDisplayData();
