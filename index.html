@@ -199,41 +199,6 @@
                     <button id="save-api-key-btn">บันทึก Key</button>
                     <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
                 </div>
-
-                <!-- ระบบเชื่อมต่อ GitHub JSON -->
-                <div class="settings-group" style="margin-top: 30px; max-width: 800px;">
-                    <h3><span class="material-icons" style="vertical-align: middle;">data_object</span> แก้ไขฐานข้อมูล (GitHub JSON)</h3>
-                    <p style="margin-bottom: 15px;">ตั้งค่าเพื่อดึงและแก้ไขไฟล์ JSON บน GitHub ของคุณโดยตรง</p>
-                    
-                    <div style="text-align: left; margin-bottom: 15px;">
-                        <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">GitHub Personal Access Token (Classic)</label>
-                        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxx..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px; font-family: monospace;">
-                    </div>
-                    
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 200px; text-align: left;">
-                            <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">Repository (e.g., user/repo)</label>
-                            <input type="text" id="gh-repo-input" placeholder="username/my-database" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px;">
-                        </div>
-                        <div style="flex: 1; min-width: 200px; text-align: left;">
-                            <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">File Path (e.g., data.json)</label>
-                            <input type="text" id="gh-path-input" placeholder="data/config.json" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px;">
-                        </div>
-                    </div>
-
-                    <button id="gh-load-btn" style="width: 100%; background: #0ea5e9; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1rem;">
-                        <span class="material-icons" style="font-size: 20px;">cloud_download</span> โหลดข้อมูลจาก GitHub
-                    </button>
-
-                    <div style="text-align: left; margin-bottom: 15px;">
-                        <label style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">JSON Content Editor</label>
-                        <textarea id="gh-content-input" rows="15" style="width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 5px; font-family: 'Consolas', monospace; font-size: 0.9rem; resize: vertical; background: #1e1e1e; color: #ce9178; box-sizing: border-box;" placeholder="เนื้อหาไฟล์ JSON จะแสดงที่นี่... (กรุณากดโหลดข้อมูลก่อน)"></textarea>
-                    </div>
-
-                    <button id="gh-save-btn" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1rem;">
-                        <span class="material-icons" style="font-size: 20px;">cloud_upload</span> บันทึกและ Commit ไปยัง GitHub
-                    </button>
-                </div>
             </section>
         </div>
     </div>
