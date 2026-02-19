@@ -13,6 +13,7 @@ let avatarItemsCache = new Map();
 let playerAvatarCache = new Map(); 
 let clanMembersDetailedMap = new Map(); 
 let questDetailsCache = new Map(); 
+let clanVotesCache = {}; 
 let clanMembersCache = {}; 
 let allQuestsCache = []; 
 
@@ -363,7 +364,6 @@ window.viewAllQuests = async () => {
                 const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
                 const rewardCount = q.rewards ? q.rewards.length : 0;
 
-                // CLEAN STYLE FOR MODAL LIST
                 return `
                     <div class="quest-card-large" style="min-height: 140px; cursor: pointer;" onclick="window.showQuestModal('${q.id}')">
                         <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 90px;">
@@ -408,7 +408,7 @@ window.viewAllQuests = async () => {
     }
 };
 
-// Function to Show Quest Details Modal WITHOUT Votes
+// Function to Show Quest Details Modal WITH Votes
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
     if (!quest) return showCustomAlert('Error', 'Quest details not found.');
@@ -455,12 +455,22 @@ window.showQuestModal = (questId) => {
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    // REMOVED VOTES HTML SECTION ENTIRELY
+    // เอาประวัติคนโหวตกลับมา
+    let votesHtml = '<p style="color:#64748b; font-style:italic;">ยังไม่มีการโหวต</p>';
+    if (clanVotesCache && clanVotesCache.votes && clanVotesCache.votes[questId]) {
+        const voterIds = clanVotesCache.votes[questId];
+        if (voterIds.length > 0) {
+            const voterNames = voterIds.map(vid => clanMembersCache[vid] || 'Unknown Member').join(', ');
+            votesHtml = `<div style="margin-top:5px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">${voterNames}</div>`;
+        }
+    }
 
     const content = `
         <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
         ${rewardsHtml}
+        <h4 style="margin:15px 0 10px 0; color:#334155; border-top:1px dashed #eee; padding-top:15px;">🗳️ Votes (${(clanVotesCache?.votes?.[questId] || []).length})</h4>
+        ${votesHtml}
     `;
 
     showCustomInfoModal(title, content);
@@ -486,7 +496,7 @@ window.sendClanAnnouncement = async (clanId) => {
             if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
             showCustomAlert('Error', '❌ Failed to post announcement: ' + errorMsg);
         } else {
-            input.value = ''; // Clear input
+            input.value = ''; 
             showCustomAlert('Success', '✅ Announcement posted successfully!');
             fetchClanData(clanId, true, true); 
         }
@@ -517,7 +527,7 @@ window.sendClanChatMessage = async (clanId) => {
             if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
             showCustomAlert('Error', '❌ Failed to send message: ' + errorMsg);
         } else {
-            input.value = ''; // Clear input
+            input.value = ''; 
             input.focus();
             fetchClanData(clanId, true, true);
         }
@@ -1367,7 +1377,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     let blockedMembers = { error: true };
     let availableQuests = { error: true };
-    let votesData = { error: true }; // เอาระบบโหวตกลับมา
+    let votesData = { error: true }; // เอาระบบโหวตกลับมาใส่ตรงนี้
 
     if(isMyClan) {
         updateProgress('Fetching Blocklist...');
@@ -1446,7 +1456,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('Rendering Dashboard...');
     setTimeout(() => {
-        // ส่งข้อมูลการโหวตเข้าไปประมวลผล
+        // ส่ง votesData เข้าไปใน renderClanDashboard
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
 }
@@ -1606,7 +1616,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
             const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-            const currencyColor = isGem ? '#a855f7' : '#d97706';
+            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
             
             let buyCost = 0;
             if (isGem) {
@@ -1641,7 +1651,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 `;
             }
 
-            // CLEAN WHITE CARD
+            // CLEAN WHITE CARD (WITH VOTES BADGE)
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
                     <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
@@ -1779,39 +1789,39 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const safeUsername = escapeJsString(m.username);
 
             return `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; padding:10px; border-radius:12px; border:1px solid #e2e8f0; position:relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-height:80px;" title="${label}">
-                    <div style="position:absolute; top:0; right:0; background:#64748b; color:white; font-size:0.65rem; padding:2px 6px; border-bottom-left-radius:8px; font-weight:bold;">T${idx+1}</div>
-                    <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="${fallback}" style="width:48px; height:48px; object-fit:contain; margin-top:5px;">
-                    ${subLabel ? `<div style="font-size:0.75rem; font-weight:bold; color:#475569; margin-top:5px;">${subLabel}</div>` : ''}
+                <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})" title="Click for details">
+                    <div id="${avatarElemId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
+                    <div class="member-details">
+                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" 
+                                  onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')" 
+                                  title="Search Player">
+                                ${m.username || 'Unknown'}
+                            </span> 
+                            ${roleBadge}
+                            ${questIconHtml}
+                            ${adminActionsHtml}
+                        </div>
+                        <div class="member-meta">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span>
+                            ${statusText}
+                            ${flairHtml}
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
-
-        const colCount = Math.max(1, Math.ceil(quest.rewards.length / 2));
-        rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    let votesHtml = '<p style="color:#64748b; font-style:italic;">ยังไม่มีการโหวต</p>';
-    if (clanVotesCache && clanVotesCache.votes && clanVotesCache.votes[questId]) {
-        const voterIds = clanVotesCache.votes[questId];
-        if (voterIds.length > 0) {
-            const voterNames = voterIds.map(vid => clanMembersCache[vid] || 'Unknown Member').join(', ');
-            votesHtml = `<div style="margin-top:5px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">${voterNames}</div>`;
-        }
-    }
-
-    const content = `
-        <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
-        <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
-        ${rewardsHtml}
-        <h4 style="margin:15px 0 10px 0; color:#334155; border-top:1px dashed #eee; padding-top:15px;">🗳️ Votes (${(clanVotesCache?.votes?.[questId] || []).length})</h4>
-        ${votesHtml}
-    `;
-
-    showCustomInfoModal(title, content);
-};
-
-window.sendClanAnnouncement = async (clanId) => {
+    // 5. CHAT
+    let chatHtml = '<div style="padding:15px; color:#ccc;">(No permission to view chat)</div>';
+    if (!chat.error && Array.isArray(chat)) {
+        chatHtml = chat.reverse().map(msg => {
+            const isBot = !!msg.playerBotId;
+            const username = isBot ? `[BOT] ${msg.playerBotOwnerUsername}` : (msg.player?.username || memberMap[msg.playerId] || 'Unknown');
+            const botStyle = isBot ? 'background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;' : '';
+            
+            let content = '';
             if (msg.emojiId) {
                 const emojiData = globalEmojiMap.get(msg.emojiId);
                 const emojiUrl = emojiData?.preview || `https://cdn.wolvesville.com/emojis/previews/emoji_${msg.emojiId}.png`; 
@@ -2242,5 +2252,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelector('.nav-link[data-page="dashboard"]')?.click();
 });
+
+window.sendClanAnnouncement = async (clanId) => {
+    const input = document.getElementById('clan-announcement-input');
+    if (!input) return;
+    
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    try {
+        console.log(`[Announcement] Sending to clan ${clanId}:`, msg);
+        input.disabled = true;
+        
+        const res = await sendPayload(`/clans/${clanId}/announcements`, 'POST', { message: msg });
+        
+        input.disabled = false;
+        
+        if (res.error) {
+            let errorMsg = res.message || 'Unknown error';
+            if(res.status === 429) errorMsg = 'Too many requests. Please wait a moment.';
+            showCustomAlert('Error', '❌ Failed to post announcement: ' + errorMsg);
+        } else {
+            input.value = ''; 
+            showCustomAlert('Success', '✅ Announcement posted successfully!');
+            fetchClanData(clanId, true, true); 
+        }
+    } catch (e) {
+        console.error('[Announcement] Error:', e);
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+        if(input) input.disabled = false;
+    }
+};
 
 console.log('--- script.js: Loading Finished ---');
