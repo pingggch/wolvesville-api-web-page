@@ -953,3 +953,10 @@ details summary:active { transform: scale(0.99); }
     background: #ef4444;
     color: white;
 }
+
+/* Loading Spinner - Generic */
+.loading-spinner {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
