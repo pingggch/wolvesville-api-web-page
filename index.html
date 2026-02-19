@@ -36,14 +36,20 @@
                             <span class="nav-text">จัดการแคลน</span>
                         </a>
                     </li>
-                    <!-- NEW MENU ITEM -->
                     <li>
                         <a href="#" class="nav-link" data-page="quest-wiki">
                             <span class="material-icons">menu_book</span>
                             <span class="nav-text">Quest Wiki</span>
                         </a>
                     </li>
+                    <!-- NEW: DONATE MENU -->
                     <li>
+                        <a href="#" class="nav-link" data-page="donate">
+                            <span class="material-icons">favorite</span>
+                            <span class="nav-text">สนับสนุน (Donate)</span>
+                        </a>
+                    </li>
+                    <li style="margin-top: auto;"> <!-- Push settings to bottom if needed -->
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
                             <span class="nav-text">ตั้งค่า</span>
@@ -57,7 +63,7 @@
             
             <!-- DASHBOARD PAGE -->
             <section id="dashboard" class="page-content">
-                <h2>ภาพรวม API</h2>
+                <h2><span class="material-icons" style="vertical-align: bottom; font-size: 32px; color: var(--primary-color); margin-right: 8px;">space_dashboard</span> ภาพรวม API</h2>
                 <div class="stats-grid stats-grid-row1">
                     <div class="stat-card api-today-card">
                         <span class="material-icons">trending_up</span>
@@ -67,14 +73,14 @@
                         </div>
                     </div>
                     <div class="stat-card item-card">
-                        <span class="material-icons">inventory</span>
+                        <span class="material-icons">inventory_2</span>
                         <div class="stat-info">
                             <p class="stat-label">ไอเทมในเกม (จาก API)</p>
                             <h3 class="stat-value" id="available-items">...</h3>
                         </div>
                     </div>
                     <div class="stat-card api-status-card">
-                        <span class="material-icons">link</span>
+                        <span class="material-icons">wifi_tethering</span>
                         <div class="stat-info">
                             <p class="stat-label">สถานะการเชื่อมต่อ API</p>
                             <div class="status-indicator">
@@ -113,13 +119,14 @@
             <section id="player-search" class="page-content">
                 <h2>ค้นหาข้อมูลผู้เล่น</h2>
                 <div class="search-container">
-                    <input type="text" id="username-input" placeholder="ชื่อผู้ใช้ หรือ Player ID...">
+                    <span class="material-icons" style="color: var(--text-muted); margin-left: 10px;">search</span>
+                    <input type="text" id="username-input" placeholder="พิมพ์ชื่อผู้ใช้ หรือ Player ID...">
                     <button id="search-player-btn">ค้นหา</button>
                 </div>
                 <div id="player-profile-container">
-                    <div style="text-align:center; color:#888; margin-top:40px;">
-                        <span class="material-icons" style="font-size:48px; display:block; margin-bottom:10px;">search</span>
-                        กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา
+                    <div class="empty-state">
+                        <span class="material-icons">person_search</span>
+                        <p>กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา</p>
                     </div>
                 </div>
             </section>
@@ -128,39 +135,71 @@
             <section id="clan-manager" class="page-content">
                 <h2>จัดการแคลน (Clan Manager)</h2>
                 <div class="search-container">
-                    <input type="text" id="clan-name-input" placeholder="ชื่อแคลน (หรือกดปุ่ม 'แคลนของฉัน')...">
+                    <span class="material-icons" style="color: var(--text-muted); margin-left: 10px;">shield</span>
+                    <input type="text" id="clan-name-input" placeholder="ชื่อแคลน หรือ Clan ID...">
                     <button id="search-clan-btn">ค้นหา</button>
-                    <button id="my-clan-btn" style="background:#eab308; margin-left:10px;">⭐ แคลนของฉัน</button>
+                    <button id="my-clan-btn" class="btn-warning">⭐ แคลนของฉัน</button>
                 </div>
                 <div id="clan-content-container">
-                    <div style="text-align:center; color:#888; margin-top:40px;">
-                        <span class="material-icons" style="font-size:48px; display:block; margin-bottom:10px;">shield</span>
-                        ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล
+                    <div class="empty-state">
+                        <span class="material-icons">admin_panel_settings</span>
+                        <p>ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล</p>
                     </div>
                 </div>
             </section>
 
-            <!-- NEW: QUEST WIKI PAGE -->
+            <!-- QUEST WIKI PAGE -->
             <section id="quest-wiki" class="page-content">
                 <h2>📚 Quest Wiki (All Quests)</h2>
-                <!-- Search Box Removed Here -->
-                
                 <div id="quest-wiki-container" class="quest-grid">
-                    <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
-                        <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
-                        <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลเควส...</div>
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <span class="material-icons loading-spinner">sync</span>
+                        <p>กำลังโหลดข้อมูลเควสจากเซิร์ฟเวอร์...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW: DONATE PAGE -->
+            <section id="donate" class="page-content">
+                <h2>สนับสนุนการพัฒนา (Donate)</h2>
+                <div class="donate-container">
+                    <div class="donate-card">
+                        <div class="donate-header-bg"></div>
+                        <span class="material-icons donate-icon">volunteer_activism</span>
+                        <h3 class="donate-title">สนับสนุนเซิร์ฟเวอร์และนักพัฒนา</h3>
+                        <p class="donate-desc">หากคุณชื่นชอบ Wolvesville API Dashboard นี้ สามารถช่วยสนับสนุนค่าเซิร์ฟเวอร์ ค่ากาแฟ เพื่อให้ระบบพัฒนาต่อไปได้ครับ ❤️</p>
+                        
+                        <div class="donate-methods">
+                            <!-- ทรูมันนี่ หรือ พร้อมเพย์ 1 -->
+                            <div class="donate-method">
+                                <img src="https://via.placeholder.com/200x200?text=QR+Code+PromptPay" alt="PromptPay" class="qr-code">
+                                <h4>พร้อมเพย์ (PromptPay)</h4>
+                                <p class="account-num">08x-xxx-xxxx</p>
+                                <span class="account-name">ชื่อบัญชี: นาย/นางสาว xxx</span>
+                            </div>
+                            
+                            <!-- ทรูมันนี่ หรือ พร้อมเพย์ 2 -->
+                            <div class="donate-method">
+                                <img src="https://via.placeholder.com/200x200?text=QR+Code+TrueMoney" alt="TrueMoney" class="qr-code">
+                                <h4>ทรูมันนี่ (TrueMoney)</h4>
+                                <p class="account-num">08x-xxx-xxxx</p>
+                                <span class="account-name">โอนเข้าวอลเล็ท</span>
+                            </div>
+                        </div>
+                        <div class="thank-you-msg">ขอขอบคุณทุกการสนับสนุนที่มีให้เสมอมาครับ 🙏</div>
                     </div>
                 </div>
             </section>
 
             <!-- SETTINGS PAGE -->
             <section id="settings" class="page-content">
-                <h2>ตั้งค่า</h2>
+                <h2>ตั้งค่าระบบ</h2>
                 <div class="settings-group">
+                    <span class="material-icons" style="font-size: 48px; color: var(--primary-color); margin-bottom: 15px;">vpn_key</span>
                     <h3>Wolvesville API Key</h3>
-                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
+                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่เพื่อใช้งานฟีเจอร์ขั้นสูง</p>
                     <input type="text" id="api-key-input" placeholder="Paste your API Key here...">
-                    <button id="save-api-key-btn">บันทึก Key</button>
+                    <button id="save-api-key-btn">บันทึกคีย์ (Save Key)</button>
                     <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
                 </div>
             </section>
