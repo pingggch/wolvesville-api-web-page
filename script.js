@@ -1491,15 +1491,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             ? (1125 + (175 * activeParticipants)) 
             : (2000 + (500 * activeParticipants));
 
-        // ค่า XP ปัจจุบันในด่านนั้นๆ
-        let currentXpInTier = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
-        
-        // ป้องกันกรณี XP เกิน (เพื่อไม่ให้หลอดทะลุ)
-        if (currentXpInTier > targetXp) currentXpInTier = targetXp;
-
         const currentTierIndex = (qData.tier !== undefined ? qData.tier : (qInfo.tier || 0));
         const displayTier = currentTierIndex + 1;
+
+        // XP รวมทั้งหมดที่ API ส่งมา (มันจะบวกสะสมไปเรื่อยๆ ทุกด่าน)
+        let totalXp = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
         
+        // หักลบ XP ของด่านที่ผ่านมาแล้ว เพื่อให้เหลือแค่เศษของด่านปัจจุบัน
+        let currentXpInTier = totalXp - (currentTierIndex * targetXp);
+
+        // ป้องกันกรณีคำนวณผิดพลาดแล้วค่าติดลบ หรือค่าเกินเป้าหมาย (กันหลอดทะลุ)
+        if (currentXpInTier < 0) currentXpInTier = 0;
+        if (currentXpInTier > targetXp) currentXpInTier = targetXp;
+
         const actionCost = 300 + (30 * activeParticipants);
 
         let rewardsTrackHtml = '';
