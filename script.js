@@ -484,24 +484,10 @@ window.showQuestModal = (questId) => {
         rewardsHtml = `<div style="display:grid; grid-template-columns:repeat(${colCount}, 1fr); gap:8px; margin-top:5px;">${rewardsList}</div>`;
     }
 
-    let votesHtml = '<p style="color:#64748b;">No votes yet</p>';
-    if (clanVotesCache.votes && clanVotesCache.votes[questId]) {
-        const voterIds = clanVotesCache.votes[questId];
-        if (voterIds.length > 0) {
-            votesHtml = voterIds.map(vid => {
-                const name = clanMembersCache[vid] || 'Unknown Member';
-                return `<span class="voter-tag">${name}</span>`;
-            }).join('');
-            votesHtml = `<div style="margin-top:5px;">${votesHtml}</div>`;
-        }
-    }
-
     const content = `
         <img src="${imageUrl}" referrerpolicy="no-referrer" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; display:block;">
         <h4 style="margin-bottom:10px; color:#334155;">🎁 Rewards</h4>
         ${rewardsHtml}
-        <h4 style="margin:15px 0 10px 0; color:#334155;">🗳️ Votes (${(clanVotesCache.votes?.[questId] || []).length})</h4>
-        ${votesHtml}
     `;
 
     showCustomInfoModal(title, content);
@@ -1603,11 +1589,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         </div>
                     </div>
                 </div>
+                
                 <div class="active-quest-body">
                     <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
                         <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> 
                         Quest Rewards Progression
                     </h4>
+
                     ${rewardsTrackHtml}
                     ${actionsHtml}
                 </div>
@@ -1615,21 +1603,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         `;
     } 
 
-    // 2. AVAILABLE QUESTS (ORIGINAL OVERLAY STYLE)
+    // 2. AVAILABLE QUESTS
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         
-        let shuffleVotesHtml = '';
-        if (!votesData.error && votesData.shuffleVotes && Array.isArray(votesData.shuffleVotes) && votesData.shuffleVotes.length > 0) {
-             const voterIds = votesData.shuffleVotes;
-             const voterNames = voterIds.map(vid => memberMap[vid] || 'Unknown').join(', ');
-             shuffleVotesHtml = `
-                <div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;">
-                    <span style="font-weight:bold;">🗳️ Shuffle Votes (${voterIds.length}):</span> ${voterNames}
-                </div>
-             `;
-        }
-
         availableQuestsHtml = `
         <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
             <div style="display:flex; justify-content:space-between; align-items:start;">
@@ -1646,17 +1623,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> Shuffle (500 💰)
                         </button>
                     </div>
-                    ${shuffleVotesHtml}
                 </div>
             </div>
         </div>
-        <div class="quest-grid">
         `;
+        
+        availableQuestsHtml += '<div class="quest-grid">';
         
         availableQuestsHtml += availableQuests.map(q => {
             const isGem = q.purchasableWithGems;
-            const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d'; // สว่างขึ้นสำหรับพื้นหลังดำ
             
             let buyCost = 0;
             if (isGem) {
@@ -1665,25 +1640,12 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 buyCost = 2000 + (400 * participatingMemberCount);
             }
 
-            let voteHtml = '';
-            if (!votesData.error && votesData.votes && votesData.votes[q.id]) {
-                const voterIds = votesData.votes[q.id]; 
-                const voteCount = voterIds.length;
-                if (voteCount > 0) {
-                    voteHtml = `
-                        <div class="quest-votes-badge">
-                            <span class="material-icons" style="font-size:14px;">how_to_vote</span> ${voteCount}
-                        </div>
-                    `;
-                }
-            }
-
             const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
             let claimBtn = '';
             if (!hasActiveQuest) {
                 claimBtn = `
                     <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center;">
+                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
                         <span class="material-icons" style="font-size:18px; margin-right:4px;">shopping_cart</span> Buy
                     </button>
                 `;
@@ -1691,15 +1653,16 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                    <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
-                    ${voteHtml}
-                    <div class="quest-card-overlay">
-                        <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid rgba(255,255,255,0.15);">
-                            <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
-                            <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
+                      <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
+                      <div class="quest-card-overlay">
+                        <div>
+                             <div class="quest-price-tag" style="color: ${isGem ? '#d8b4fe' : '#fcd34d'};">
+                                <span class="material-icons" style="font-size:16px;">${isGem ? 'diamond' : 'monetization_on'}</span>
+                                <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
+                             </div>
                         </div>
                         ${claimBtn}
-                    </div>
+                      </div>
                 </div>
             `;
         }).join('');
