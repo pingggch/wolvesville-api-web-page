@@ -79,7 +79,7 @@ body {
     height: 100%;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
-    padding: 0; /* Remove padding to perfectly control centering via margins */
+    padding: 0; /* ลบ padding ออกเพื่อใช้ Margin ควบคุมให้เป๊ะ */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -112,23 +112,29 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    height: 90px; /* Give some headroom like in the image */
+    height: 90px; /* เพิ่มพื้นที่ด้านบนให้สวยงามคล้ายภาพต้นฉบับ */
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 .hamburger-btn {
-    background: #1e293b; /* Dark grayish-blue background */
+    background: #1e293b; /* สีเทาเข้มเหมือนในรูป */
     border: none;
     color: white;
-    width: 50px;
-    height: 50px;
-    border-radius: 16px; /* ปรับให้ขอบมน 16px เท่ากับปุ่มเมนูเป๊ะๆ */
+    width: 52px;
+    height: 52px;
+    border-radius: 16px; /* ขอบมนเท่ากับเมนู */
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 15px; /* (80px sidebar - 50px btn) / 2 = 15px margin to center perfectly */
+    margin: 0 14px; /* ล็อกระยะห่างให้ตรงกลางเป๊ะ (80 - 52)/2 = 14px */
+    padding: 0;
+}
+
+.app-container.sidebar-pushed .hamburger-btn {
+    margin: 0 14px; /* ไม่กระโดดตอนกางเมนู */
 }
 
 .hamburger-btn:hover { 
@@ -140,7 +146,7 @@ body {
 .hamburger-btn:active { transform: translateY(1px) scale(0.95); }
 
 .hamburger-btn .material-icons {
-    font-size: 24px; /* ปรับให้ขนาด 24px เท่ากับไอคอนเมนูเป๊ะๆ (เดิม 26px) */
+    font-size: 24px; /* ขนาดไอคอนเท่ากันเป๊ะ */
     transition: transform 0.2s ease;
 }
 
@@ -148,37 +154,40 @@ nav {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding-bottom: 25px; /* Space at bottom for settings */
+    padding-bottom: 25px; /* พื้นที่เว้นด้านล่าง */
 }
 
 nav ul {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Generous gap between icons */
+    gap: 8px; /* ระยะห่างระหว่างปุ่ม */
     height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    color: #64748b; /* Inactive grey icon */
+    justify-content: flex-start; /* บังคับชิดซ้ายเพื่อไม่ให้ไอคอนขยับ */
+    color: #64748b;
     text-decoration: none;
     border-radius: 16px; 
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    width: 50px; /* Same width as hamburger when collapsed */
-    height: 50px;
-    margin-left: 15px; /* Centers the box */
-    padding-left: 13px; /* Center the 24px icon inside 50px box ((50-24)/2 = 13) */
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 52px; /* ขนาดเท่าแฮมเบอร์เกอร์ */
+    height: 52px;
+    margin: 0 14px; /* ระยะขอบเท่าแฮมเบอร์เกอร์เป๊ะ */
+    padding-left: 14px; /* ระยะไอคอนให้อยู่ตรงกลาง (52 - 24)/2 = 14px */
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
 }
 
 .app-container.sidebar-pushed .nav-link {
-    width: calc(100% - 30px); /* Expand width while keeping 15px left/right margin */
-    /* Icon stays EXACTLY in place because margin-left and padding-left don't change */
+    width: calc(100% - 28px); /* ขยายความกว้างเต็มที่โดยเหลือขอบไว้ 14px */
+    margin: 0 14px; /* ล็อกไว้ให้เท่าเดิม */
+    padding-left: 14px; /* ไอคอนไม่กระโดด 100% */
 }
 
 .nav-link:hover { 
@@ -868,7 +877,7 @@ details summary:active { transform: scale(0.99); }
         width: 100%; 
         max-width: 100%; 
     }
-    .app-container.sidebar-pushed .sidebar { width: var(--sidebar-width); padding: 20px; }
+    .app-container.sidebar-pushed .sidebar { width: var(--sidebar-width); padding: 0; }
     .app-container.sidebar-pushed .main-content {
         margin-left: 0;
         width: 100%;
