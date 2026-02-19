@@ -91,11 +91,13 @@ body {
     margin-left: var(--sidebar-collapsed);
     padding: 40px;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    max-width: 1600px;
+    /* เอา max-width: 1600px ออก เพื่อให้เนื้อหาขยายเต็มจอด้านขวา */
+    width: calc(100% - var(--sidebar-collapsed));
 }
 
 .app-container.sidebar-pushed .main-content {
     margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
 }
 
 /* Navigation Menu */
@@ -350,6 +352,7 @@ h2 {
     outline: none;
     background: transparent;
     font-family: inherit;
+    min-width: 0;
 }
 
 button {
