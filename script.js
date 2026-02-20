@@ -354,6 +354,127 @@ function showMemberModal(data) {
     showCustomInfoModal(data.username || 'Member Details', content);
 }
 
+// Function to Show Role Modal (New)
+window.showRoleModal = (roleId) => {
+    const role = rolesCache.get(roleId);
+    if (!role) return showCustomAlert('Error', 'Role details not found.');
+
+    const imgUrl = role.image?.url || EMBEDDED_ICONS.UNKNOWN;
+    
+    let advancedHtml = '';
+    if (advancedRolesMappingCache[role.id] && advancedRolesMappingCache[role.id].length > 0) {
+        const advRoles = advancedRolesMappingCache[role.id].map(id => {
+            const r = rolesCache.get(id);
+            return r ? r.name : id.replace(/-/g, ' ');
+        }).join(', ');
+        advancedHtml = `<div style="margin-top:15px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🌟 Advanced Roles:</strong> ${advRoles}</div>`;
+    }
+
+    let randomHtml = '';
+    if (randomRolesMappingCache[role.id] && randomRolesMappingCache[role.id].length > 0) {
+         const subRoles = randomRolesMappingCache[role.id].map(id => {
+            const r = rolesCache.get(id);
+            return r ? r.name : id.replace(/-/g, ' ');
+         }).join(', ');
+         randomHtml = `<div style="margin-top:10px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🎲 Can spawn as:</strong> ${subRoles}</div>`;
+    }
+
+    let isRankedExcluded = rankedRandomExcludedRolesCache.includes(role.id) ? 
+        `<span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; margin-left:5px;">Ranked Excluded</span>` : '';
+
+    let teamColor = '#64748b'; 
+    if(role.team === 'VILLAGER') teamColor = '#3b82f6';
+    else if(role.team === 'WEREWOLF') teamColor = '#ef4444';
+    else if(role.team === 'SOLO') teamColor = '#f59e0b';
+    else if(role.team === 'RANDOM') teamColor = '#a855f7';
+
+    const content = `
+        <div style="text-align:center; padding:10px;">
+            <img src="${imgUrl}" referrerpolicy="no-referrer" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); margin-bottom:15px;" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
+            <h2 style="margin:0 0 10px 0; color:#1e293b; font-size:1.8rem;">${role.name}</h2>
+            <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
+                <span style="background:${teamColor}20; color:${teamColor}; border:1px solid ${teamColor}50; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Team: ${role.team}</span>
+                <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Aura: ${role.aura}</span>
+                ${isRankedExcluded}
+            </div>
+        </div>
+        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-top:20px; text-align:center; font-size:1rem; color:#334155; line-height:1.6;">
+            "${role.description}"
+        </div>
+        ${advancedHtml}
+        ${randomHtml}
+    `;
+    showCustomInfoModal('Role Details', content);
+};
+
+// Function to View All Roles (New)
+async function initRoleWiki() {
+    const container = document.getElementById('role-wiki-container');
+    const searchInput = document.getElementById('role-search-input');
+    
+    if (rolesCache.size === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; color:#888; padding:60px;">
+                <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
+                <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลบทบาท...</div>
+            </div>
+        `;
+        await fetchAndCacheRoles();
+    }
+
+    if (rolesCache.size === 0) {
+        container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">ไม่สามารถโหลดข้อมูลบทบาทได้</div>`;
+        return;
+    }
+
+    const rolesArray = Array.from(rolesCache.values());
+    renderRoleGrid(rolesArray);
+
+    if (searchInput) {
+        searchInput.onkeyup = (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = rolesArray.filter(r => 
+                (r.name && r.name.toLowerCase().includes(term)) || 
+                (r.team && r.team.toLowerCase().includes(term)) ||
+                (r.id && r.id.toLowerCase().includes(term))
+            );
+            renderRoleGrid(filtered);
+        };
+    }
+}
+
+function renderRoleGrid(roles) {
+    const container = document.getElementById('role-wiki-container');
+    
+    if (!roles || roles.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#888; padding:40px;">ไม่พบบทบาทที่ค้นหา</div>`;
+        return;
+    }
+
+    const html = roles.map(r => {
+        const imgUrl = r.image?.url || EMBEDDED_ICONS.UNKNOWN;
+        
+        let teamColor = '#64748b'; 
+        if(r.team === 'VILLAGER') teamColor = '#3b82f6';
+        else if(r.team === 'WEREWOLF') teamColor = '#ef4444';
+        else if(r.team === 'SOLO') teamColor = '#f59e0b';
+        else if(r.team === 'RANDOM') teamColor = '#a855f7';
+
+        return `
+            <div class="quest-card-large" style="cursor:pointer; min-height:160px; justify-content:flex-start;" onclick="window.showRoleModal('${r.id}')">
+                <div style="background:${teamColor}; width:100%; height:8px; border-top-left-radius:12px; border-top-right-radius:12px; position:absolute; top:0; left:0;"></div>
+                <img src="${imgUrl}" referrerpolicy="no-referrer" style="height:70px; object-fit:contain; margin:25px auto 10px auto; display:block; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));" loading="lazy" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
+                <div style="text-align:center; padding:0 10px 15px 10px; width:100%;">
+                    <strong style="font-size:1.05rem; color:#1e293b; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.name}">${r.name}</strong>
+                    <div style="font-size:0.75rem; font-weight:bold; color:${teamColor}; margin-top:4px;">${r.team}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">${html}</div>`;
+}
+
 // Function to View All Clan Quests (Wiki)
 window.viewAllQuests = async () => {
     showCustomInfoModal('Loading...', '<div style="text-align:center; padding:40px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">Fetching all quests...</div></div>');
@@ -2298,10 +2419,128 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
 }
 
-// **********************************************
-// 9. QUEST WIKI LOGIC
-// **********************************************
+// Function to Show Role Modal (New)
+window.showRoleModal = (roleId) => {
+    const role = rolesCache.get(roleId);
+    if (!role) return showCustomAlert('Error', 'Role details not found.');
 
+    const imgUrl = role.image?.url || EMBEDDED_ICONS.UNKNOWN;
+    
+    let advancedHtml = '';
+    if (advancedRolesMappingCache[role.id] && advancedRolesMappingCache[role.id].length > 0) {
+        const advRoles = advancedRolesMappingCache[role.id].map(id => {
+            const r = rolesCache.get(id);
+            return r ? r.name : id.replace(/-/g, ' ');
+        }).join(', ');
+        advancedHtml = `<div style="margin-top:15px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🌟 Advanced Roles:</strong> ${advRoles}</div>`;
+    }
+
+    let randomHtml = '';
+    if (randomRolesMappingCache[role.id] && randomRolesMappingCache[role.id].length > 0) {
+         const subRoles = randomRolesMappingCache[role.id].map(id => {
+            const r = rolesCache.get(id);
+            return r ? r.name : id.replace(/-/g, ' ');
+         }).join(', ');
+         randomHtml = `<div style="margin-top:10px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🎲 Can spawn as:</strong> ${subRoles}</div>`;
+    }
+
+    let isRankedExcluded = rankedRandomExcludedRolesCache.includes(role.id) ? 
+        `<span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; margin-left:5px;">Ranked Excluded</span>` : '';
+
+    let teamColor = '#64748b'; 
+    if(role.team === 'VILLAGER') teamColor = '#3b82f6';
+    else if(role.team === 'WEREWOLF') teamColor = '#ef4444';
+    else if(role.team === 'SOLO') teamColor = '#f59e0b';
+    else if(role.team === 'RANDOM') teamColor = '#a855f7';
+
+    const content = `
+        <div style="text-align:center; padding:10px;">
+            <img src="${imgUrl}" referrerpolicy="no-referrer" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); margin-bottom:15px;" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
+            <h2 style="margin:0 0 10px 0; color:#1e293b; font-size:1.8rem;">${role.name}</h2>
+            <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
+                <span style="background:${teamColor}20; color:${teamColor}; border:1px solid ${teamColor}50; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Team: ${role.team}</span>
+                <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Aura: ${role.aura}</span>
+                ${isRankedExcluded}
+            </div>
+        </div>
+        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-top:20px; text-align:center; font-size:1rem; color:#334155; line-height:1.6;">
+            "${role.description}"
+        </div>
+        ${advancedHtml}
+        ${randomHtml}
+    `;
+    showCustomInfoModal('Role Details', content);
+};
+
+// Function to View All Roles (New)
+async function initRoleWiki() {
+    const container = document.getElementById('role-wiki-container');
+    const searchInput = document.getElementById('role-search-input');
+    
+    if (rolesCache.size === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; color:#888; padding:60px;">
+                <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
+                <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลบทบาท...</div>
+            </div>
+        `;
+        await fetchAndCacheRoles();
+    }
+
+    if (rolesCache.size === 0) {
+        container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">ไม่สามารถโหลดข้อมูลบทบาทได้</div>`;
+        return;
+    }
+
+    const rolesArray = Array.from(rolesCache.values());
+    renderRoleGrid(rolesArray);
+
+    if (searchInput) {
+        searchInput.onkeyup = (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = rolesArray.filter(r => 
+                (r.name && r.name.toLowerCase().includes(term)) || 
+                (r.team && r.team.toLowerCase().includes(term)) ||
+                (r.id && r.id.toLowerCase().includes(term))
+            );
+            renderRoleGrid(filtered);
+        };
+    }
+}
+
+function renderRoleGrid(roles) {
+    const container = document.getElementById('role-wiki-container');
+    
+    if (!roles || roles.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#888; padding:40px;">ไม่พบบทบาทที่ค้นหา</div>`;
+        return;
+    }
+
+    const html = roles.map(r => {
+        const imgUrl = r.image?.url || EMBEDDED_ICONS.UNKNOWN;
+        
+        let teamColor = '#64748b'; 
+        if(r.team === 'VILLAGER') teamColor = '#3b82f6';
+        else if(r.team === 'WEREWOLF') teamColor = '#ef4444';
+        else if(r.team === 'SOLO') teamColor = '#f59e0b';
+        else if(r.team === 'RANDOM') teamColor = '#a855f7';
+
+        return `
+            <div class="quest-card-large" style="cursor:pointer; min-height:160px; justify-content:flex-start;" onclick="window.showRoleModal('${r.id}')">
+                <div style="background:${teamColor}; width:100%; height:8px; border-top-left-radius:12px; border-top-right-radius:12px; position:absolute; top:0; left:0;"></div>
+                <img src="${imgUrl}" referrerpolicy="no-referrer" style="height:70px; object-fit:contain; margin:25px auto 10px auto; display:block; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));" loading="lazy" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
+                <div style="text-align:center; padding:0 10px 15px 10px; width:100%;">
+                    <strong style="font-size:1.05rem; color:#1e293b; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.name}">${r.name}</strong>
+                    <div style="font-size:0.75rem; font-weight:bold; color:${teamColor}; margin-top:4px;">${r.team}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">${html}</div>`;
+}
+
+// Function to View All Clan Quests (Wiki)
 async function initQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
     const searchInput = document.getElementById('quest-search-input');
@@ -2348,6 +2587,11 @@ async function initQuestWiki() {
         console.error(e);
         container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Critical Error loading Wiki</div>`;
     }
+}
+
+// เผื่อฟังก์ชันการเรียกดูเควสผ่านปุ่มใน Dashboard ยิงมาที่เดิม 
+window.viewAllQuests = async () => {
+    document.querySelector('.nav-link[data-page="quest-wiki"]')?.click();
 }
 
 function renderWikiGrid(quests) {
@@ -2422,6 +2666,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
             }
             if(t==='dashboard') fetchAndDisplayData();
+            else if(t==='role-wiki') initRoleWiki(); 
             else if(t==='quest-wiki') initQuestWiki(); 
             else if(t==='settings') {
                 const cur = localStorage.getItem('wolvesville_api_key');
