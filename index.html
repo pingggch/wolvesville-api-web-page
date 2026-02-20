@@ -38,6 +38,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#" class="nav-link" data-page="role-wiki">
+                            <span class="material-icons">recent_actors</span>
+                            <span class="nav-text">Role Wiki</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#" class="nav-link" data-page="quest-wiki">
                             <span class="material-icons">menu_book</span>
                             <span class="nav-text">Quest Wiki</span>
@@ -148,11 +154,29 @@
                 </div>
             </section>
 
+            <!-- ROLE WIKI PAGE (หน้าดูบทบาทใหม่) -->
+            <section id="role-wiki" class="page-content">
+                <h2>🎭 Role Wiki (ข้อมูลบทบาททั้งหมด)</h2>
+                <div class="search-container">
+                    <span class="material-icons">search</span>
+                    <input type="text" id="role-search-input" placeholder="ค้นหาชื่อบทบาท หรือฝ่าย (เช่น villager, werewolf)...">
+                </div>
+                <div id="role-wiki-container" style="margin-top: 20px;">
+                    <div style="text-align:center; color:#888; padding:60px;">
+                        <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
+                        <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลบทบาท...</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- QUEST WIKI PAGE -->
             <section id="quest-wiki" class="page-content">
                 <h2>📚 Quest Wiki (All Quests)</h2>
-                
-                <div id="quest-wiki-container" class="quest-grid">
+                <div class="search-container">
+                    <span class="material-icons">search</span>
+                    <input type="text" id="quest-search-input" placeholder="ค้นหาชื่อเควส...">
+                </div>
+                <div id="quest-wiki-container" class="quest-grid" style="margin-top: 20px;">
                     <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
                         <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลเควส...</div>
@@ -189,7 +213,7 @@
                 </div>
             </section>
 
-            <!-- SETTINGS PAGE (อัปเดตเพิ่ม GitHub Editor) -->
+            <!-- SETTINGS PAGE -->
             <section id="settings" class="page-content">
                 <h2>ตั้งค่าระบบ & ฐานข้อมูล</h2>
                 
