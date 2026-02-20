@@ -399,6 +399,7 @@ let currentViewingClanId = null;
 let isCurrentViewMyClan = false;
 let isFirstRender = true; 
 let currentParticipatingCount = 0; 
+let questCooldownInterval = null;
 
 // Inject Lottie Player Script
 const lottieScript = document.createElement('script');
@@ -1860,16 +1861,43 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             rewardsTrackHtml += '</div></div>';
         }
 
+        // --- เพิ่มระบบนับถอยหลังและปุ่มข้ามเวลา ---
+        const nowMs = Date.now();
+        const rawTierStart = qData.tierStartTime || qInfo.tierStartTime;
+        const tierStartMs = rawTierStart ? new Date(rawTierStart).getTime() : 0;
+        const isWaitingForNextTier = tierStartMs > nowMs;
+
+        let countdownHtml = '';
+        let shouldShowSkip = false;
+
+        if (isWaitingForNextTier) {
+            shouldShowSkip = true;
+            countdownHtml = `
+                <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
+                    ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
+                    <span id="tier-cooldown-timer" data-time="${tierStartMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
+                </div>
+            `;
+        } else if (currentXpInTier >= targetXp) {
+            shouldShowSkip = true;
+            countdownHtml = `
+                <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-icons" style="font-size: 20px;">check_circle</span>
+                    ${getLocale() === 'en' ? 'Tier completed! Waiting for the next tier...' : 'เคลียร์ด่านนี้สำเร็จ! กำลังเตรียมด่านต่อไป...'}
+                </div>
+            `;
+        }
+
         let actionsHtml = '';
         if (canEdit) {
-            const isTierFinished = currentXpInTier >= targetXp;
             actionsHtml = `
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px;">
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px; flex-wrap:wrap;">
                     <button onclick="window.claimQuestExtraTime('${clanId}')" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
                         <span class="material-icons" style="font-size:18px;">alarm_add</span> ${t('txt_add_time')} (<span class="dynamic-action-price">${actionCost}</span>)
                     </button>
-                    ${isTierFinished ? `
-                    <button onclick="window.skipQuestWaitingTime('${clanId}')" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
+                    ${shouldShowSkip ? `
+                    <button onclick="window.skipQuestWaitingTime('${clanId}')" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);">
                         <span class="material-icons" style="font-size:18px;">fast_forward</span> ${t('txt_skip_wait')} (<span class="dynamic-action-price">${actionCost}</span>)
                     </button>
                     ` : ''}
@@ -1926,6 +1954,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> ${t('txt_quest_prog')}
                     </h4>
                     ${rewardsTrackHtml}
+                    ${countdownHtml}
                     ${actionsHtml}
                     ${participantsHtml}
                 </div>
@@ -2317,6 +2346,24 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     clanContentContainer.innerHTML = profileHeader + mainContent;
     const finalChatContainer = document.getElementById('clan-chat-container');
     if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
+
+    // --- เริ่มระบบจับเวลา (Cooldown Timer) ---
+    if (questCooldownInterval) clearInterval(questCooldownInterval);
+    questCooldownInterval = setInterval(() => {
+        const timerEl = document.getElementById('tier-cooldown-timer');
+        if (timerEl) {
+            const targetTime = parseInt(timerEl.getAttribute('data-time'));
+            const diff = targetTime - Date.now();
+            if (diff <= 0) {
+                timerEl.innerText = "00:00:00";
+            } else {
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                timerEl.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+        }
+    }, 1000);
 }
 
 window.showRoleModal = (roleId) => {
