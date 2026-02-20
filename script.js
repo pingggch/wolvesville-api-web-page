@@ -152,6 +152,12 @@ const langDict = {
         txt_shuffle: "สุ่มใหม่",
         txt_shuffle_votes: "โหวตสุ่มเควส",
         txt_buy_quest: "ซื้อเควส",
+        
+        // Auto Quest System
+        txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
+        txt_auto_buy_confirm: "ระบบจะทำการซื้อเควสนี้ให้ทันทีที่แคลนว่าง และมีเงินเพียงพอ ยืนยันการตั้งเวลาสำหรับเควส:",
+        txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ! (ระบบจะตรวจสอบและซื้ออัตโนมัติ)",
+
         txt_rewards: "รางวัล",
         txt_post_ann: "เขียนประกาศแคลน",
         txt_ph_ann: "พิมพ์ข้อความประกาศของคุณที่นี่...",
@@ -341,6 +347,12 @@ const langDict = {
         txt_shuffle: "Shuffle",
         txt_shuffle_votes: "Shuffle Votes",
         txt_buy_quest: "Buy Quest",
+
+        // Auto Quest System
+        txt_auto_buy: "🤖 Schedule Auto-Buy",
+        txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready. Confirm for:",
+        txt_auto_buy_success: "✅ Schedule saved! (Cron job will auto-buy)",
+
         txt_rewards: "Rewards",
         txt_post_ann: "Post Announcement",
         txt_ph_ann: "Type your announcement here...",
@@ -1145,7 +1157,39 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
     }
 };
 
-// 🌟 เพิ่มฟังก์ชันใหม่ รีโหลดเฉพาะ API Active Quest 🌟
+// --- NEW: ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
+window.scheduleQuest = async (clanId, questId, questTitle) => {
+    const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
+    const confirmed = await showCustomConfirm(t('txt_auto_buy'), msg, false);
+    if (!confirmed) return;
+
+    const apiKey = localStorage.getItem('wolvesville_api_key');
+    if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
+
+    try {
+        // ยิงไปที่ API Endpoint ของเราเองบน Vercel ที่เชื่อมกับ Database
+        const res = await fetch(`${localServerUrl}/api/schedule-quest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                clanId: clanId, 
+                questId: questId, 
+                questTitle: questTitle,
+                apiKey: apiKey // ส่ง Key ไปเก็บใน DB เพื่อให้ Cron นำไปใช้
+            })
+        });
+
+        if (res.ok) {
+            showCustomAlert(t('alert_success'), t('txt_auto_buy_success'));
+        } else {
+            const err = await res.json();
+            showCustomAlert(t('alert_error'), '❌ ' + (err.error || err.message || t('unknown_err')));
+        }
+    } catch (e) {
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
+    }
+};
+
 window.reloadActiveQuest = async (clanId, canEdit) => {
     const btn = document.getElementById('reload-quest-btn');
     const wrapper = document.getElementById('active-quest-wrapper');
@@ -1158,7 +1202,7 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
 
     try {
         const quests = await fetchData(`/clans/${clanId}/quests/active`);
-        const activeParticipants = currentParticipatingCount; // ดึงยอดผู้เล่นที่เข้าร่วมเควสล่าสุด
+        const activeParticipants = currentParticipatingCount; 
 
         let questsHtml = `<div style="text-align:center; color:#ccc; padding:20px;">${t('txt_no_active_quest')}</div>`;
         
@@ -2084,7 +2128,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (relativeProgress > totalSegments) relativeProgress = totalSegments;
             const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
 
-            // 🌟 เพิ่ม div ซ้อนอีกชั้น เพื่อรองรับการ Scroll ในมือถือและให้หลอด XP ยืดตรง 🌟
             rewardsTrackHtml = `
                 <div class="battle-pass-hub">
                     <div style="position: relative; min-width: max-content; padding: 0 10px;">
@@ -2120,19 +2163,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </div>
                 `;
             });
-            // ปิดแท็ก div ที่เพิ่มมาใหม่
             rewardsTrackHtml += '</div></div></div>';
         }
 
-        // --- แก้ไขระบบนับถอยหลังโดยอ้างอิงจาก tierEndTime ---
         const nowMs = Date.now();
         const rawTierEnd = qData.tierEndTime || qInfo.tierEndTime;
         const tierEndMs = rawTierEnd ? new Date(rawTierEnd).getTime() : 0;
         
-        // เช็คว่ายังไม่หมดเวลา 24 ชั่วโมงของด่านนี้ใช่หรือไม่
         const isTimeRemaining = tierEndMs > nowMs;
-        
-        // เช็คว่าเควสด่านนี้สำเร็จแล้วหรือยัง (เช็คจาก API ตรงๆ หรือดูที่ XP)
         const isTierFinished = qData.tierFinished || (currentXpInTier >= targetXp);
 
         let countdownHtml = '';
@@ -2140,7 +2178,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         let shouldShowAddTime = false;
 
         if (!isTierFinished) {
-            // 🌟 กรณี 1: ยังทำด่านนี้ไม่เสร็จ (XP ไม่เต็ม)
             shouldShowAddTime = true;
             shouldShowSkip = false;
             
@@ -2161,11 +2198,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 `;
             }
         } else {
-            // 🌟 กรณี 2: เคลียร์ด่านนี้สำเร็จแล้ว (XP เต็ม)
             shouldShowAddTime = false;
             
             if (isTimeRemaining) {
-                shouldShowSkip = true; // เปิดปุ่มให้กดข้ามเวลาได้
+                shouldShowSkip = true; 
                 countdownHtml = `
                     <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                         <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
@@ -2309,6 +2345,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
             
             let claimBtn = '';
+            // 🌟 เพิ่มปุ่มสำหรับ Auto-Buy ไว้ตรงนี้ 🌟
+            let autoBuyBtn = '';
+            
             if (!hasActiveQuest) {
                 claimBtn = `
                     <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
@@ -2317,6 +2356,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </button>
                 `;
             }
+
+            // ปุ่มตั้งเวลาซื้อ จะแสดงตลอด (หรือจะซ่อนถ้ามี Active Quest ก็ได้ แต่ให้แสดงไว้เพื่อตั้งเวลาล่วงหน้าดีกว่า)
+            autoBuyBtn = `
+                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}')" 
+                        style="background:#8b5cf6; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2);">
+                    <span class="material-icons" style="font-size:16px; margin-right:4px;">schedule</span> ${t('txt_auto_buy')}
+                </button>
+            `;
 
             return `
                 <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
@@ -2333,6 +2380,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             </div>
                         </div>
                         ${claimBtn}
+                        ${autoBuyBtn}
                     </div>
                 </div>
             `;
@@ -2539,7 +2587,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const cMem = document.getElementById('clan-members-list'); if (cMem && cMem.innerHTML !== membersHtml) cMem.innerHTML = membersHtml;
         const cLog = document.getElementById('clan-logs-list'); if (cLog && cLog.innerHTML !== logsHtml) cLog.innerHTML = logsHtml;
         
-        // 🌟 อัปเดตพื้นหลังโดยแยก Active Quest ออกจาก Available Quests 🌟
         const cActiveQuest = document.getElementById('active-quest-wrapper');
         if (cActiveQuest && cActiveQuest.innerHTML !== questsHtml) cActiveQuest.innerHTML = questsHtml;
         const cAvailQuest = document.getElementById('available-quests-wrapper');
@@ -2958,7 +3005,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 // ⚠️ DISCORD WEBHOOK URL ⚠️
-                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
+                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHS ক্রিমHSZaRBnb5p8ka-dydMuyxwk'; 
 
                 let embedColor = 3447003; 
                 let embedTitle = '📝 Feedback';
