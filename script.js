@@ -1697,16 +1697,21 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
         let actionsHtml = '';
         if (canEdit) {
+            // เช็คว่า XP ด่านปัจจุบันเต็มหรือยัง ถ้าเต็มแล้วให้แสดงปุ่ม Skip Wait
+            const isTierFinished = currentXpInTier >= targetXp;
+            
             actionsHtml = `
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px;">
                     <button onclick="window.claimQuestExtraTime('${clanId}')" title="Add Time" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
                         <span class="material-icons" style="font-size:18px;">alarm_add</span> 
                         Add Time (<span class="dynamic-action-price">${actionCost}</span>)
                     </button>
+                    ${isTierFinished ? `
                     <button onclick="window.skipQuestWaitingTime('${clanId}')" title="Skip Wait" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
                         <span class="material-icons" style="font-size:18px;">fast_forward</span> 
                         Skip Wait (<span class="dynamic-action-price">${actionCost}</span>)
                     </button>
+                    ` : ''}
                     <button onclick="window.cancelActiveQuest('${clanId}')" title="Cancel Quest" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
                         <span class="material-icons" style="font-size:18px;">cancel</span> Cancel
                     </button>
