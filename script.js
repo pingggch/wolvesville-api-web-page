@@ -433,7 +433,6 @@ window.showRoleModal = (roleId) => {
 // Function to View All Roles (New)
 async function initRoleWiki() {
     const container = document.getElementById('role-wiki-container');
-    const searchInput = document.getElementById('role-search-input');
     
     if (rolesCache.size === 0) {
         container.innerHTML = `
@@ -452,18 +451,6 @@ async function initRoleWiki() {
 
     const rolesArray = Array.from(rolesCache.values());
     renderRoleGrid(rolesArray);
-
-    if (searchInput) {
-        searchInput.onkeyup = (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = rolesArray.filter(r => 
-                (r.name && r.name.toLowerCase().includes(term)) || 
-                (r.team && r.team.toLowerCase().includes(term)) ||
-                (r.id && r.id.toLowerCase().includes(term))
-            );
-            renderRoleGrid(filtered);
-        };
-    }
 }
 
 function renderRoleGrid(roles) {
@@ -2566,7 +2553,6 @@ function renderRoleGrid(roles) {
 // Function to View All Clan Quests (Wiki)
 async function initQuestWiki() {
     const container = document.getElementById('quest-wiki-container');
-    const searchInput = document.getElementById('quest-search-input');
     
     if (allQuestsCache.length > 0) {
         renderWikiGrid(allQuestsCache);
@@ -2594,17 +2580,6 @@ async function initQuestWiki() {
         if (Array.isArray(res)) {
             allQuestsCache = res; 
             renderWikiGrid(allQuestsCache); 
-
-            if (searchInput) {
-                searchInput.addEventListener('keyup', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    const filtered = allQuestsCache.filter(q => 
-                        (q.title && q.title.toLowerCase().includes(term)) || 
-                        (q.name && q.name.toLowerCase().includes(term)) 
-                    );
-                    renderWikiGrid(filtered);
-                });
-            }
         }
     } catch (e) {
         console.error(e);
