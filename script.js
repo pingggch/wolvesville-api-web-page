@@ -178,8 +178,8 @@ const langDict = {
         menu_dashboard: "Dashboard",
         menu_player: "Player Search",
         menu_clan: "Clan Manager",
-        menu_roles: "All Role",
-        menu_quests: "All Quest",
+        menu_roles: "Role Wiki",
+        menu_quests: "Quest Wiki",
         menu_donate: "Donate",
         menu_settings: "Settings",
         head_dashboard: "API Overview",
@@ -1537,8 +1537,6 @@ function renderPlayerProfile(data) {
         </div>
     `}).join('');
 
-    const rawJson = JSON.stringify(data, null, 4);
-
     playerProfileContainer.innerHTML = `
         <div class="profile-header-card">
             <div class="profile-avatar-wrapper">
@@ -1610,16 +1608,6 @@ function renderPlayerProfile(data) {
         </div>
 
         ${roles.length ? `<h3 class="stats-section-title"><span class="material-icons">style</span> ${t('txt_role_cards')} (${roles.length})</h3><div class="role-cards-wrapper">${cardsHtml}</div>` : ''}
-
-        <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <details>
-                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
-                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
-                    Raw JSON Data
-                </summary>
-                <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
-            </details>
-        </div>
     `;
 }
 
@@ -2252,18 +2240,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         </div>
     `;
 
-    const apiConsole = `
-        <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <details>
-                <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
-                    <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
-                    Raw JSON Data
-                </summary>
-                <pre class="json-output">${JSON.stringify({ info, members, quests, chat, logs, ledger, history, announcements }, null, 4)}</pre>
-            </details>
-        </div>
-    `;
-
     let mainContent = `
         ${announceSectionHtml}
         <div class="stats-grid stats-grid-row2">
@@ -2338,7 +2314,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         ` : ''}
     `;
 
-    clanContentContainer.innerHTML = profileHeader + mainContent + apiConsole;
+    clanContentContainer.innerHTML = profileHeader + mainContent;
     const finalChatContainer = document.getElementById('clan-chat-container');
     if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
 }
@@ -2486,12 +2462,7 @@ function renderWikiGrid(quests) {
         `;
     }).join('');
 
-    const debugHtml = `
-        <div class="api-console" style="grid-column: 1 / -1; margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <details><summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;"><span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span> Raw JSON Data</summary><pre class="json-output">${JSON.stringify(quests, null, 4)}</pre></details>
-        </div>
-    `;
-    container.innerHTML = html + debugHtml;
+    container.innerHTML = html;
 }
 
 // Initialize on Load
