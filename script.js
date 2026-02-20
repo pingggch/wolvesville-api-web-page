@@ -2662,12 +2662,8 @@ document.addEventListener('DOMContentLoaded', () => {
             submitFeedbackBtn.disabled = true;
 
             try {
-                // ⚠️ วาง DISCORD WEBHOOK URL ของคุณที่นี่ ⚠️
-                const WEBHOOK_URL = 'https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN'; 
-                
-                if (WEBHOOK_URL.includes('YOUR_WEBHOOK_ID')) {
-                    throw new Error("คุณยังไม่ได้ใส่ Discord Webhook URL ในไฟล์ script.js ครับ!");
-                }
+                // ⚠️ DISCORD WEBHOOK URL ⚠️
+                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
 
                 let embedColor = 3447003; 
                 let embedTitle = '📝 Other Feedback';
