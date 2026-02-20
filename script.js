@@ -56,8 +56,8 @@ function showCustomConfirm(title, message, isDangerous = false) {
                 <h3>${title}</h3>
                 <p>${message}</p>
                 <div class="custom-modal-buttons">
-                    <button class="btn-modal btn-cancel">Cancel</button>
-                    <button class="btn-modal action-confirm ${isDangerous ? 'btn-danger' : 'btn-confirm'}">Yes, Confirm</button>
+                    <button class="btn-modal btn-cancel">ยกเลิก</button>
+                    <button class="btn-modal action-confirm ${isDangerous ? 'btn-danger' : 'btn-confirm'}">ยืนยัน</button>
                 </div>
             </div>
         `;
@@ -85,7 +85,7 @@ function showCustomInfoModal(title, contentHtml, isLarge = false) {
             <h3 style="text-align:center;">${title}</h3>
             <div>${contentHtml}</div>
             <div class="custom-modal-buttons">
-                <button class="btn-modal btn-confirm">Close</button>
+                <button class="btn-modal btn-confirm">ปิด</button>
             </div>
         </div>
     `;
@@ -104,8 +104,8 @@ function showCustomPrompt(title, message, defaultValue = '') {
                 <p>${message}</p>
                 <input type="text" id="custom-prompt-input" value="${defaultValue.replace(/"/g, '&quot;')}" style="width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;">
                 <div class="custom-modal-buttons">
-                    <button class="btn-modal btn-cancel">Cancel</button>
-                    <button class="btn-modal btn-confirm">Save</button>
+                    <button class="btn-modal btn-cancel">ยกเลิก</button>
+                    <button class="btn-modal btn-confirm">บันทีก</button>
                 </div>
             </div>
         `;
