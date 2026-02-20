@@ -216,6 +216,18 @@
                     <button id="save-api-key-btn">บันทึก Key</button>
                     <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
                 </div>
+
+                <div class="settings-group" style="margin-top: 20px;">
+                    <h3><span class="material-icons" style="vertical-align: middle;">language</span> ภาษาของข้อมูล (Language)</h3>
+                    <p>เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API (เช่น ชื่อบทบาท, คำอธิบายเควส)</p>
+                    <select id="api-locale-select" style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; width: 100%; max-width: 300px; margin-bottom: 10px;">
+                        <option value="th">ไทย (Thai)</option>
+                        <option value="en">English</option>
+                    </select>
+                    <br>
+                    <button id="save-locale-btn">บันทึกภาษา / Save Language</button>
+                    <p id="api-locale-status" style="margin-top: 15px; font-weight: bold; color: var(--success); display: none;">✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)</p>
+                </div>
             </section>
         </div>
     </div>
