@@ -211,6 +211,29 @@ window.goToPlayerSearch = (username) => {
     }
 };
 
+// เพิ่มฟังก์ชันคลิกดูรายละเอียดสมาชิกแคลนตรงนี้
+window.fetchMemberDetails = async (clanId, playerId, canEdit) => {
+    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">กำลังโหลดข้อมูลผู้เล่น...</div></div>');
+    
+    try {
+        const playerDetail = await fetchData(`/players/${playerId}`);
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        
+        if (playerDetail && !playerDetail.error) {
+            const clanData = clanMembersDetailedMap.get(playerId) || {};
+            // รวมข้อมูลจากทั้ง Player API และ Clan Member API
+            const combinedData = { ...clanData, ...playerDetail, username: clanData.username || playerDetail.username };
+            
+            showMemberModal(combinedData);
+        } else {
+            showCustomAlert('Error', '❌ ไม่สามารถดึงข้อมูลผู้เล่นได้');
+        }
+    } catch (e) {
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        showCustomAlert('Error', '❌ เกิดข้อผิดพลาด: ' + e.message);
+    }
+};
+
 function escapeJsString(str) {
     return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
