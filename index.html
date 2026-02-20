@@ -188,19 +188,19 @@
                         
                         <div class="donate-methods">
                             <div class="donate-method">
-                                <img src="004999129535570_20250528_140858.jpg" alt="PromptPay" class="qr-code">
+                                <img src="https://via.placeholder.com/200x200?text=QR+Code+PromptPay" alt="PromptPay" class="qr-code">
                                 <h4>พร้อมเพย์ (PromptPay)</h4>
                                 <p class="account-num">095-185-7443</p>
                                 <span class="account-name" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</span>
                             </div>
                             <div class="donate-method">
-                                <img src="ReceiveMoney_QR_2026-02-20_17.53.45.png" alt="TrueMoney" class="qr-code">
+                                <img src="https://via.placeholder.com/200x200?text=QR+Code+TrueMoney" alt="TrueMoney" class="qr-code">
                                 <h4>ทรูมันนี่ (TrueMoney)</h4>
                                 <p class="account-num">095-185-7443</p>
                                 <span class="account-name" data-i18n="donate_truemoney">โอนเข้าวอลเล็ท</span>
                             </div>
                             <div class="donate-method">
-                                <img src="ReactNative-snapshot-image4164086366744608996.png" alt="In-game Gift" class="qr-code">
+                                <img src="https://via.placeholder.com/200x200?text=In-game+Gift" alt="In-game Gift" class="qr-code">
                                 <h4 data-i18n="donate_ingame">ของขวัญในเกม (In-game)</h4>
                                 <p class="account-num" style="color: var(--rose);">PingkungXD</p>
                                 <span class="account-name" data-i18n="donate_ingame_desc">แอดเพื่อนแล้วส่งของขวัญให้ในเกมได้เลยครับ 🌹</span>
@@ -280,6 +280,16 @@
             <button id="submit-feedback-btn" class="submit-btn">
                 <span class="material-icons" style="font-size: 20px;">send</span> <span data-i18n="btn_send_feedback">ส่งข้อความ</span>
             </button>
+        </div>
+    </div>
+
+    <!-- 🌟 หน้าต่าง Modal สำหรับดูรูปภาพขนาดใหญ่ (Image Viewer) 🌟 -->
+    <div id="image-viewer-modal" class="custom-modal-overlay" style="display: none; z-index: 4000;">
+        <div style="position: relative; max-width: 90vw; max-height: 90vh; display: flex; justify-content: center; align-items: center;">
+            <button id="close-image-viewer" class="modal-close-btn" style="top: -15px; right: -15px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 4010;">
+                <span class="material-icons">close</span>
+            </button>
+            <img id="image-viewer-img" src="" style="max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); background: white;">
         </div>
     </div>
 
