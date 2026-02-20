@@ -56,8 +56,8 @@ function showCustomConfirm(title, message, isDangerous = false) {
                 <h3>${title}</h3>
                 <p>${message}</p>
                 <div class="custom-modal-buttons">
-                    <button class="btn-modal btn-cancel">ยกเลิก</button>
-                    <button class="btn-modal action-confirm ${isDangerous ? 'btn-danger' : 'btn-confirm'}">ยืนยัน</button>
+                    <button class="btn-modal btn-cancel">Cancel</button>
+                    <button class="btn-modal action-confirm ${isDangerous ? 'btn-danger' : 'btn-confirm'}">Yes, Confirm</button>
                 </div>
             </div>
         `;
@@ -85,7 +85,7 @@ function showCustomInfoModal(title, contentHtml, isLarge = false) {
             <h3 style="text-align:center;">${title}</h3>
             <div>${contentHtml}</div>
             <div class="custom-modal-buttons">
-                <button class="btn-modal btn-confirm">ปิด</button>
+                <button class="btn-modal btn-confirm">Close</button>
             </div>
         </div>
     `;
@@ -104,8 +104,8 @@ function showCustomPrompt(title, message, defaultValue = '') {
                 <p>${message}</p>
                 <input type="text" id="custom-prompt-input" value="${defaultValue.replace(/"/g, '&quot;')}" style="width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;">
                 <div class="custom-modal-buttons">
-                    <button class="btn-modal btn-cancel">ยกเลิก</button>
-                    <button class="btn-modal btn-confirm">บันทีก</button>
+                    <button class="btn-modal btn-cancel">Cancel</button>
+                    <button class="btn-modal btn-confirm">Save</button>
                 </div>
             </div>
         `;
@@ -1122,9 +1122,22 @@ async function searchAndDisplayPlayer() {
     
     const input = usernameInput.value.trim();
     if (!input) return;
-    if (!localStorage.getItem('wolvesville_api_key')) return alert('กรุณาใส่ API Key');
+    if (!localStorage.getItem('wolvesville_api_key')) {
+        if (typeof showCustomAlert === 'function') {
+            return showCustomAlert('แจ้งเตือน', 'กรุณาใส่ API Key ในหน้าตั้งค่าก่อนครับ');
+        } else {
+            return alert('กรุณาใส่ API Key');
+        }
+    }
 
-    playerProfileContainer.innerHTML = '<div style="text-align:center; padding:30px;">⏳ กำลังค้นหาข้อมูล...</div>';
+    // 🌟 หน้าต่างโหลดแบบสวยงาม (มีไอคอนหมุน) 🌟
+    playerProfileContainer.innerHTML = `
+        <div style="text-align:center; padding:60px 20px; background:white; border-radius:var(--radius-lg); border:1px solid #e2e8f0; box-shadow:var(--shadow-sm); margin-top:20px; animation: fadeIn 0.3s ease-out;">
+            <span class="material-icons loading-spinner" style="font-size:60px; color:var(--primary-color);">autorenew</span>
+            <h3 style="color:#1e293b; margin-top:20px; font-size:1.3rem;">กำลังค้นหาข้อมูล...</h3>
+            <p style="color:#64748b; font-size:0.95rem; margin-top:5px;">กำลังดึงข้อมูลของ <strong style="color:var(--primary-color);">${escapeJsString(input)}</strong> จากเซิร์ฟเวอร์</p>
+        </div>
+    `;
 
     let id = input;
     if (!isUUID(input)) {
@@ -1132,7 +1145,14 @@ async function searchAndDisplayPlayer() {
         if (search && !search.error && search.length) id = search[0].id;
         else if (search && search.id) id = search.id;
         else {
-            playerProfileContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">ไม่พบผู้เล่น</div>';
+            // ❌ หน้าต่างแจ้งเตือนแบบสวยงามเมื่อไม่พบผู้เล่น ❌
+            playerProfileContainer.innerHTML = `
+                <div class="empty-state" style="border-color: #fecaca; background: #fef2f2; margin-top:20px;">
+                    <span class="material-icons" style="color: #ef4444; font-size: 60px;">person_off</span>
+                    <h3 style="color: #991b1b; margin:10px 0; font-size:1.3rem;">ไม่พบผู้เล่น</h3>
+                    <p style="color: #ef4444; font-size:0.95rem;">ไม่พบข้อมูลของชื่อ <strong>${escapeJsString(input)}</strong> ในระบบ<br>กรุณาตรวจสอบตัวสะกดอีกครั้ง</p>
+                </div>
+            `;
             return;
         }
     }
@@ -1151,7 +1171,14 @@ async function searchAndDisplayPlayer() {
         }
         renderPlayerProfile(data);
     } else {
-        playerProfileContainer.innerHTML = '<div style="text-align:center; color:red; padding:20px;">ดึงข้อมูลล้มเหลว</div>';
+        // ❌ หน้าต่างแจ้งเตือนเมื่อดึงข้อมูลล้มเหลว ❌
+        playerProfileContainer.innerHTML = `
+            <div class="empty-state" style="border-color: #fecaca; background: #fef2f2; margin-top:20px;">
+                <span class="material-icons" style="color: #ef4444; font-size: 60px;">error_outline</span>
+                <h3 style="color: #991b1b; margin:10px 0; font-size:1.3rem;">ดึงข้อมูลล้มเหลว</h3>
+                <p style="color: #ef4444; font-size:0.95rem;">เกิดข้อผิดพลาดในการดึงข้อมูลจาก API<br>ข้อความ: ${data.message || 'Unknown Error'}</p>
+            </div>
+        `;
     }
     fetchAndDisplayStatsOnly();
 }
@@ -2586,62 +2613,93 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsPage.appendChild(hatGroup);
     }
 
-    // --- FEEDBACK SYSTEM (DISCORD WEBHOOK) ---
+    // --- FEEDBACK SYSTEM (FLOATING BUTTON & DISCORD WEBHOOK WITH IMAGE) ---
+    const fabBtn = document.getElementById('floating-feedback-btn');
+    const feedbackModal = document.getElementById('feedback-modal');
+    const closeFeedbackBtn = document.getElementById('close-feedback-modal');
     const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
-    const feedbackTopic = document.getElementById('feedback-topic');
-    const feedbackMsg = document.getElementById('feedback-msg');
 
+    // เปิด/ปิด Modal
+    if (fabBtn && feedbackModal && closeFeedbackBtn) {
+        fabBtn.addEventListener('click', () => {
+            feedbackModal.style.display = 'flex';
+        });
+        
+        closeFeedbackBtn.addEventListener('click', () => {
+            feedbackModal.style.display = 'none';
+        });
+
+        feedbackModal.addEventListener('click', (e) => {
+            if (e.target === feedbackModal) feedbackModal.style.display = 'none';
+        });
+    }
+
+    // ฟังก์ชันส่งข้อมูลเข้า Webhook
     if (submitFeedbackBtn) {
         submitFeedbackBtn.addEventListener('click', async () => {
-            const topic = feedbackTopic ? feedbackTopic.value : 'other';
-            const msg = feedbackMsg ? feedbackMsg.value.trim() : '';
+            const topic = document.getElementById('feedback-topic').value;
+            const msg = document.getElementById('feedback-msg').value.trim();
+            const imageInput = document.getElementById('feedback-image');
 
-            if (!msg) {
-                // เช็คว่ามีฟังก์ชัน showCustomAlert ในระบบหรือไม่ ถ้าไม่มีให้ใช้ alert ปกติ
+            // เช็คว่ามีข้อความ หรือมีการแนบรูปภาพ อย่างใดอย่างหนึ่ง
+            if (!msg && imageInput.files.length === 0) {
                 if (typeof showCustomAlert === 'function') {
-                    showCustomAlert('แจ้งเตือน', 'กรุณาพิมพ์ข้อความฟีดแบคก่อนกดส่งครับ 😅');
+                    showCustomAlert('แจ้งเตือน', 'กรุณาพิมพ์ข้อความ หรือแนบรูปภาพก่อนกดส่งครับ 😅');
                 } else {
-                    alert('กรุณาพิมพ์ข้อความฟีดแบคก่อนกดส่งครับ 😅');
+                    alert('กรุณาพิมพ์ข้อความ หรือแนบรูปภาพก่อนกดส่งครับ 😅');
                 }
                 return;
             }
 
             // เปลี่ยนปุ่มเป็นสถานะกำลังโหลด
             const originalText = submitFeedbackBtn.innerHTML;
-            submitFeedbackBtn.innerHTML = '<span class="material-icons" style="font-size: 20px; animation: spin 1s linear infinite;">sync</span> กำลังส่ง...';
-            submitFeedbackBtn.style.pointerEvents = 'none';
+            submitFeedbackBtn.innerHTML = '<span class="material-icons loading-spinner" style="font-size: 20px;">sync</span> กำลังส่ง...';
+            submitFeedbackBtn.disabled = true;
 
             try {
                 // ⚠️ วาง DISCORD WEBHOOK URL ของคุณที่นี่ ⚠️
                 const WEBHOOK_URL = 'https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN'; 
                 
                 if (WEBHOOK_URL.includes('YOUR_WEBHOOK_ID')) {
-                    throw new Error("คุณยังไม่ได้ใส่ Discord Webhook URL ในไฟล์ script.js ครับ! ให้ไปแก้ไขตรงตัวแปร WEBHOOK_URL ก่อน");
+                    throw new Error("คุณยังไม่ได้ใส่ Discord Webhook URL ในไฟล์ script.js ครับ!");
                 }
 
-                // ตกแต่งสีและหัวข้อให้สวยงามตอนส่งเข้า Discord
-                let embedColor = 3447003; // สีฟ้า (Other)
+                let embedColor = 3447003; 
                 let embedTitle = '📝 Other Feedback';
-                if (topic === 'bug') { embedColor = 16711680; embedTitle = '🐛 Bug Report'; } // สีแดง
-                else if (topic === 'suggestion') { embedColor = 16776960; embedTitle = '💡 Suggestion'; } // สีเหลือง
+                if (topic === 'bug') { embedColor = 16711680; embedTitle = '🐛 Bug Report'; } 
+                else if (topic === 'suggestion') { embedColor = 16776960; embedTitle = '💡 Suggestion'; } 
 
-                // โครงสร้างข้อความแบบ Embed ของ Discord
+                // การส่งรูปภาพผ่าน Webhook ต้องใช้ FormData
+                const formData = new FormData();
+
+                // สร้างโครงสร้าง Embed ของ Discord
                 const payload = {
-                    username: "Wolvesville API Feedback", // ชื่อบอทที่จะแสดงในดิสคอร์ด
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png", // รูปโปรไฟล์บอท
+                    username: "Wolvesville API Feedback",
+                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
                     embeds: [{
                         title: embedTitle,
-                        description: msg,
+                        description: msg || "*ไม่มีข้อความ (แนบรูปภาพอย่างเดียว)*",
                         color: embedColor,
                         timestamp: new Date().toISOString()
                     }]
                 };
 
+                // ถ้ามีการแนบไฟล์
+                if (imageInput.files.length > 0) {
+                    const file = imageInput.files[0];
+                    // เพิ่มไฟล์เข้า form data
+                    formData.append('file', file, file.name);
+                    // สั่งให้ Embed ดึงรูปจากไฟล์ที่แนบไป
+                    payload.embeds[0].image = { url: `attachment://${file.name}` };
+                }
+
+                // ใส่ข้อมูล JSON ลงในฟิลด์ payload_json
+                formData.append('payload_json', JSON.stringify(payload));
+
                 // ส่งคำสั่งยิง Webhook
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData // ไม่ต้องใส่ Content-Type เพราะเบราว์เซอร์จะจัดการ Boundary ให้อัตโนมัติเมื่อใช้ FormData
                 });
 
                 if (!response.ok) {
@@ -2650,13 +2708,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // แจ้งเตือนเมื่อส่งสำเร็จ
                 if (typeof showCustomAlert === 'function') {
-                    showCustomAlert('สำเร็จ', '✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อความของคุณเรียบร้อยแล้ว');
+                    showCustomAlert('สำเร็จ', '✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว');
                 } else {
-                    alert('✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อความของคุณเรียบร้อยแล้ว');
+                    alert('✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว');
                 }
                 
-                // เคลียร์กล่องข้อความ
-                if (feedbackMsg) feedbackMsg.value = ''; 
+                // เคลียร์กล่องข้อความและหน้าต่าง
+                document.getElementById('feedback-msg').value = ''; 
+                imageInput.value = '';
+                feedbackModal.style.display = 'none';
                 
             } catch (e) {
                 console.error("Feedback Error:", e);
@@ -2668,7 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 // คืนค่าปุ่มให้กลับมาเป็นแบบเดิม
                 submitFeedbackBtn.innerHTML = originalText;
-                submitFeedbackBtn.style.pointerEvents = 'auto';
+                submitFeedbackBtn.disabled = false;
             }
         });
     }
