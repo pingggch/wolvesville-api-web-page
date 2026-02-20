@@ -214,7 +214,7 @@ const langDict = {
         // Donate
         donate_title: "Support Server & Developer",
         donate_desc: "If you like Wolvesville API Dashboard, you can support server costs and buy me a coffee! ❤️",
-        donate_acc_name: "Account Name: Peerapat Phetchanphen",
+        donate_acc_name: "Account Name: Perapat Petjanpen",
         donate_truemoney: "Transfer to Wallet",
         donate_ingame: "In-game Gift",
         donate_ingame_desc: "Add friend and send a gift in-game! 🌹",
