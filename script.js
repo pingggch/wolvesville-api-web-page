@@ -839,6 +839,36 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
     }
 };
 
+// ฟังก์ชันรับหมวก API Hat
+window.redeemApiHat = async () => {
+    const confirmed = await showCustomConfirm(
+        'Redeem API Hat',
+        '⚠️ ต้องการรับหมวก API Hat แบบพิเศษฟรี สำหรับไอดีเจ้าของ Bot หรือไม่?',
+        false 
+    );
+
+    if (!confirmed) return;
+
+    try {
+        console.log('[RedeemApiHat] Requesting API Hat...');
+        showCustomInfoModal('Loading...', '<div style="text-align:center; padding:30px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">กำลังดำเนินการ...</div></div>');
+        
+        const res = await sendPayload('/items/redeemApiHat', 'POST', {});
+        
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+
+        if (res.error) {
+            showCustomAlert('Error', '❌ ล้มเหลว: ' + (res.message || 'Unknown error'));
+        } else {
+            showCustomAlert('Success', '✅ รับหมวก API Hat สำเร็จ!<br><br>ไอเทมได้ถูกเพิ่มเข้าไปในช่องเก็บของในเกม (Inventory) ของบัญชีเจ้าของบอทเรียบร้อยแล้ว');
+        }
+    } catch (e) {
+        console.error('[RedeemApiHat] Error:', e);
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+        showCustomAlert('Error', '❌ Error: ' + e.message);
+    }
+};
+
 function isUUID(str) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
@@ -2316,6 +2346,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if(searchClanBtn) searchClanBtn.addEventListener('click', searchClan);
     if(myClanBtn) myClanBtn.addEventListener('click', fetchMyClan);
     if(clanNameInput) clanNameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchClan(); });
+
+    // Inject API Hat Button in Settings
+    const settingsPage = document.getElementById('settings');
+    if (settingsPage) {
+        const hatGroup = document.createElement('div');
+        hatGroup.className = 'settings-group';
+        hatGroup.style.marginTop = '20px';
+        hatGroup.innerHTML = `
+            <h3><span class="material-icons" style="vertical-align: middle; color: #a855f7;">checkroom</span> Redeem API Hat</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">รับหมวก API Hat แบบ Exclusive ฟรี! สำหรับไอดีเจ้าของ Bot</p>
+            <button onclick="window.redeemApiHat()" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span class="material-icons" style="font-size: 18px;">auto_awesome</span> รับหมวก API Hat
+            </button>
+        `;
+        settingsPage.appendChild(hatGroup);
+    }
 
     document.querySelector('.nav-link[data-page="dashboard"]')?.click();
 });
