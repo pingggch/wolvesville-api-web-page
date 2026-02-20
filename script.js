@@ -80,6 +80,7 @@ const langDict = {
         btn_close: "ปิด",
         btn_save: "บันทึก",
         btn_ok: "ตกลง",
+        btn_reload: "รีโหลด",
         no_api_key: "กรุณาใส่ API Key ในหน้าตั้งค่าก่อนครับ",
         unknown_err: "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
         req_limit: "ระบบถูกจำกัดการเรียกใช้งานชั่วคราว กรุณารอสักครู่ (Too many requests)",
@@ -268,6 +269,7 @@ const langDict = {
         btn_close: "Close",
         btn_save: "Save",
         btn_ok: "OK",
+        btn_reload: "Reload",
         no_api_key: "Please enter your API Key in Settings.",
         unknown_err: "Unknown error occurred.",
         req_limit: "Too many requests. Please wait a moment.",
@@ -2351,6 +2353,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div>
                 <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span><span class="material-icons">flag</span> ${t('txt_active_quest')}</span>
+                    <button onclick="fetchClanData('${clanId}', ${canEdit}, false)" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#1e293b';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';">
+                        <span class="material-icons" style="font-size:16px;">refresh</span> ${t('btn_reload')}
+                    </button>
                 </h3>
                 <div id="clan-quests-container">${questsHtml}${availableQuestsHtml}</div>
             </div>
