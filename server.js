@@ -354,8 +354,13 @@ const proxyHandler = async (req, res) => {
 app.get('/api/wolvesville', proxyHandler);
 app.post('/api/wolvesville', proxyHandler);
 
-app.listen(PORT, () => {
-    console.log(`\n==============================================`);
-    console.log(`✅ Server is running on PORT ${PORT}`);
-    console.log(`==============================================\n`);
-});
+// 🌟 สิ่งที่แก้ไขใหม่สำหรับ Vercel: ให้ export app ออกมาแทนการสั่ง listen เสมอ 🌟
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`\n==============================================`);
+        console.log(`✅ Server is running on PORT ${PORT}`);
+        console.log(`==============================================\n`);
+    });
+}
+
+module.exports = app;
