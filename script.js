@@ -214,7 +214,7 @@ const langDict = {
         // Donate
         donate_title: "Support Server & Developer",
         donate_desc: "If you like Wolvesville API Dashboard, you can support server costs and buy me a coffee! ❤️",
-        donate_acc_name: "Account Name: Perapat Petjanpen",
+        donate_acc_name: "Account Name: Peerapat Phetchanphen",
         donate_truemoney: "Transfer to Wallet",
         donate_ingame: "In-game Gift",
         donate_ingame_desc: "Add friend and send a gift in-game! 🌹",
@@ -2643,6 +2643,29 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 submitFeedbackBtn.innerHTML = originalText;
                 submitFeedbackBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- ระบบขยายรูปภาพ (Image Viewer) ---
+    const imageViewerModal = document.getElementById('image-viewer-modal');
+    const imageViewerImg = document.getElementById('image-viewer-img');
+    const closeImageViewerBtn = document.getElementById('close-image-viewer');
+
+    document.querySelectorAll('.qr-code').forEach(img => {
+        img.addEventListener('click', () => {
+            if(imageViewerImg) imageViewerImg.src = img.src;
+            if(imageViewerModal) imageViewerModal.style.display = 'flex';
+        });
+    });
+
+    if (imageViewerModal && closeImageViewerBtn) {
+        closeImageViewerBtn.addEventListener('click', () => {
+            imageViewerModal.style.display = 'none';
+        });
+        imageViewerModal.addEventListener('click', (e) => {
+            if (e.target === imageViewerModal) {
+                imageViewerModal.style.display = 'none';
             }
         });
     }
