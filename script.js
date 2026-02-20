@@ -1088,19 +1088,31 @@ function renderPlayerProfile(data) {
     const wolfWR = calcWR(stats.werewolfWinCount, stats.werewolfLoseCount);
     const voteWR = calcWR(stats.votingWinCount, stats.votingLoseCount);
 
+    // ตรวจสอบเวลาออนไลน์ล่าสุด (ห้ามเกิน 5 นาที)
+    let isReallyOnline = false;
+    if (data.lastOnline) {
+        const lastOnlineDate = new Date(data.lastOnline);
+        const now = new Date();
+        const diffMinutes = (now - lastOnlineDate) / (1000 * 60);
+        isReallyOnline = diffMinutes <= 5;
+    }
+
     const rawStatus = (data.status || 'OFFLINE').toUpperCase();
     let statusBadge = '';
 
-    if (rawStatus === 'PLAY') {
-        statusBadge = '<span class="status-badge play"><span class="material-icons">sports_esports</span> Playing</span>';
-    } else if (rawStatus === 'ONLINE' || rawStatus === 'DEFAULT') { 
-        statusBadge = '<span class="status-badge online"><span class="material-icons">fiber_manual_record</span> DEFAULT</span>';
-    } else if (rawStatus === 'DO_NOT_DISTURB' || rawStatus === 'DND') { 
-        statusBadge = '<span class="status-badge dnd"><span class="material-icons">do_not_disturb_on</span> Do Not Disturb</span>';
-    } else if (rawStatus === 'OFFLINE') {
-        statusBadge = '<span class="status-badge offline"><span class="material-icons">cloud_off</span> INVISIBLE</span>';
+    // ถ้าออนไลน์อยู่ในช่วง 5 นาที
+    if (isReallyOnline) {
+        if (rawStatus === 'PLAY') {
+            statusBadge = '<span class="status-badge play"><span class="material-icons">sports_esports</span> Playing</span>';
+        } else if (rawStatus === 'DO_NOT_DISTURB' || rawStatus === 'DND') { 
+            statusBadge = '<span class="status-badge dnd"><span class="material-icons">do_not_disturb_on</span> Do Not Disturb</span>';
+        } else { 
+            // DEFAULT หรือ ONLINE
+            statusBadge = '<span class="status-badge online"><span class="material-icons">fiber_manual_record</span> Online</span>';
+        }
     } else {
-        statusBadge = `<span class="status-badge offline">${data.status}</span>`;
+        // ถ้าเกิน 5 นาที ปัดเป็น Offline ทันที
+        statusBadge = '<span class="status-badge offline"><span class="material-icons">cloud_off</span> Offline</span>';
     }
 
     let clanHtml = '';
