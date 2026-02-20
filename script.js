@@ -1034,6 +1034,71 @@ async function fetchAndDisplayStatsOnly() {
     } catch (e) { console.error(e); }
 }
 
+// Function to render Global Announcements
+function renderGlobalAnnouncements(data) {
+    let container = document.getElementById('global-announcements-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'global-announcements-container';
+        container.style.marginTop = '40px';
+        const dashboardPage = document.getElementById('dashboard');
+        if (dashboardPage) {
+            dashboardPage.appendChild(container);
+        } else {
+            return;
+        }
+    }
+
+    const buildList = (title, icon, items, color) => {
+        if (!items || items.length === 0) return '';
+        let html = `
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; max-height: 600px;">
+                <h3 style="margin: 0 0 15px 0; color: ${color}; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
+                    <span class="material-icons">${icon}</span> ${title}
+                </h3>
+                <div style="overflow-y: auto; padding-right: 5px; flex: 1; display: flex; flex-direction: column; gap: 15px;" class="clan-scroll-area">
+        `;
+        
+        items.forEach(item => {
+            let imgHtml = '';
+            if (item.attachments && item.attachments.length > 0) {
+                const att = item.attachments[0];
+                imgHtml = `<img src="${att.url}" referrerpolicy="no-referrer" style="max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0; object-fit: contain; max-height: 250px;" loading="lazy" alt="Attachment">`;
+            }
+            
+            html += `
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong style="color: #334155; font-size: 0.95rem;">@${item.author?.username || 'System'}</strong>
+                        <span style="font-size: 0.75rem; color: #94a3b8; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${formatDateThai(item.timestamp)}</span>
+                    </div>
+                    <div style="color: #475569; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">${linkify(item.content)}</div>
+                    ${imgHtml}
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+        return html;
+    };
+
+    const annHtml = buildList('Announcements', 'campaign', data.announcements, 'var(--primary-color)');
+    const changeHtml = buildList('Changelogs', 'update', data.changelogs, '#f59e0b');
+    const eventsHtml = buildList('Discord Events', 'event', data.discordEvents, '#a855f7');
+
+    container.innerHTML = `
+        <h2 style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <span class="material-icons" style="color: var(--primary-color);">newspaper</span> 
+            ข่าวสารและอัปเดตเซิร์ฟเวอร์ (Global Announcements)
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            ${annHtml || ''}
+            ${changeHtml || ''}
+            ${eventsHtml || ''}
+        </div>
+    `;
+}
+
 // **********************************************
 // 7. DASHBOARD & PLAYER LOGIC
 // **********************************************
@@ -1055,6 +1120,10 @@ async function fetchAndDisplayData() {
                 ${items.error ? 'Error' : items.count.toLocaleString()}
              `;
         }
+        
+        // Render Global Announcements if data is available
+        renderGlobalAnnouncements(check);
+
     } else {
         if(apiStatusDot) { apiStatusDot.classList.remove('connected'); apiStatusDot.style.backgroundColor = '#D32F2F'; }
         if(apiStatusText) apiStatusText.textContent = 'เชื่อมต่อไม่ได้';
