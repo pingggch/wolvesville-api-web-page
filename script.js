@@ -137,7 +137,7 @@ const langDict = {
         txt_members: "สมาชิก",
         txt_clan_xp: "XP แคลน",
         txt_created: "สร้างเมื่อ",
-        txt_active_quest: "เควสที่กำลังดำเนินการอยู่",
+        txt_active_quest: "แคลนเควส",
         txt_no_active_quest: "ยังไม่มีเควสที่กำลังดำเนินการในตอนนี้",
         txt_tier: "ด่านที่",
         txt_ends: "หมดเวลา",
@@ -1207,7 +1207,7 @@ function getQuestResetTimeDisplay() {
     const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
 
-    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `สุ่มเควสฟรีอัตโนมัติในอีก: ${d} วัน ${h} ชม. ${m} นาที`;
+    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `แคลนเควสจะรีในอีก ${d} วัน ${h} ชม. ${m} นาที`;
     return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">${txt}</span>`;
 }
 
