@@ -46,8 +46,9 @@
 }
 
 html, body {
+    width: 100%;
     max-width: 100vw;
-    overflow-x: hidden; 
+    overflow-x: hidden !important; 
 }
 
 body {
@@ -67,7 +68,7 @@ body {
     min-height: 100vh;
     width: 100%;
     max-width: 100vw;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
 }
 
 /* Sidebar */
@@ -85,6 +86,16 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+    
+    /* 🌟 ปิด Scrollbar เพื่อป้องกันการเบียดปุ่มเมนูให้เบี้ยว 🌟 */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* ซ่อน Scrollbar ของ Chrome/Safari/Edge */
+.sidebar::-webkit-scrollbar {
+    width: 0;
+    display: none;
 }
 
 .app-container.sidebar-pushed .sidebar {
@@ -100,6 +111,7 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 0; 
     box-sizing: border-box;
+    overflow-x: hidden !important;
 }
 
 .app-container.sidebar-pushed .main-content {
@@ -108,7 +120,7 @@ body {
     max-width: calc(100% - var(--sidebar-width));
 }
 
-/* 🌟 ปุ่ม Hamburger ลอยเด่นตลอดเวลา 🌟 */
+/* 🌟 ปุ่ม Hamburger จัดตำแหน่งให้ตรงกับไอคอนด้านล่างเป๊ะๆ 🌟 */
 .hamburger-btn {
     background: #1e293b; 
     border: none;
@@ -123,9 +135,10 @@ body {
     justify-content: center;
     position: fixed;
     top: 19px;
-    left: 14px;
-    z-index: 2000; /* อยู่บนสุดของทุกอย่าง */
+    left: 14px; /* (80px - 52px) / 2 = 14px ตรงกลางเป๊ะ */
+    z-index: 2000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+    padding: 0;
 }
 
 .hamburger-btn:hover { 
@@ -158,18 +171,20 @@ nav ul {
     padding: 0;
 }
 
+/* 🌟 ปุ่มเมนูต่างๆ จัดตำแหน่งให้ตรงกับ Hamburger 🌟 */
 .nav-link {
     display: flex;
     align-items: center;
-    justify-content: flex-start; 
+    justify-content: center; /* ดันไอคอนให้อยู่ตรงกลางตอนยุบเมนู */
     color: #64748b;
     text-decoration: none;
     border-radius: 16px; 
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     width: 52px; 
     height: 52px;
-    margin: 0 14px; 
-    padding-left: 14px; 
+    min-width: 52px; /* ล็อกความกว้างไม่ให้หด */
+    margin: 0 14px; /* บังคับระยะห่างซ้ายขวา 14px ทำให้ไอคอนอยู่กลางแกนเดียวกับ Hamburger */
+    padding: 0; /* ลบ Padding ทิ้งเพื่อให้ตรงกลางสมบูรณ์ */
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
@@ -178,7 +193,8 @@ nav ul {
 .app-container.sidebar-pushed .nav-link {
     width: calc(100% - 28px); 
     margin: 0 14px; 
-    padding-left: 14px; 
+    justify-content: flex-start; /* เมื่อกางเมนู ให้ชิดซ้าย */
+    padding-left: 14px; /* ใส่ขอบซ้ายทดแทนตอนกางออก */
 }
 
 .nav-link:hover { 
@@ -199,6 +215,7 @@ nav ul {
 .nav-link .material-icons { 
     font-size: 24px; 
     min-width: 24px; 
+    margin: 0; /* เคลียร์ margin เพื่อให้ไอคอนสมมาตร */
     transition: transform 0.3s ease;
 }
 
@@ -223,6 +240,7 @@ nav ul {
     animation: fadeUp 0.4s ease-out;
     min-width: 0;
     width: 100%;
+    max-width: 100%;
 }
 .page-content.active-page { display: block; }
 
@@ -236,6 +254,7 @@ h2 {
     margin-bottom: 25px;
     color: var(--bg-sidebar);
     font-weight: 600;
+    word-break: break-word;
 }
 
 .empty-state {
@@ -280,6 +299,7 @@ h2 {
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid #e2e8f0;
     min-width: 0;
+    max-width: 100%;
 }
 .stat-card:hover {
     transform: translateY(-5px);
@@ -298,7 +318,7 @@ h2 {
 .item-card .material-icons { color: var(--info); background: #f0f9ff; }
 .api-status-card .material-icons { color: var(--primary-color); background: #eef2ff; }
 
-.stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-top: 5px; }
+.stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-top: 5px; word-break: break-all; }
 .stat-label { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
 
 .full-usage-card { flex-direction: column; align-items: stretch; }
@@ -366,6 +386,7 @@ button:hover { filter: brightness(95%); }
     position: relative;
     overflow: hidden;
     border-left: 5px solid var(--primary-color);
+    max-width: 100%;
 }
 .profile-avatar-wrapper { position: relative; flex-shrink: 0; }
 .profile-avatar-lg {
@@ -388,8 +409,8 @@ button:hover { filter: brightness(95%); }
     font-weight: bold;
     border: 2px solid white;
 }
-.profile-main-info { flex: 1; min-width: 0; }
-.player-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; word-break: break-word; }
+.profile-main-info { flex: 1; min-width: 0; max-width: 100%; }
+.player-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; word-break: break-word; line-height: 1.2; }
 .clan-tag {
     background: #e2e8f0;
     font-size: 0.8rem;
@@ -397,6 +418,8 @@ button:hover { filter: brightness(95%); }
     border-radius: 4px;
     color: var(--text-muted);
     vertical-align: middle;
+    display: inline-block;
+    margin-top: 5px;
 }
 .player-bio {
     font-style: italic;
@@ -405,7 +428,7 @@ button:hover { filter: brightness(95%); }
     padding: 10px;
     border-radius: 8px;
     margin-top: 10px;
-    max-width: 600px;
+    max-width: 100%;
     word-break: break-word;
 }
 
@@ -442,6 +465,7 @@ button:hover { filter: brightness(95%); }
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 .stats-grid-container {
     display: grid;
@@ -553,34 +577,27 @@ button:hover { filter: brightness(95%); }
 .donate-card { background: white; padding: 50px 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); text-align: center; max-width: 1000px; width: 100%; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
 .donate-header-bg { position: absolute; top: 0; left: 0; right: 0; height: 120px; background: linear-gradient(135deg, #fbcfe8, #f3e8ff); z-index: 0; }
 .donate-icon { font-size: 70px; color: var(--rose); margin-bottom: 15px; position: relative; z-index: 1; background: white; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.2); }
-.donate-title { font-size: 1.8rem; color: var(--text-main); margin-bottom: 10px; position: relative; z-index: 1; }
+.donate-title { font-size: 1.8rem; color: var(--text-main); margin-bottom: 10px; position: relative; z-index: 1; word-break: break-word; }
 .donate-desc { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 35px; line-height: 1.6; position: relative; z-index: 1; }
 .donate-methods { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; position: relative; z-index: 1; }
-.donate-method { background: var(--bg-body); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; flex: 1; min-width: 280px; transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; }
+.donate-method { background: var(--bg-body); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; flex: 1; min-width: 280px; transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; max-width: 100%; }
 .donate-method:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--secondary-color); }
 .donate-method h4 { color: var(--primary-color); margin-bottom: 10px; font-size: 1.1rem; }
-
-/* 🌟 แก้อาการรูปยืดและล้นกรอบ (QR Code Responsive Fix) 🌟 */
 .qr-code { 
     width: 100%; 
-    max-width: 280px; /* ขยายได้สูงสุด 280px ให้พอดีกรอบและสแกนง่าย */
+    max-width: 280px; 
     height: auto;
-    aspect-ratio: 1 / 1; /* บังคับให้เป็นสี่เหลี่ยมจัตุรัสเสมอ */
-    object-fit: contain; /* ป้องกันรูปยืด */
-    background-color: #fff; /* เพิ่มพื้นหลังสีขาว กรณีรูปโปร่งใส */
+    aspect-ratio: 1 / 1; 
+    object-fit: contain; 
+    background-color: #fff; 
     border-radius: 16px; 
     margin-bottom: 15px; 
     box-shadow: var(--shadow-sm); 
     border: 4px solid white; 
-    cursor: zoom-in; /* เพิ่มเคอร์เซอร์เป็นรูปแว่นขยายให้รู้ว่ากดได้ */
+    cursor: zoom-in; 
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
 }
-
-.qr-code:hover {
-    transform: scale(1.05); /* เอฟเฟกต์เด้งขยายขึ้นตอนเอาเมาส์ชี้ */
-    box-shadow: var(--shadow-md);
-}
-
+.qr-code:hover { transform: scale(1.05); box-shadow: var(--shadow-md); }
 .account-num { font-size: 1.2rem; font-weight: 700; color: var(--text-main); letter-spacing: 1px; margin-bottom: 5px; }
 .account-name { font-size: 0.9rem; color: var(--text-muted); }
 .thank-you-msg { margin-top: 40px; font-size: 1.15rem; color: var(--primary-color); font-weight: 600; position: relative; z-index: 1; }
@@ -591,6 +608,7 @@ button:hover { filter: brightness(95%); }
     font-size: 0.9rem;
     line-height: 1.6;
     word-break: break-word; 
+    max-width: 100%;
 }
 .clan-bio a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
 .clan-bio a:hover { text-decoration: underline; }
@@ -630,6 +648,7 @@ button:hover { filter: brightness(95%); }
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     min-width: 0;
+    max-width: 100%;
 }
 .member-card:hover {
     transform: translateY(-2px);
@@ -650,7 +669,7 @@ button:hover { filter: brightness(95%); }
 .member-details { flex: 1; min-width: 0; }
 .member-details h5 { margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .member-meta { font-size: 0.75rem; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.member-flair { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; color: var(--primary-color); }
+.member-flair { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; color: var(--primary-color); word-break: break-all;}
 .quest-status { margin-left: auto; color: var(--success); font-size: 1rem; }
 .quest-status.off { color: #cbd5e1; }
 
@@ -664,11 +683,22 @@ button:hover { filter: brightness(95%); }
 .role-badge.leader { background: var(--warning); color: white; }
 .role-badge.coleader { background: var(--info); color: white; }
 
+/* 🌟 ป้องกันหน้าแคลนล้น 🌟 */
+.clan-scroll-area {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden; 
+    padding-right: 5px;
+    word-break: break-word; 
+    max-width: 100%;
+}
 .ledger-list, .history-list {
     max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 5px;
     word-break: break-word; 
+    max-width: 100%;
 }
 .ledger-item {
     display: flex;
@@ -677,9 +707,10 @@ button:hover { filter: brightness(95%); }
     padding: 10px 0;
     border-bottom: 1px solid #f1f5f9;
     font-size: 0.85rem;
+    flex-wrap: wrap;
 }
 .ledger-item:last-child { border-bottom: none; }
-.ledger-meta { display: flex; flex-direction: column; min-width: 0; }
+.ledger-meta { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }
 .ledger-meta strong { word-break: break-word; }
 .ledger-time { font-size: 0.7rem; color: var(--text-muted); }
 .ledger-amount { font-weight: 600; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
@@ -693,6 +724,7 @@ button:hover { filter: brightness(95%); }
     padding: 12px;
     margin-bottom: 8px;
     display: block; 
+    max-width: 100%;
 }
 
 /* ===============================
@@ -702,6 +734,7 @@ button:hover { filter: brightness(95%); }
     margin-top: 40px;
     border-top: 2px dashed #e2e8f0;
     padding-top: 20px;
+    max-width: 100%;
 }
 
 .api-console details summary {
@@ -747,6 +780,7 @@ button:hover { filter: brightness(95%); }
     max-width: 600px;
     margin: 40px auto;
     text-align: center;
+    width: 100%;
 }
 .settings-group h3 { color: var(--primary-color); margin-bottom: 15px; }
 #api-key-input {
@@ -794,20 +828,6 @@ details summary {
 details summary:hover { background-color: #e2e8f0 !important; }
 details summary:active { transform: scale(0.99); }
 
-.clan-scroll-area {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 15px;
-    padding-right: 5px;
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-    overflow-x: hidden; 
-    word-break: break-word;
-}
-.clan-scroll-area::-webkit-scrollbar { width: 6px; }
-.clan-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-.clan-scroll-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-
 /* ===============================
    9. MODAL & MEMBER DETAILS
    =============================== */
@@ -823,10 +843,10 @@ details summary:active { transform: scale(0.99); }
 
 .modal-content {
     background: white;
-    width: 90%; max-width: 600px; max-height: 90vh;
+    width: 95%; max-width: 600px; max-height: 90vh;
     overflow-y: auto;
     border-radius: 24px;
-    padding: 30px;
+    padding: 25px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     position: relative;
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -859,80 +879,6 @@ details summary:active { transform: scale(0.99); }
     border-bottom-color: var(--primary-color);
 }
 
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-.detail-card {
-    background: #f8fafc;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    text-align: center;
-}
-.detail-card h5 { margin: 0 0 5px 0; font-size: 0.85rem; color: #64748b; font-weight: 500; }
-.detail-card .val { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
-.val.gold { color: var(--gold); }
-.val.gem { color: var(--gem); }
-.val.xp { color: var(--primary-color); }
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-/* 🌟🌟🌟 MOBILE RESPONSIVE FIXES 🌟🌟🌟 */
-@media (max-width: 768px) {
-    .sidebar { 
-        width: var(--sidebar-width); 
-        transform: translateX(-100%); /* ซ่อน sidebar ไว้ด้านซ้าย */
-        z-index: 1500; 
-    }
-    .app-container.sidebar-pushed .sidebar { 
-        transform: translateX(0); /* เลื่อน sidebar ออกมาเมื่อกดปุ่ม */
-        box-shadow: 10px 0 25px rgba(0,0,0,0.5);
-    }
-    .main-content { 
-        margin-left: 0; 
-        padding: 90px 15px 20px 15px; /* เพิ่มพื้นที่ด้านบนให้ปุ่มเมนูไม่บังเนื้อหา */
-        width: 100%; 
-        max-width: 100%; 
-    }
-    .app-container.sidebar-pushed .main-content {
-        margin-left: 0;
-        width: 100%;
-        max-width: 100%;
-    }
-    .profile-header-card { flex-direction: column; text-align: center; border-left: none; border-top: 5px solid var(--primary-color); }
-    .stats-grid-row1, .stats-grid-row2 { grid-template-columns: 1fr; }
-    
-    /* แก้ไขการแสดงผลช่องค้นหาในมือถือไม่ให้ล้น */
-    .search-container {
-        flex-wrap: wrap;
-    }
-    .search-container > .material-icons {
-        display: none; /* ซ่อนไอคอนบนมือถือเพื่อประหยัดพื้นที่ */
-    }
-    .search-container input {
-        width: 100%; /* ให้กล่องค้นหาเต็มจอ */
-        text-align: center;
-        border-bottom: 1px solid #cbd5e1;
-        padding-bottom: 10px;
-        margin-bottom: 10px;
-    }
-    .search-container button {
-        width: 100%; /* ปุ่มค้นหา/แคลนของฉัน ให้เต็มจอเรียงลงมา */
-        margin-left: 0 !important;
-        margin-top: 5px;
-    }
-    
-    /* แก้ไขให้การ์ด Donate ไม่ล้นขอบจอ */
-    .donate-method {
-        min-width: 100%; 
-        padding: 15px;
-    }
-}
-
 /* ===============================
    10. APP SPECIFIC STYLES (QUEST CARDS)
    =============================== */
@@ -949,7 +895,7 @@ details summary:active { transform: scale(0.99); }
 .loading-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4); width: 0%; transition: width 0.3s ease-out; border-radius: 5px; }
 .loading-text { color: #64748b; font-size: 0.9rem; font-weight: 500; }
 
-.custom-modal-buttons { margin-top: 25px; display: flex; justify-content: center; gap: 15px; }
+.custom-modal-buttons { margin-top: 25px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
 .btn-modal { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: transform 0.1s; }
 .btn-modal:active { transform: scale(0.95); }
 .btn-confirm { background: #0ea5e9; color: white; }
@@ -958,21 +904,26 @@ details summary:active { transform: scale(0.99); }
 
 /* --- QUEST CARDS (ORIGINAL STYLE) --- */
 .quest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 15px; margin-top: 15px; width: 100%; }
-.quest-card-large { position: relative; border-radius: 12px; overflow: hidden; background: #f8fafc; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; border: 1px solid #e2e8f0; cursor: pointer; }
+.quest-card-large { position: relative; border-radius: 12px; overflow: hidden; background: #f8fafc; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; border: 1px solid #e2e8f0; cursor: pointer; max-width: 100%; }
 .quest-card-large:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15); }
 .quest-card-large-img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .quest-card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding: 30px 15px 15px; color: white; display: flex; justify-content: space-between; align-items: flex-end; }
 .quest-price-tag { background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 0.95rem; backdrop-filter: blur(4px); }
 .quest-votes-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px); }
 
-.active-quest-container { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 25px; position: relative; border: 1px solid #e2e8f0; width: 100%; }
+.active-quest-container { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 25px; position: relative; border: 1px solid #e2e8f0; width: 100%; max-width: 100%; min-width: 0; }
 .active-quest-banner { width: 100%; height: 220px; object-fit: cover; display: block; position: relative; }
 .active-quest-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 220px; background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.9) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; color: white; pointer-events: none; }
 .active-quest-title-lg { font-size: 1.8rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1.2; word-break: break-word; }
 .active-quest-meta-lg { display: flex; align-items: center; gap: 10px; margin-top: 5px; font-size: 0.9rem; color: #e2e8f0; flex-wrap: wrap; }
-.active-quest-body { padding: 20px; }
+.active-quest-body { padding: 20px; width: 100%; box-sizing: border-box; min-width: 0; }
 
-.battle-pass-hub { position: relative; padding: 30px 10px 40px 10px; margin-top: 10px; overflow-x: auto; max-width: 100%; }
+/* 🌟 บังคับให้ปุ่มข้ามเวลา / เพิ่มเวลา ตัดลงบรรทัดใหม่เมื่อจอมือถือแคบ 🌟 */
+.active-quest-body > div[style*="display:flex"] {
+    flex-wrap: wrap !important;
+}
+
+.battle-pass-hub { position: relative; padding: 30px 10px 40px 10px; margin-top: 10px; overflow-x: auto; max-width: 100%; width: 100%; box-sizing: border-box; min-width: 0; }
 .xp-progress-wrapper { position: absolute; top: 50%; left: 40px; right: 40px; height: 14px; background: #e2e8f0; border-radius: 10px; overflow: hidden; transform: translateY(-50%); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #cbd5e1; z-index: 1; }
 .xp-progress-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); width: 0%; transition: width 1s ease-out; border-radius: 10px; position: relative; }
 .xp-progress-fill::after { content: ""; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background-image: linear-gradient(-45deg,rgba(255,255,255,.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.2) 75%,transparent 75%,transparent); z-index: 1; background-size: 30px 30px; animation: move 2s linear infinite; }
@@ -1010,6 +961,7 @@ details summary:active { transform: scale(0.99); }
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
     gap: 15px;
     margin-top: 15px;
+    max-width: 100%;
 }
 
 .blocked-member-card {
@@ -1022,6 +974,7 @@ details summary:active { transform: scale(0.99); }
     justify-content: space-between;
     transition: all 0.2s;
     min-width: 0;
+    max-width: 100%;
 }
 
 .blocked-member-card:hover {
@@ -1097,7 +1050,7 @@ details summary:active { transform: scale(0.99); }
     height: 60px;
     background: var(--primary-color);
     color: white;
-    border-radius: 50%;
+    border-radius: 50% !important; /* บังคับให้เป็นวงกลมเสมอ */
     border: none;
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     cursor: pointer;
@@ -1106,6 +1059,7 @@ details summary:active { transform: scale(0.99); }
     justify-content: center;
     z-index: 1000;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+    padding: 0; 
 }
 .fab-feedback:hover {
     transform: scale(1.1) rotate(-5deg);
@@ -1113,15 +1067,67 @@ details summary:active { transform: scale(0.99); }
 }
 .fab-feedback .material-icons {
     font-size: 28px;
+    margin: 0; 
 }
+
+/* 🌟🌟🌟 MOBILE RESPONSIVE FIXES 🌟🌟🌟 */
 @media (max-width: 768px) {
+    .sidebar { 
+        width: var(--sidebar-width); 
+        transform: translateX(-100%); 
+        z-index: 1500; 
+    }
+    .app-container.sidebar-pushed .sidebar { 
+        transform: translateX(0); 
+        box-shadow: 10px 0 25px rgba(0,0,0,0.5);
+    }
+    .main-content { 
+        margin-left: 0; 
+        padding: 90px 15px 20px 15px !important; /* เพิ่มพื้นที่ด้านบนให้ปุ่มเมนูไม่บังเนื้อหา */
+        width: 100vw !important; /* บังคับความกว้างให้ไม่เกินหน้าจอ */
+        max-width: 100vw !important; 
+        overflow-x: hidden !important; /* ป้องกันการเลื่อนซ้ายขวา */
+        box-sizing: border-box;
+    }
+    .app-container.sidebar-pushed .main-content {
+        margin-left: 0;
+        width: 100vw !important;
+        max-width: 100vw !important;
+    }
+    
+    /* 🌟 ป้องกันทุกกล่องทะลุจอมือถือ 🌟 */
+    .stats-grid-row1, .stats-grid-row2 { 
+        grid-template-columns: minmax(0, 1fr) !important; 
+    }
+    .active-quest-container, .active-quest-body, .battle-pass-hub {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .profile-header-card { flex-direction: column; text-align: center; border-left: none; border-top: 5px solid var(--primary-color); }
+    
+    .search-container { flex-wrap: wrap; }
+    .search-container > .material-icons { display: none; }
+    .search-container input { width: 100%; text-align: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 10px; }
+    .search-container button { width: 100%; margin-left: 0 !important; margin-top: 5px; }
+    .donate-method { min-width: 100%; padding: 15px; }
+
+    /* 🌟 แก้ปุ่มฟีดแบคไม่ให้เบี้ยวในมือถือ 🌟 */
     .fab-feedback {
         bottom: 20px;
         right: 20px;
-        width: 50px;
-        height: 50px;
+        width: 56px !important; /* กำหนดขนาดชัดเจน */
+        height: 56px !important; 
+        min-width: 56px !important; /* ล็อกไว้ไม่ให้ถูกบีบ */
+        min-height: 56px !important;
+        border-radius: 50% !important; /* บังคับกลม 100% */
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        aspect-ratio: 1 / 1 !important;
     }
-    .fab-feedback .material-icons { font-size: 24px; }
+    .fab-feedback .material-icons { font-size: 26px !important; margin: 0 !important; }
 }
 
 .custom-modal-overlay {
@@ -1135,13 +1141,15 @@ details summary:active { transform: scale(0.99); }
 }
 .custom-modal-box {
     background: white;
-    padding: 30px;
+    padding: 25px;
     border-radius: 20px;
-    width: 90%;
+    width: 95%; /* ขยายให้เต็มจอมากขึ้นในมือถือ */
     max-width: 500px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     position: relative;
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 90vh; /* ห้ามกล่องทะลุจอบนล่าง */
+    overflow-y: auto;
 }
 .form-input {
     width: 100%;
@@ -1153,6 +1161,7 @@ details summary:active { transform: scale(0.99); }
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.2s;
+    max-width: 100%;
 }
 .form-input:focus {
     border-color: var(--primary-color);
