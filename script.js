@@ -1863,10 +1863,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (relativeProgress > totalSegments) relativeProgress = totalSegments;
             const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
 
+            // 🌟 เพิ่ม div ซ้อนอีกชั้น เพื่อรองรับการ Scroll ในมือถือและให้หลอด XP ยืดตรง 🌟
             rewardsTrackHtml = `
                 <div class="battle-pass-hub">
-                    <div class="xp-progress-wrapper"><div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div></div>
-                    <div class="battle-pass-track">
+                    <div style="position: relative; min-width: max-content; padding: 0 10px;">
+                        <div class="xp-progress-wrapper" style="left: 50px; right: 50px;">
+                            <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
+                        </div>
+                        <div class="battle-pass-track">
             `;
             
             qInfo.rewards.forEach((r, idx) => {
@@ -1895,7 +1899,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </div>
                 `;
             });
-            rewardsTrackHtml += '</div></div>';
+            // ปิดแท็ก div ที่เพิ่มมาใหม่
+            rewardsTrackHtml += '</div></div></div>';
         }
 
         // --- แก้ไขระบบนับถอยหลังโดยอ้างอิงจาก tierEndTime ---
