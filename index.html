@@ -22,43 +22,43 @@
                     <li>
                         <a href="#" class="nav-link" data-page="dashboard">
                             <span class="material-icons">dashboard</span>
-                            <span class="nav-text">แดชบอร์ด</span>
+                            <span class="nav-text" data-i18n="menu_dashboard">แดชบอร์ด</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="player-search">
                             <span class="material-icons">search</span>
-                            <span class="nav-text">ค้นหาผู้เล่น</span>
+                            <span class="nav-text" data-i18n="menu_player">ค้นหาผู้เล่น</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="clan-manager">
                             <span class="material-icons">shield</span>
-                            <span class="nav-text">จัดการแคลน</span>
+                            <span class="nav-text" data-i18n="menu_clan">จัดการแคลน</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="role-wiki">
                             <span class="material-icons">recent_actors</span>
-                            <span class="nav-text">บทบาททั้งหมด</span>
+                            <span class="nav-text" data-i18n="menu_roles">บทบาททั้งหมด</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="quest-wiki">
                             <span class="material-icons">menu_book</span>
-                            <span class="nav-text">เควสแคลนทั้งหมด</span>
+                            <span class="nav-text" data-i18n="menu_quests">เควสแคลนทั้งหมด</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="donate">
                             <span class="material-icons">favorite</span>
-                            <span class="nav-text">สนับสนุน</span>
+                            <span class="nav-text" data-i18n="menu_donate">สนับสนุน</span>
                         </a>
                     </li>
                     <li style="margin-top: auto;">
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
-                            <span class="nav-text">การตั้งค่า</span>
+                            <span class="nav-text" data-i18n="menu_settings">การตั้งค่า</span>
                         </a>
                     </li>
                 </ul>
@@ -69,7 +69,7 @@
             
             <!-- DASHBOARD PAGE -->
             <section id="dashboard" class="page-content">
-                <h2>ภาพรวม API</h2>
+                <h2 data-i18n="head_dashboard">ภาพรวม API</h2>
                 <div class="stats-grid stats-grid-row1">
                     <div class="stat-card api-today-card">
                         <span class="material-icons">trending_up</span>
@@ -81,17 +81,17 @@
                     <div class="stat-card item-card">
                         <span class="material-icons">inventory</span>
                         <div class="stat-info">
-                            <p class="stat-label">ไอเทมทั้งหมดในเกมในเกม</p>
+                            <p class="stat-label" data-i18n="stat_items">ไอเทมทั้งหมดในเกมในเกม</p>
                             <h3 class="stat-value" id="available-items">...</h3>
                         </div>
                     </div>
                     <div class="stat-card api-status-card">
                         <span class="material-icons">link</span>
                         <div class="stat-info">
-                            <p class="stat-label">สถานะการเชื่อมต่อ API</p>
+                            <p class="stat-label" data-i18n="stat_status">สถานะการเชื่อมต่อ API</p>
                             <div class="status-indicator">
                                 <span id="api-status-dot" class="status-dot"></span>
-                                <span id="api-status-text">กำลังเชื่อมต่อ...</span>
+                                <span id="api-status-text" data-i18n="stat_checking">กำลังตรวจสอบ...</span>
                             </div>
                         </div>
                     </div>
@@ -101,144 +101,144 @@
                     <div class="stat-card full-usage-card api-usage-full-card">
                         <div class="usage-header">
                             <span class="material-icons">insights</span>
-                            <h3>การใช้API</h3>
+                            <h3 data-i18n="stat_api_usage">การใช้API</h3>
                         </div>
-                        <div class="usage-detail"><p>วันนี้</p><h4 id="requests-full-today">0</h4></div>
-                        <div class="usage-detail"><p>เดือนนี้</p><h4 id="requests-full-this-month">0</h4></div>
-                        <div class="usage-detail"><p>ปันี้</p><h4 id="requests-full-this-year">0</h4></div> 
-                        <div class="usage-detail last-detail"><p>ทั้งหมด</p><h4 id="requests-full-lifetime">0</h4></div> 
+                        <div class="usage-detail"><p data-i18n="time_today">วันนี้</p><h4 id="requests-full-today">0</h4></div>
+                        <div class="usage-detail"><p data-i18n="time_month">เดือนนี้</p><h4 id="requests-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p data-i18n="time_year">ปีนี้</p><h4 id="requests-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p data-i18n="time_all">ทั้งหมด</p><h4 id="requests-full-lifetime">0</h4></div> 
                     </div>
                     <div class="stat-card full-usage-card visitors-full-card">
                         <div class="usage-header">
                             <span class="material-icons">public</span>
-                            <h3>การเยี่ยมชมเว็บ</h3>
+                            <h3 data-i18n="stat_visitors">การเยี่ยมชมเว็บ</h3>
                         </div>
-                        <div class="usage-detail"><p>วันนี้</p><h4 id="visitors-full-today">0</h4></div>
-                        <div class="usage-detail"><p>เดือนนี้</p><h4 id="visitors-full-this-month">0</h4></div>
-                        <div class="usage-detail"><p>ปันี้</p><h4 id="visitors-full-this-year">0</h4></div> 
-                        <div class="usage-detail last-detail"><p>ทั้งหมด</p><h4 id="visitors-full-lifetime">0</h4></div> 
+                        <div class="usage-detail"><p data-i18n="time_today">วันนี้</p><h4 id="visitors-full-today">0</h4></div>
+                        <div class="usage-detail"><p data-i18n="time_month">เดือนนี้</p><h4 id="visitors-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p data-i18n="time_year">ปีนี้</p><h4 id="visitors-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p data-i18n="time_all">ทั้งหมด</p><h4 id="visitors-full-lifetime">0</h4></div> 
                     </div>
                 </div>
             </section>
             
             <!-- PLAYER SEARCH PAGE -->
             <section id="player-search" class="page-content">
-                <h2>ค้นหาข้อมูลผู้เล่น</h2>
+                <h2 data-i18n="head_player">ค้นหาข้อมูลผู้เล่น</h2>
                 <div class="search-container">
                     <span class="material-icons">search</span>
-                    <input type="text" id="username-input" placeholder="ชื่อผู้ใช้ หรือ Player ID...">
-                    <button id="search-player-btn">ค้นหา</button>
+                    <input type="text" id="username-input" data-i18n-placeholder="search_player_ph" placeholder="ชื่อผู้ใช้ หรือ Player ID...">
+                    <button id="search-player-btn" data-i18n="btn_search">ค้นหา</button>
                 </div>
                 <div id="player-profile-container">
                     <div class="empty-state">
                         <span class="material-icons">person_search</span>
-                        <p>กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา</p>
+                        <p data-i18n="empty_search_player">กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา</p>
                     </div>
                 </div>
             </section>
 
             <!-- CLAN MANAGER PAGE -->
             <section id="clan-manager" class="page-content">
-                <h2>จัดการแคลน</h2>
+                <h2 data-i18n="head_clan">จัดการแคลน</h2>
                 <div class="search-container">
                     <span class="material-icons">shield</span>
-                    <input type="text" id="clan-name-input" placeholder="ชื่อแคลน หรือ Clan ID...">
-                    <button id="search-clan-btn">ค้นหา</button>
-                    <button id="my-clan-btn" class="btn-warning" style="margin-left: 10px;">⭐ แคลนของฉัน</button>
+                    <input type="text" id="clan-name-input" data-i18n-placeholder="search_clan_ph" placeholder="ชื่อแคลน หรือ Clan ID...">
+                    <button id="search-clan-btn" data-i18n="btn_search">ค้นหา</button>
+                    <button id="my-clan-btn" class="btn-warning" style="margin-left: 10px;" data-i18n="btn_my_clan">⭐ แคลนของฉัน</button>
                 </div>
                 <div id="clan-content-container">
                     <div class="empty-state">
                         <span class="material-icons">admin_panel_settings</span>
-                        <p>ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล</p>
+                        <p data-i18n="empty_search_clan">ค้นหาแคลน หรือกด "แคลนของฉัน" เพื่อดูข้อมูล</p>
                     </div>
                 </div>
             </section>
 
-            <!-- ROLE WIKI PAGE (หน้าดูบทบาทใหม่) -->
+            <!-- ROLE WIKI PAGE -->
             <section id="role-wiki" class="page-content">
-                <h2>บทบาททั้งหมด</h2>
+                <h2 data-i18n="head_roles">บทบาททั้งหมด</h2>
                 <div id="role-wiki-container" style="margin-top: 20px;">
                     <div style="text-align:center; color:#888; padding:60px;">
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
-                        <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลบทบาท...</div>
+                        <div style="margin-top:15px; font-size:1.1rem;" data-i18n="loading_roles">กำลังโหลดข้อมูลบทบาท...</div>
                     </div>
                 </div>
             </section>
 
             <!-- QUEST WIKI PAGE -->
             <section id="quest-wiki" class="page-content">
-                <h2>เควสแคลนทั้งหมด</h2>
+                <h2 data-i18n="head_quests">เควสแคลนทั้งหมด</h2>
                 <div id="quest-wiki-container" class="quest-grid" style="margin-top: 20px;">
                     <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
-                        <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลเควส...</div>
+                        <div style="margin-top:15px; font-size:1.1rem;" data-i18n="loading_quests">กำลังโหลดข้อมูลเควส...</div>
                     </div>
                 </div>
             </section>
-            
+
             <!-- DONATE PAGE -->
             <section id="donate" class="page-content">
-                <h2>สนับสนุนการพัฒนา</h2>
+                <h2 data-i18n="head_donate">สนับสนุนการพัฒนา</h2>
                 <div class="donate-container">
                     <div class="donate-card">
                         <div class="donate-header-bg"></div>
                         <span class="material-icons donate-icon">volunteer_activism</span>
-                        <h3 class="donate-title">สนับสนุนเซิร์ฟเวอร์และนักพัฒนา</h3>
-                        <p class="donate-desc">หากคุณชื่นชอบ Wolvesville API Dashboard นี้ สามารถช่วยสนับสนุนค่าเซิร์ฟเวอร์ ค่ากาแฟ เพื่อให้ระบบพัฒนาต่อไปได้ครับ ❤️</p>
+                        <h3 class="donate-title" data-i18n="donate_title">สนับสนุนเซิร์ฟเวอร์และนักพัฒนา</h3>
+                        <p class="donate-desc" data-i18n="donate_desc">หากคุณชื่นชอบ Wolvesville API Dashboard นี้ สามารถช่วยสนับสนุนค่าเซิร์ฟเวอร์ ค่ากาแฟ เพื่อให้ระบบพัฒนาต่อไปได้ครับ ❤️</p>
                         
                         <div class="donate-methods">
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+PromptPay" alt="PromptPay" class="qr-code">
                                 <h4>พร้อมเพย์ (PromptPay)</h4>
                                 <p class="account-num">095-185-7443</p>
-                                <span class="account-name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</span>
+                                <span class="account-name" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</span>
                             </div>
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+TrueMoney" alt="TrueMoney" class="qr-code">
                                 <h4>ทรูมันนี่ (TrueMoney)</h4>
                                 <p class="account-num">095-185-7443</p>
-                                <span class="account-name">โอนเข้าวอลเล็ท</span>
+                                <span class="account-name" data-i18n="donate_truemoney">โอนเข้าวอลเล็ท</span>
                             </div>
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=In-game+Gift" alt="In-game Gift" class="qr-code">
-                                <h4>ของขวัญในเกม (In-game)</h4>
+                                <h4 data-i18n="donate_ingame">ของขวัญในเกม (In-game)</h4>
                                 <p class="account-num" style="color: var(--rose);">PingkungXD</p>
-                                <span class="account-name">แอดเพื่อนแล้วส่ง Rose/ของขวัญให้ในเกมได้เลยครับ 🌹</span>
+                                <span class="account-name" data-i18n="donate_ingame_desc">แอดเพื่อนแล้วส่งของขวัญให้ในเกมได้เลยครับ 🌹</span>
                             </div>
                         </div>
-                        <div class="thank-you-msg">ขอขอบคุณทุกการสนับสนุนที่มีให้เสมอมาครับ 🙏</div>
+                        <div class="thank-you-msg" data-i18n="donate_thanks">ขอขอบคุณทุกการสนับสนุนที่มีให้เสมอมาครับ 🙏</div>
                     </div>
                 </div>
             </section>
 
             <!-- SETTINGS PAGE -->
             <section id="settings" class="page-content">
-                <h2>การตั้งค่า</h2>
+                <h2 data-i18n="head_settings">การตั้งค่า</h2>
                 
                 <div class="settings-group">
                     <h3><span class="material-icons" style="vertical-align: middle;">vpn_key</span> Wolvesville API Key</h3>
-                    <p>กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
+                    <p data-i18n="settings_api_desc">กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
                     <input type="text" id="api-key-input" placeholder="Paste your API Key here...">
-                    <button id="save-api-key-btn">บันทึก Key</button>
+                    <button id="save-api-key-btn" data-i18n="btn_save_key">บันทึก Key</button>
                     <p id="api-key-status" style="margin-top: 15px; font-weight: bold;"></p>
                 </div>
 
                 <div class="settings-group" style="margin-top: 20px;">
-                    <h3><span class="material-icons" style="vertical-align: middle;">language</span> ภาษาของข้อมูล (Language)</h3>
-                    <p>เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API (เช่น คำอธิบายบทบาท)</p>
+                    <h3 data-i18n="settings_lang_title"><span class="material-icons" style="vertical-align: middle;">language</span> ภาษา (Language)</h3>
+                    <p data-i18n="settings_lang_desc">เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API และเมนูต่างๆ</p>
                     <select id="api-locale-select" style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; width: 100%; max-width: 300px; margin-bottom: 10px;">
                         <option value="th">ไทย (Thai)</option>
                         <option value="en">English</option>
                     </select>
                     <br>
-                    <button id="save-locale-btn">บันทึกภาษา / Save Language</button>
-                    <p id="api-locale-status" style="margin-top: 15px; font-weight: bold; color: var(--success); display: none;">✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)</p>
+                    <button id="save-locale-btn" data-i18n="btn_save_lang">บันทึกภาษา / Save Language</button>
+                    <p id="api-locale-status" style="margin-top: 15px; font-weight: bold; color: var(--success); display: none;" data-i18n="msg_lang_saved">✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)</p>
                 </div>
             </section>
 
             <!-- ส่วน Credit (CR) ท้ายเว็บ -->
             <footer style="margin-top: 50px; padding: 20px 10px 0 10px; text-align: center; font-size: 0.9rem; color: #64748b; border-top: 1px dashed #cbd5e1; width: 100%;">
-                <strong>Wolvesville API Dashboard | พัฒนาและออกแบบโดย PingkungXD</strong> 
+                <strong data-i18n="footer_cr">Wolvesville API Dashboard | พัฒนาและออกแบบโดย PingkungXD</strong> 
             </footer>
 
         </div>
@@ -253,37 +253,36 @@
     <div id="feedback-modal" class="custom-modal-overlay" style="display: none;">
         <div class="custom-modal-box">
             <button id="close-feedback-modal" class="modal-close-btn"><span class="material-icons">close</span></button>
-            <h3 style="color: var(--primary-color); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <h3 style="color: var(--primary-color); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;" data-i18n="feedback_title">
                 <span class="material-icons">rate_review</span> ส่งฟีดแบค
             </h3>
-            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">พบเจอบัค หรือมีไอเดียใหม่ๆ พิมพ์บอกเราและแนบรูปภาพได้เลยครับ!</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;" data-i18n="feedback_desc">พบเจอบัค หรือมีไอเดียใหม่ๆ พิมพ์บอกเราและแนบรูปภาพได้เลยครับ!</p>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-weight: 500; margin-bottom: 5px;">หัวข้อ</label>
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;" data-i18n="feedback_topic">หัวข้อ</label>
                 <select id="feedback-topic" class="form-input">
-                    <option value="bug">🐛 รายงานปัญหา (Bug)</option>
-                    <option value="suggestion">💡 เสนอแนะ (Suggestion)</option>
-                    <option value="other">📝 อื่นๆ (Other)</option>
+                    <option value="bug" data-i18n="feedback_opt_bug">🐛 รายงานปัญหา (Bug)</option>
+                    <option value="suggestion" data-i18n="feedback_opt_sug">💡 เสนอแนะ (Suggestion)</option>
+                    <option value="other" data-i18n="feedback_opt_oth">📝 อื่นๆ (Other)</option>
                 </select>
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-weight: 500; margin-bottom: 5px;">รายละเอียด</label>
-                <textarea id="feedback-msg" rows="4" class="form-input" placeholder="พิมพ์ข้อความของคุณที่นี่..."></textarea>
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;" data-i18n="feedback_detail">รายละเอียด</label>
+                <textarea id="feedback-msg" rows="4" class="form-input" data-i18n-placeholder="feedback_ph" placeholder="พิมพ์ข้อความของคุณที่นี่..."></textarea>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label style="display: block; font-weight: 500; margin-bottom: 5px;">แนบรูปภาพ (ถ้ามี)</label>
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;" data-i18n="feedback_img">แนบรูปภาพ (ถ้ามี)</label>
                 <input type="file" id="feedback-image" accept="image/png, image/jpeg, image/gif" class="form-input" style="padding: 8px; background: #f8fafc; cursor: pointer;">
             </div>
 
             <button id="submit-feedback-btn" class="submit-btn">
-                <span class="material-icons" style="font-size: 20px;">send</span> ส่งข้อความ
+                <span class="material-icons" style="font-size: 20px;">send</span> <span data-i18n="btn_send_feedback">ส่งข้อความ</span>
             </button>
         </div>
     </div>
 
-    <!-- เติม ?v=2 เพื่อบังคับให้เบราว์เซอร์โหลด JS ใหม่เสมอ -->
     <script src="script.js?v=2"></script> 
 </body>
 </html>
