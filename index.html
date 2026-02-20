@@ -50,12 +50,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="nav-link" data-page="feedback">
-                            <span class="material-icons">feedback</span>
-                            <span class="nav-text">ส่งฟีดแบค</span>
-                        </a>
-                    </li>
-                    <li>
                         <a href="#" class="nav-link" data-page="donate">
                             <span class="material-icons">favorite</span>
                             <span class="nav-text">สนับสนุน</span>
@@ -181,35 +175,6 @@
                     </div>
                 </div>
             </section>
-
-                        <!-- FEEDBACK PAGE -->
-            <section id="feedback" class="page-content">
-                <h2>ส่งฟีดแบค</h2>
-                <div class="settings-group" style="max-width: 600px; margin: 20px 0; text-align: left;">
-                    <h3 style="color: var(--primary-color); margin-bottom: 10px;">
-                        <span class="material-icons" style="vertical-align: middle;">rate_review</span> แจ้งปัญหา / เสนอแนะ
-                    </h3>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">พบเจอบัค หรือมีไอเดียฟีเจอร์ใหม่ๆ สามารถพิมพ์ข้อความทิ้งไว้ได้เลยครับ</p>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">หัวข้อ</label>
-                        <select id="feedback-topic" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 1rem; outline: none;">
-                            <option value="bug">🐛 รายงานปัญหา</option>
-                            <option value="suggestion">💡 เสนอแนะ</option>
-                            <option value="other">📝 อื่นๆ</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">รายละเอียด</label>
-                        <textarea id="feedback-msg" rows="5" placeholder="พิมพ์ข้อความของคุณที่นี่..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 1rem; resize: vertical; outline: none;"></textarea>
-                    </div>
-
-                    <button id="submit-feedback-btn" onclick="alert('ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อความของคุณเรียบร้อยแล้ว'); document.getElementById('feedback-msg').value='';" style="width: 100%; background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span class="material-icons" style="font-size: 20px;">send</span> ส่งข้อความ
-                    </button>
-                </div>
-            </section>
             
             <!-- DONATE PAGE -->
             <section id="donate" class="page-content">
@@ -238,7 +203,7 @@
                                 <img src="https://via.placeholder.com/200x200?text=In-game+Gift" alt="In-game Gift" class="qr-code">
                                 <h4>ของขวัญในเกม (In-game)</h4>
                                 <p class="account-num" style="color: var(--rose);">PingkungXD</p>
-                                <span class="account-name">แอดเพื่อนแล้ว/ส่งของขวัญให้ในเกมได้เลยครับเฮีย 🌹</span>
+                                <span class="account-name">แอดเพื่อนแล้วส่ง Rose/ของขวัญให้ในเกมได้เลยครับ 🌹</span>
                             </div>
                         </div>
                         <div class="thank-you-msg">ขอขอบคุณทุกการสนับสนุนที่มีให้เสมอมาครับ 🙏</div>
@@ -276,6 +241,45 @@
                 <strong>Wolvesville API Dashboard | พัฒนาและออกแบบโดย PingkungXD</strong> 
             </footer>
 
+        </div>
+    </div>
+
+    <!-- 🌟 ปุ่ม Floating ฟีดแบคขวาล่าง 🌟 -->
+    <button id="floating-feedback-btn" class="fab-feedback" title="ส่งฟีดแบคแจ้งปัญหา">
+        <span class="material-icons">rate_review</span>
+    </button>
+
+    <!-- 🌟 หน้าต่าง Modal สำหรับส่งฟีดแบค 🌟 -->
+    <div id="feedback-modal" class="custom-modal-overlay" style="display: none;">
+        <div class="custom-modal-box">
+            <button id="close-feedback-modal" class="modal-close-btn"><span class="material-icons">close</span></button>
+            <h3 style="color: var(--primary-color); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons">rate_review</span> ส่งฟีดแบค
+            </h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">พบเจอบัค หรือมีไอเดียใหม่ๆ พิมพ์บอกเราและแนบรูปภาพได้เลยครับ!</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;">หัวข้อ</label>
+                <select id="feedback-topic" class="form-input">
+                    <option value="bug">🐛 รายงานปัญหา (Bug)</option>
+                    <option value="suggestion">💡 เสนอแนะ (Suggestion)</option>
+                    <option value="other">📝 อื่นๆ (Other)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;">รายละเอียด</label>
+                <textarea id="feedback-msg" rows="4" class="form-input" placeholder="พิมพ์ข้อความของคุณที่นี่..."></textarea>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 5px;">แนบรูปภาพ (ถ้ามี)</label>
+                <input type="file" id="feedback-image" accept="image/png, image/jpeg, image/gif" class="form-input" style="padding: 8px; background: #f8fafc; cursor: pointer;">
+            </div>
+
+            <button id="submit-feedback-btn" class="submit-btn">
+                <span class="material-icons" style="font-size: 20px;">send</span> ส่งข้อความ
+            </button>
         </div>
     </div>
 
