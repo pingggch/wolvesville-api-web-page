@@ -1861,35 +1861,64 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             rewardsTrackHtml += '</div></div>';
         }
 
-        // --- เพิ่มระบบนับถอยหลังและปุ่มข้ามเวลา ---
+        // --- แก้ไขระบบนับถอยหลังโดยอ้างอิงจาก tierEndTime ---
         const nowMs = Date.now();
-        const rawTierStart = qData.tierStartTime || qInfo.tierStartTime;
-        const tierStartMs = rawTierStart ? new Date(rawTierStart).getTime() : 0;
-        const isWaitingForNextTier = tierStartMs > nowMs;
+        const rawTierEnd = qData.tierEndTime || qInfo.tierEndTime;
+        const tierEndMs = rawTierEnd ? new Date(rawTierEnd).getTime() : 0;
+        
+        // เช็คว่ายังไม่หมดเวลา 24 ชั่วโมงของด่านนี้ใช่หรือไม่
+        const isTimeRemaining = tierEndMs > nowMs;
+        
+        // เช็คว่าเควสด่านนี้สำเร็จแล้วหรือยัง (เช็คจาก API ตรงๆ หรือดูที่ XP)
+        const isTierFinished = qData.tierFinished || (currentXpInTier >= targetXp);
 
         let countdownHtml = '';
         let shouldShowSkip = false;
-        let shouldShowAddTime = true; // ตั้งค่าเริ่มต้นให้แสดงปุ่มเพิ่มเวลา
+        let shouldShowAddTime = false;
 
-        if (isWaitingForNextTier) {
-            shouldShowSkip = true;
-            shouldShowAddTime = false; // ซ่อนปุ่มเพิ่มเวลาตอนอยู่ในช่วงรอข้ามด่าน
-            countdownHtml = `
-                <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
-                    ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
-                    <span id="tier-cooldown-timer" data-time="${tierStartMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
-                </div>
-            `;
-        } else if (currentXpInTier >= targetXp) {
-            shouldShowSkip = true;
-            shouldShowAddTime = false; // ซ่อนปุ่มเพิ่มเวลาถ้าด่านนี้ XP เต็มแล้วแต่ยังไม่ตัดรอบ
-            countdownHtml = `
-                <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <span class="material-icons" style="font-size: 20px;">check_circle</span>
-                    ${getLocale() === 'en' ? 'Tier completed! Waiting for the next tier...' : 'เคลียร์ด่านนี้สำเร็จ! กำลังเตรียมด่านต่อไป...'}
-                </div>
-            `;
+        if (!isTierFinished) {
+            // 🌟 กรณี 1: ยังทำด่านนี้ไม่เสร็จ (XP ไม่เต็ม)
+            shouldShowAddTime = true;
+            shouldShowSkip = false;
+            
+            if (isTimeRemaining) {
+                countdownHtml = `
+                    <div style="background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #1d4ed8; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="material-icons" style="font-size: 20px;">timer</span>
+                        ${getLocale() === 'en' ? 'Time remaining for this tier:' : 'เวลาที่เหลือสำหรับด่านนี้:'} 
+                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
+                    </div>
+                `;
+            } else {
+                countdownHtml = `
+                    <div style="background: #fef2f2; border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #b91c1c; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span class="material-icons" style="font-size: 20px;">error_outline</span>
+                        ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว! กรุณาเพิ่มเวลาหรือยกเลิก'}
+                    </div>
+                `;
+            }
+        } else {
+            // 🌟 กรณี 2: เคลียร์ด่านนี้สำเร็จแล้ว (XP เต็ม)
+            shouldShowAddTime = false;
+            
+            if (isTimeRemaining) {
+                shouldShowSkip = true; // เปิดปุ่มให้กดข้ามเวลาได้
+                countdownHtml = `
+                    <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
+                        ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
+                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
+                    </div>
+                `;
+            } else {
+                shouldShowSkip = false;
+                countdownHtml = `
+                    <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span class="material-icons" style="font-size: 20px;">check_circle</span>
+                        ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ! กำลังเตรียมด่านต่อไป...'}
+                    </div>
+                `;
+            }
         }
 
         let actionsHtml = '';
