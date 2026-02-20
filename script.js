@@ -1571,6 +1571,39 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             `;
         }
 
+        // ADD PARTICIPANTS HTML HERE
+        let participantsHtml = '';
+        if (qData.participants && Array.isArray(qData.participants) && qData.participants.length > 0) {
+            const sortedParts = [...qData.participants].sort((a, b) => b.xp - a.xp);
+            const listHtml = sortedParts.map((p, index) => {
+                const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index + 1}.`));
+                const safeUsername = escapeJsString(p.username || 'Unknown');
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-size:0.9rem;">
+                        <div>
+                            <span style="display:inline-block; width:24px; color:#64748b; font-weight:bold; text-align:center;">${medal}</span>
+                            <strong style="cursor:pointer; color:var(--primary-color); margin-left:5px;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong>
+                        </div>
+                        <span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:2px 8px; border-radius:12px; font-size:0.8rem;">
+                            ${(p.xp || 0).toLocaleString()} XP
+                        </span>
+                    </div>
+                `;
+            }).join('');
+            
+            participantsHtml = `
+                <div style="margin-top:25px; border-top:1px dashed #e2e8f0; padding-top:15px;">
+                    <h5 style="margin:0 0 10px 0; color:#475569; display:flex; align-items:center; font-size:1rem;">
+                        <span class="material-icons" style="font-size:20px; margin-right:5px; color:#3b82f6;">leaderboard</span> 
+                        Top Participants
+                    </h5>
+                    <div style="max-height:200px; overflow-y:auto; padding-right:5px; border:1px solid #f1f5f9; border-radius:8px; padding:10px; background:#f8fafc;" class="clan-scroll-area">
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         questsHtml = `
             <div class="active-quest-container">
                 <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
@@ -1590,6 +1623,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
                     ${rewardsTrackHtml}
                     ${actionsHtml}
+                    ${participantsHtml}
                 </div>
             </div>
         `;
