@@ -2,22 +2,22 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wolvesville API Dashboard</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- เติม ?v=2 เพื่อบังคับให้เบราว์เซอร์โหลด CSS ใหม่เสมอ -->
-    <link rel="stylesheet" href="styles.css?v=2"> 
+    <!-- เติม ?v=3 เพื่อบังคับให้เบราว์เซอร์โหลด CSS ใหม่เสมอ -->
+    <link rel="stylesheet" href="styles.css?v=3"> 
 </head>
 <body>
     <div class="app-container">
         
+        <!-- 🌟 ย้ายปุ่มเมนูออกมานอกสุด เพื่อให้แสดงลอยอยู่มุมซ้ายบนเสมอ 🌟 -->
+        <button class="hamburger-btn" title="Menu">
+            <span class="material-icons">menu</span>
+        </button>
+
         <div class="sidebar">
-            <div class="sidebar-header">
-                <button class="hamburger-btn">
-                    <span class="material-icons">menu</span>
-                </button>
-            </div>
-            <nav>
+            <nav style="margin-top: 90px;">
                 <ul>
                     <li>
                         <a href="#" class="nav-link" data-page="dashboard">
@@ -293,6 +293,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=2"></script> 
+    <script src="script.js?v=3"></script> 
 </body>
 </html>
