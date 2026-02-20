@@ -171,7 +171,24 @@ const langDict = {
         txt_unblock: "ปลดบล็อค",
         txt_no_blocks: "ไม่มีใครถูกบล็อคอยู่",
         txt_all_on: "เปิดทุกคน",
-        txt_all_off: "ปิดทุกคน"
+        txt_all_off: "ปิดทุกคน",
+        
+        // Loading Steps
+        load_init: "กำลังเตรียมระบบ...",
+        load_info: "กำลังดึงข้อมูลทั่วไป...",
+        load_members: "กำลังดึงรายชื่อสมาชิก...",
+        load_quests: "กำลังดึงข้อมูลเควสที่เปิดอยู่...",
+        load_chat: "กำลังดึงประวัติแชท...",
+        load_logs: "กำลังดึงบันทึกกิจกรรม...",
+        load_ledger: "กำลังดึงบัญชีแคลน...",
+        load_history: "กำลังดึงประวัติเควส...",
+        load_ann: "กำลังดึงประกาศแคลน...",
+        load_blocklist: "กำลังดึงรายชื่อแบล็คลิสต์...",
+        load_blocked_p: "กำลังประมวลผลข้อมูลคนถูกบล็อค...",
+        load_avail_q: "กำลังดึงข้อมูลเควสที่มีให้ซื้อ...",
+        load_votes: "กำลังดึงผลโหวต...",
+        load_avatars: "กำลังโหลดรูปโปรไฟล์",
+        load_dash: "กำลังสร้างหน้าแดชบอร์ด..."
     },
     en: {
         // Sidebar & Headers
@@ -342,7 +359,24 @@ const langDict = {
         txt_unblock: "Unblock",
         txt_no_blocks: "No blocked members found.",
         txt_all_on: "All ON",
-        txt_all_off: "All OFF"
+        txt_all_off: "All OFF",
+
+        // Loading Steps
+        load_init: "Initializing system...",
+        load_info: "Fetching clan info...",
+        load_members: "Fetching members list...",
+        load_quests: "Fetching active quests...",
+        load_chat: "Fetching chat history...",
+        load_logs: "Fetching logs...",
+        load_ledger: "Fetching ledger...",
+        load_history: "Fetching quest history...",
+        load_ann: "Fetching announcements...",
+        load_blocklist: "Fetching blocklist...",
+        load_blocked_p: "Processing blocked players...",
+        load_avail_q: "Fetching available quests...",
+        load_votes: "Fetching votes data...",
+        load_avatars: "Loading avatars",
+        load_dash: "Rendering dashboard..."
     }
 };
 
@@ -1686,32 +1720,35 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
 
-    const updateProgress = (text) => {
+    const updateProgress = (textKey, extraText = '') => {
         if(!isBackground) {
             currentStep++;
             const percent = Math.min(100, Math.round((currentStep / totalSteps) * 100));
+            const loadingMsg = t(textKey) + extraText;
             clanContentContainer.innerHTML = `
                 <div class="loading-container">
                     <div style="font-size:24px; margin-bottom:10px; animation: bounce 1s infinite;">🛡️</div>
-                    <h3 style="color:#1e293b; margin:0;">${t('txt_loading_clan')}</h3>
+                    <h3 style="color:#1e293b; margin:0; margin-bottom: 10px;">${t('txt_loading_clan')}</h3>
+                    <div style="color:var(--primary-color); font-weight:500; font-size:0.95rem; margin-bottom: 5px;">${loadingMsg}</div>
                     <div class="loading-bar-track"><div class="loading-bar-fill" style="width: ${percent}%;"></div></div>
+                    <div style="color:#64748b; font-size:0.8rem;">${percent}%</div>
                 </div>
             `;
         }
     };
 
-    if(!isBackground) { isFirstRender = true; updateProgress('...'); }
+    if(!isBackground) { isFirstRender = true; updateProgress('load_init'); }
     
     await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
     
-    updateProgress('...');
+    updateProgress('load_info');
     const info = await fetchData(`/clans/${clanId}/info`);
     if (info.error) {
         if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
         return;
     }
 
-    updateProgress('...');
+    updateProgress('load_members');
     let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
     if (membersRaw.error) membersRaw = await fetchData(`/clans/${clanId}/members`);
     
@@ -1720,17 +1757,17 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
     }
     
-    updateProgress('...');
+    updateProgress('load_quests');
     const quests = await fetchData(`/clans/${clanId}/quests/active`);
-    updateProgress('...');
+    updateProgress('load_chat');
     const chat = await fetchData(`/clans/${clanId}/chat`);
-    updateProgress('...');
+    updateProgress('load_logs');
     const logs = await fetchData(`/clans/${clanId}/logs`);
-    updateProgress('...');
+    updateProgress('load_ledger');
     const ledger = await fetchData(`/clans/${clanId}/ledger`);
-    updateProgress('...');
+    updateProgress('load_history');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
-    updateProgress('...');
+    updateProgress('load_ann');
     const announcements = await fetchData(`/clans/${clanId}/announcements`);
 
     let blockedMembers = { error: true };
@@ -1738,13 +1775,13 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     let votesData = { error: true }; 
 
     if(isMyClan) {
-        updateProgress('...');
+        updateProgress('load_blocklist');
         const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
 
         if (!blocklistRes.error && Array.isArray(blocklistRes)) {
             const extractId = (item) => typeof item === 'string' ? item : (item.playerId || item.id || item.targetPlayerId);
             const playersData = [];
-            updateProgress('...');
+            updateProgress('load_blocked_p');
             for (const item of blocklistRes.slice(0, 50)) {
                 const pid = extractId(item);
                 if (pid) playersData.push(await fetchData(`/players/${pid}`));
@@ -1759,18 +1796,18 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
              blockedMembers = blocklistRes;
         }
 
-        updateProgress('...');
+        updateProgress('load_avail_q');
         availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
         if (Array.isArray(availableQuests)) availableQuests.forEach(q => questDetailsCache.set(q.id, q));
 
-        updateProgress('...');
+        updateProgress('load_votes');
         votesData = await fetchData(`/clans/${clanId}/quests/votes`);
         clanVotesCache = votesData;
     }
 
     let members = membersRaw;
     if (!membersRaw.error && Array.isArray(membersRaw)) {
-        updateProgress('...');
+        updateProgress('load_avatars', ` (${membersRaw.length} ${getLocale() === 'en' ? 'players' : 'คน'})...`);
         const membersList = [];
         for (const m of membersRaw) {
             if (playerAvatarCache.has(m.playerId)) membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
@@ -1789,7 +1826,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     let participatingMemberCount = Array.isArray(members) ? members.filter(m => m.participateInClanQuests).length : 0;
     currentParticipatingCount = participatingMemberCount;
 
-    updateProgress('...');
+    updateProgress('load_dash');
     setTimeout(() => {
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
