@@ -559,26 +559,35 @@ button:hover { filter: brightness(95%); }
    6. DONATE PAGE STYLES
    =============================== */
 .donate-container { display: flex; justify-content: center; align-items: center; padding: 20px 0; }
-.donate-card { background: white; padding: 50px 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); text-align: center; max-width: 700px; width: 100%; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+.donate-card { background: white; padding: 50px 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); text-align: center; max-width: 1000px; width: 100%; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
 .donate-header-bg { position: absolute; top: 0; left: 0; right: 0; height: 120px; background: linear-gradient(135deg, #fbcfe8, #f3e8ff); z-index: 0; }
 .donate-icon { font-size: 70px; color: var(--rose); margin-bottom: 15px; position: relative; z-index: 1; background: white; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.2); }
 .donate-title { font-size: 1.8rem; color: var(--text-main); margin-bottom: 10px; position: relative; z-index: 1; }
 .donate-desc { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 35px; line-height: 1.6; position: relative; z-index: 1; }
 .donate-methods { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; position: relative; z-index: 1; }
-.donate-method { background: var(--bg-body); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; flex: 1; min-width: 250px; transition: transform 0.3s, box-shadow 0.3s; }
+.donate-method { background: var(--bg-body); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; flex: 1; min-width: 280px; transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; }
 .donate-method:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--secondary-color); }
 .donate-method h4 { color: var(--primary-color); margin-bottom: 10px; font-size: 1.1rem; }
 
-/* 🌟 แก้อาการรูปยืด (QR Code Stretch Fix) 🌟 */
+/* 🌟 แก้อาการรูปยืดและล้นกรอบ (QR Code Responsive Fix) 🌟 */
 .qr-code { 
-    width: 180px; 
-    height: 180px; 
-    object-fit: contain; /* ป้องกันรูปยืด ให้แสดงผลพอดีกรอบเสมอ */
+    width: 100%; 
+    max-width: 280px; /* ขยายได้สูงสุด 280px ให้พอดีกรอบและสแกนง่าย */
+    height: auto;
+    aspect-ratio: 1 / 1; /* บังคับให้เป็นสี่เหลี่ยมจัตุรัสเสมอ */
+    object-fit: contain; /* ป้องกันรูปยืด */
     background-color: #fff; /* เพิ่มพื้นหลังสีขาว กรณีรูปโปร่งใส */
     border-radius: 16px; 
     margin-bottom: 15px; 
     box-shadow: var(--shadow-sm); 
     border: 4px solid white; 
+    cursor: zoom-in; /* เพิ่มเคอร์เซอร์เป็นรูปแว่นขยายให้รู้ว่ากดได้ */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+}
+
+.qr-code:hover {
+    transform: scale(1.05); /* เอฟเฟกต์เด้งขยายขึ้นตอนเอาเมาส์ชี้ */
+    box-shadow: var(--shadow-md);
 }
 
 .account-num { font-size: 1.2rem; font-weight: 700; color: var(--text-main); letter-spacing: 1px; margin-bottom: 5px; }
