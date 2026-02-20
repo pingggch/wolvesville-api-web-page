@@ -77,12 +77,13 @@ body {
     color: white;
     position: fixed;
     height: 100%;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
     padding: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     box-shadow: 4px 0 15px rgba(0,0,0,0.05);
 }
 
@@ -96,7 +97,7 @@ body {
     max-width: calc(100% - var(--sidebar-collapsed));
     margin-left: var(--sidebar-collapsed);
     padding: 30px;
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 0; 
     box-sizing: border-box;
 }
@@ -107,16 +108,7 @@ body {
     max-width: calc(100% - var(--sidebar-width));
 }
 
-/* Navigation Menu */
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    height: 90px;
-    transition: all 0.3s ease;
-    width: 100%;
-}
-
+/* 🌟 ปุ่ม Hamburger ลอยเด่นตลอดเวลา 🌟 */
 .hamburger-btn {
     background: #1e293b; 
     border: none;
@@ -129,18 +121,17 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 14px; 
-    padding: 0;
-}
-
-.app-container.sidebar-pushed .hamburger-btn {
-    margin: 0 14px; 
+    position: fixed;
+    top: 19px;
+    left: 14px;
+    z-index: 2000; /* อยู่บนสุดของทุกอย่าง */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
 }
 
 .hamburger-btn:hover { 
     background: #334155; 
     transform: translateY(-2px); 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); 
 }
 
 .hamburger-btn:active { transform: translateY(1px) scale(0.95); }
@@ -890,15 +881,23 @@ details summary:active { transform: scale(0.99); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+/* 🌟🌟🌟 MOBILE RESPONSIVE FIXES 🌟🌟🌟 */
 @media (max-width: 768px) {
-    .sidebar { width: 0; padding: 0; z-index: 1000; overflow: hidden; }
+    .sidebar { 
+        width: var(--sidebar-width); 
+        transform: translateX(-100%); /* ซ่อน sidebar ไว้ด้านซ้าย */
+        z-index: 1500; 
+    }
+    .app-container.sidebar-pushed .sidebar { 
+        transform: translateX(0); /* เลื่อน sidebar ออกมาเมื่อกดปุ่ม */
+        box-shadow: 10px 0 25px rgba(0,0,0,0.5);
+    }
     .main-content { 
         margin-left: 0; 
-        padding: 20px; 
+        padding: 90px 15px 20px 15px; /* เพิ่มพื้นที่ด้านบนให้ปุ่มเมนูไม่บังเนื้อหา */
         width: 100%; 
         max-width: 100%; 
     }
-    .app-container.sidebar-pushed .sidebar { width: var(--sidebar-width); padding: 0; }
     .app-container.sidebar-pushed .main-content {
         margin-left: 0;
         width: 100%;
@@ -906,6 +905,32 @@ details summary:active { transform: scale(0.99); }
     }
     .profile-header-card { flex-direction: column; text-align: center; border-left: none; border-top: 5px solid var(--primary-color); }
     .stats-grid-row1, .stats-grid-row2 { grid-template-columns: 1fr; }
+    
+    /* แก้ไขการแสดงผลช่องค้นหาในมือถือไม่ให้ล้น */
+    .search-container {
+        flex-wrap: wrap;
+    }
+    .search-container > .material-icons {
+        display: none; /* ซ่อนไอคอนบนมือถือเพื่อประหยัดพื้นที่ */
+    }
+    .search-container input {
+        width: 100%; /* ให้กล่องค้นหาเต็มจอ */
+        text-align: center;
+        border-bottom: 1px solid #cbd5e1;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    .search-container button {
+        width: 100%; /* ปุ่มค้นหา/แคลนของฉัน ให้เต็มจอเรียงลงมา */
+        margin-left: 0 !important;
+        margin-top: 5px;
+    }
+    
+    /* แก้ไขให้การ์ด Donate ไม่ล้นขอบจอ */
+    .donate-method {
+        min-width: 100%; 
+        padding: 15px;
+    }
 }
 
 /* ===============================
