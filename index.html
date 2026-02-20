@@ -22,7 +22,7 @@
                     <li>
                         <a href="#" class="nav-link" data-page="dashboard">
                             <span class="material-icons">dashboard</span>
-                            <span class="nav-text">Dashboard</span>
+                            <span class="nav-text">แดชบอร์ด</span>
                         </a>
                     </li>
                     <li>
@@ -40,25 +40,25 @@
                     <li>
                         <a href="#" class="nav-link" data-page="role-wiki">
                             <span class="material-icons">recent_actors</span>
-                            <span class="nav-text">Role Wiki</span>
+                            <span class="nav-text">บทบาททั้งหมด</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="quest-wiki">
                             <span class="material-icons">menu_book</span>
-                            <span class="nav-text">Quest Wiki</span>
+                            <span class="nav-text">เควสแคลนทั้งหมด</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" class="nav-link" data-page="donate">
                             <span class="material-icons">favorite</span>
-                            <span class="nav-text">สนับสนุน (Donate)</span>
+                            <span class="nav-text">สนับสนุน</span>
                         </a>
                     </li>
                     <li style="margin-top: auto;">
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
-                            <span class="nav-text">ตั้งค่า</span>
+                            <span class="nav-text">การตั้งค่า</span>
                         </a>
                     </li>
                 </ul>
@@ -81,7 +81,7 @@
                     <div class="stat-card item-card">
                         <span class="material-icons">inventory</span>
                         <div class="stat-info">
-                            <p class="stat-label">ไอเทมในเกม (จาก API)</p>
+                            <p class="stat-label">ไอเทมทั้งหมดในเกมในเกม</p>
                             <h3 class="stat-value" id="available-items">...</h3>
                         </div>
                     </div>
@@ -101,22 +101,22 @@
                     <div class="stat-card full-usage-card api-usage-full-card">
                         <div class="usage-header">
                             <span class="material-icons">insights</span>
-                            <h3>API Usage Stats</h3>
+                            <h3>การใช้API</h3>
                         </div>
-                        <div class="usage-detail"><p>Today</p><h4 id="requests-full-today">0</h4></div>
-                        <div class="usage-detail"><p>Month</p><h4 id="requests-full-this-month">0</h4></div>
-                        <div class="usage-detail"><p>Year</p><h4 id="requests-full-this-year">0</h4></div> 
-                        <div class="usage-detail last-detail"><p>Lifetime</p><h4 id="requests-full-lifetime">0</h4></div> 
+                        <div class="usage-detail"><p>วันนี้</p><h4 id="requests-full-today">0</h4></div>
+                        <div class="usage-detail"><p>เดือนนี้</p><h4 id="requests-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p>ปันี้</p><h4 id="requests-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p>ทั้งหมด</p><h4 id="requests-full-lifetime">0</h4></div> 
                     </div>
                     <div class="stat-card full-usage-card visitors-full-card">
                         <div class="usage-header">
                             <span class="material-icons">public</span>
-                            <h3>Visitors</h3>
+                            <h3>การเยี่ยมชมเว็บ</h3>
                         </div>
-                        <div class="usage-detail"><p>Today</p><h4 id="visitors-full-today">0</h4></div>
-                        <div class="usage-detail"><p>Month</p><h4 id="visitors-full-this-month">0</h4></div>
-                        <div class="usage-detail"><p>Year</p><h4 id="visitors-full-this-year">0</h4></div> 
-                        <div class="usage-detail last-detail"><p>Lifetime</p><h4 id="visitors-full-lifetime">0</h4></div> 
+                        <div class="usage-detail"><p>วันนี้</p><h4 id="visitors-full-today">0</h4></div>
+                        <div class="usage-detail"><p>เดือนนี้</p><h4 id="visitors-full-this-month">0</h4></div>
+                        <div class="usage-detail"><p>ปันี้</p><h4 id="visitors-full-this-year">0</h4></div> 
+                        <div class="usage-detail last-detail"><p>ทั้งหมด</p><h4 id="visitors-full-lifetime">0</h4></div> 
                     </div>
                 </div>
             </section>
@@ -139,7 +139,7 @@
 
             <!-- CLAN MANAGER PAGE -->
             <section id="clan-manager" class="page-content">
-                <h2>จัดการแคลน (Clan Manager)</h2>
+                <h2>จัดการแคลน</h2>
                 <div class="search-container">
                     <span class="material-icons">shield</span>
                     <input type="text" id="clan-name-input" placeholder="ชื่อแคลน หรือ Clan ID...">
@@ -156,7 +156,7 @@
 
             <!-- ROLE WIKI PAGE (หน้าดูบทบาทใหม่) -->
             <section id="role-wiki" class="page-content">
-                <h2>🎭 Role Wiki (ข้อมูลบทบาททั้งหมด)</h2>
+                <h2>บทบาททั้งหมด</h2>
                 <div id="role-wiki-container" style="margin-top: 20px;">
                     <div style="text-align:center; color:#888; padding:60px;">
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
@@ -167,7 +167,7 @@
 
             <!-- QUEST WIKI PAGE -->
             <section id="quest-wiki" class="page-content">
-                <h2>📚 Quest Wiki (All Quests)</h2>
+                <h2>เควสแคลนทั้งหมด</h2>
                 <div id="quest-wiki-container" class="quest-grid" style="margin-top: 20px;">
                     <div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;">
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
@@ -178,7 +178,7 @@
 
             <!-- DONATE PAGE -->
             <section id="donate" class="page-content">
-                <h2>สนับสนุนการพัฒนา (Donate)</h2>
+                <h2>สนับสนุนการพัฒนา</h2>
                 <div class="donate-container">
                     <div class="donate-card">
                         <div class="donate-header-bg"></div>
@@ -190,13 +190,13 @@
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+PromptPay" alt="PromptPay" class="qr-code">
                                 <h4>พร้อมเพย์ (PromptPay)</h4>
-                                <p class="account-num">08x-xxx-xxxx</p>
-                                <span class="account-name">ชื่อบัญชี: นาย/นางสาว xxx</span>
+                                <p class="account-num">095-185-7443</p>
+                                <span class="account-name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</span>
                             </div>
                             <div class="donate-method">
                                 <img src="https://via.placeholder.com/200x200?text=QR+Code+TrueMoney" alt="TrueMoney" class="qr-code">
                                 <h4>ทรูมันนี่ (TrueMoney)</h4>
-                                <p class="account-num">08x-xxx-xxxx</p>
+                                <p class="account-num">095-185-7443</p>
                                 <span class="account-name">โอนเข้าวอลเล็ท</span>
                             </div>
                         </div>
@@ -207,7 +207,7 @@
 
             <!-- SETTINGS PAGE -->
             <section id="settings" class="page-content">
-                <h2>ตั้งค่าระบบ & ฐานข้อมูล</h2>
+                <h2>การตั้งค่า</h2>
                 
                 <div class="settings-group">
                     <h3><span class="material-icons" style="vertical-align: middle;">vpn_key</span> Wolvesville API Key</h3>
@@ -219,7 +219,7 @@
 
                 <div class="settings-group" style="margin-top: 20px;">
                     <h3><span class="material-icons" style="vertical-align: middle;">language</span> ภาษาของข้อมูล (Language)</h3>
-                    <p>เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API (เช่น ชื่อบทบาท, คำอธิบายเควส)</p>
+                    <p>เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API (เช่น คำอธิบายบทบาท)</p>
                     <select id="api-locale-select" style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; width: 100%; max-width: 300px; margin-bottom: 10px;">
                         <option value="th">ไทย (Thai)</option>
                         <option value="en">English</option>
