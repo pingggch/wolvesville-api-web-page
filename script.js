@@ -377,186 +377,6 @@ function showMemberModal(data) {
     showCustomInfoModal(data.username || 'Member Details', content);
 }
 
-// Function to Show Role Modal (New)
-window.showRoleModal = (roleId) => {
-    const role = rolesCache.get(roleId);
-    if (!role) return showCustomAlert('Error', 'Role details not found.');
-
-    const imgUrl = role.image?.url || EMBEDDED_ICONS.UNKNOWN;
-    
-    let advancedHtml = '';
-    if (advancedRolesMappingCache[role.id] && advancedRolesMappingCache[role.id].length > 0) {
-        const advRoles = advancedRolesMappingCache[role.id].map(id => {
-            const r = rolesCache.get(id);
-            return r ? r.name : id.replace(/-/g, ' ');
-        }).join(', ');
-        advancedHtml = `<div style="margin-top:15px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🌟 Advanced Roles:</strong> ${advRoles}</div>`;
-    }
-
-    let randomHtml = '';
-    if (randomRolesMappingCache[role.id] && randomRolesMappingCache[role.id].length > 0) {
-         const subRoles = randomRolesMappingCache[role.id].map(id => {
-            const r = rolesCache.get(id);
-            return r ? r.name : id.replace(/-/g, ' ');
-         }).join(', ');
-         randomHtml = `<div style="margin-top:10px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🎲 Can spawn as:</strong> ${subRoles}</div>`;
-    }
-
-    let isRankedExcluded = rankedRandomExcludedRolesCache.includes(role.id) ? 
-        `<span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; margin-left:5px;">Ranked Excluded</span>` : '';
-
-    let teamColor = '#64748b'; 
-    if(role.team === 'VILLAGER') teamColor = '#3b82f6';
-    else if(role.team === 'WEREWOLF') teamColor = '#ef4444';
-    else if(role.team === 'SOLO') teamColor = '#f59e0b';
-    else if(role.team === 'RANDOM') teamColor = '#a855f7';
-
-    const content = `
-        <div style="text-align:center; padding:10px;">
-            <img src="${imgUrl}" referrerpolicy="no-referrer" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); margin-bottom:15px;" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
-            <h2 style="margin:0 0 10px 0; color:#1e293b; font-size:1.8rem;">${role.name}</h2>
-            <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
-                <span style="background:${teamColor}20; color:${teamColor}; border:1px solid ${teamColor}50; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Team: ${role.team}</span>
-                <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">Aura: ${role.aura}</span>
-                ${isRankedExcluded}
-            </div>
-        </div>
-        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-top:20px; text-align:center; font-size:1rem; color:#334155; line-height:1.6;">
-            "${role.description}"
-        </div>
-        ${advancedHtml}
-        ${randomHtml}
-    `;
-    showCustomInfoModal('Role Details', content);
-};
-
-// Function to View All Roles (New)
-async function initRoleWiki() {
-    const container = document.getElementById('role-wiki-container');
-    
-    if (rolesCache.size === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; color:#888; padding:60px;">
-                <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
-                <div style="margin-top:15px; font-size:1.1rem;">กำลังโหลดข้อมูลบทบาท...</div>
-            </div>
-        `;
-        await fetchAndCacheRoles();
-    }
-
-    if (rolesCache.size === 0) {
-        container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">ไม่สามารถโหลดข้อมูลบทบาทได้</div>`;
-        return;
-    }
-
-    const rolesArray = Array.from(rolesCache.values());
-    renderRoleGrid(rolesArray);
-}
-
-function renderRoleGrid(roles) {
-    const container = document.getElementById('role-wiki-container');
-    
-    if (!roles || roles.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:#888; padding:40px;">ไม่พบบทบาทที่ค้นหา</div>`;
-        return;
-    }
-
-    const html = roles.map(r => {
-        const imgUrl = r.image?.url || EMBEDDED_ICONS.UNKNOWN;
-        
-        let teamColor = '#64748b'; 
-        if(r.team === 'VILLAGER') teamColor = '#3b82f6';
-        else if(r.team === 'WEREWOLF') teamColor = '#ef4444';
-        else if(r.team === 'SOLO') teamColor = '#f59e0b';
-        else if(r.team === 'RANDOM') teamColor = '#a855f7';
-
-        return `
-            <div class="quest-card-large" style="cursor:pointer; min-height:160px; justify-content:flex-start;" onclick="window.showRoleModal('${r.id}')">
-                <div style="background:${teamColor}; width:100%; height:8px; border-top-left-radius:12px; border-top-right-radius:12px; position:absolute; top:0; left:0;"></div>
-                <img src="${imgUrl}" referrerpolicy="no-referrer" style="height:70px; object-fit:contain; margin:25px auto 10px auto; display:block; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));" loading="lazy" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
-                <div style="text-align:center; padding:0 10px 15px 10px; width:100%;">
-                    <strong style="font-size:1.05rem; color:#1e293b; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.name}">${r.name}</strong>
-                    <div style="font-size:0.75rem; font-weight:bold; color:${teamColor}; margin-top:4px;">${r.team}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    container.innerHTML = `<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">${html}</div>`;
-}
-
-// Function to View All Clan Quests (Wiki)
-window.viewAllQuests = async () => {
-    showCustomInfoModal('Loading...', '<div style="text-align:center; padding:40px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">Fetching all quests...</div></div>');
-    
-    try {
-        const [res, _] = await Promise.all([
-            fetchData('/clans/quests/all'),
-            fetchAndCacheAvatarItems() 
-        ]);
-        
-        if (res.error) {
-             document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-             showCustomAlert('Error', 'Failed to fetch all quests: ' + (res.message || 'Unknown error'));
-             return;
-        }
-
-        let html = '<div style="max-height: 70vh; overflow-y: auto; padding-right:5px;">';
-        html += '<p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">List of all existing clan quests in the game.</p>';
-        html += '<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">';
-        
-        if (Array.isArray(res)) {
-            html += res.map(q => {
-                const isGem = q.purchasableWithGems;
-                const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-                const currencyColor = isGem ? '#a855f7' : '#d97706'; 
-                const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/200';
-                const rewardCount = q.rewards ? q.rewards.length : 0;
-
-                return `
-                    <div class="quest-card-large" style="min-height: 140px; cursor: pointer;" onclick="window.showQuestModal('${q.id}')">
-                        <img src="${imgUrl}" referrerpolicy="no-referrer" class="quest-card-large-img" style="height: 90px;">
-                        <div class="quest-card-footer" style="padding: 8px;">
-                            <div class="quest-price-tag" style="color: ${currencyColor}; font-size:0.8rem; padding: 4px 8px;">
-                                <span class="material-icons" style="font-size:14px;">${currencyIcon}</span>
-                                <span>${isGem ? 'Gem' : 'Gold'}</span>
-                            </div>
-                            <div style="font-size:0.75rem; font-weight:bold; color:#64748b;">
-                                ${rewardCount} Rewards
-                            </div>
-                        </div>
-                        ${(() => { questDetailsCache.set(q.id, q); return ''; })()}
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        html += '</div>';
-
-        const rawJson = JSON.stringify(res, null, 4);
-        html += `
-            <div class="api-console" style="margin-top:30px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-                <details>
-                    <summary style="cursor:pointer; background:#f1f5f9; padding:10px; border-radius:8px; font-weight:600; color:#475569;">
-                        <span class="material-icons" style="vertical-align:bottom; margin-right:5px; font-size:20px;">data_object</span>
-                        Debug: Raw Quests Data (JSON)
-                    </summary>
-                    <pre style="background:#1e1e1e; color:#a5d6ff; padding:15px; border-radius:8px; margin-top:10px; overflow:auto; max-height:400px; font-size:0.85rem; font-family:monospace;">${rawJson}</pre>
-                </details>
-            </div>
-        `;
-        
-        html += '</div>';
-        
-        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-        showCustomInfoModal('📚 All Clan Quests Wiki', html, true);
-
-    } catch(e) {
-        console.error(e);
-        showCustomAlert('Error', 'Error fetching quests');
-    }
-};
-
 // Function to Show Quest Details Modal WITH Votes
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
@@ -2764,6 +2584,93 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
         `;
         settingsPage.appendChild(hatGroup);
+    }
+
+    // --- FEEDBACK SYSTEM (DISCORD WEBHOOK) ---
+    const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+    const feedbackTopic = document.getElementById('feedback-topic');
+    const feedbackMsg = document.getElementById('feedback-msg');
+
+    if (submitFeedbackBtn) {
+        submitFeedbackBtn.addEventListener('click', async () => {
+            const topic = feedbackTopic ? feedbackTopic.value : 'other';
+            const msg = feedbackMsg ? feedbackMsg.value.trim() : '';
+
+            if (!msg) {
+                // เช็คว่ามีฟังก์ชัน showCustomAlert ในระบบหรือไม่ ถ้าไม่มีให้ใช้ alert ปกติ
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('แจ้งเตือน', 'กรุณาพิมพ์ข้อความฟีดแบคก่อนกดส่งครับ 😅');
+                } else {
+                    alert('กรุณาพิมพ์ข้อความฟีดแบคก่อนกดส่งครับ 😅');
+                }
+                return;
+            }
+
+            // เปลี่ยนปุ่มเป็นสถานะกำลังโหลด
+            const originalText = submitFeedbackBtn.innerHTML;
+            submitFeedbackBtn.innerHTML = '<span class="material-icons" style="font-size: 20px; animation: spin 1s linear infinite;">sync</span> กำลังส่ง...';
+            submitFeedbackBtn.style.pointerEvents = 'none';
+
+            try {
+                // ⚠️ วาง DISCORD WEBHOOK URL ของคุณที่นี่ ⚠️
+                const WEBHOOK_URL = 'https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN'; 
+                
+                if (WEBHOOK_URL.includes('YOUR_WEBHOOK_ID')) {
+                    throw new Error("คุณยังไม่ได้ใส่ Discord Webhook URL ในไฟล์ script.js ครับ! ให้ไปแก้ไขตรงตัวแปร WEBHOOK_URL ก่อน");
+                }
+
+                // ตกแต่งสีและหัวข้อให้สวยงามตอนส่งเข้า Discord
+                let embedColor = 3447003; // สีฟ้า (Other)
+                let embedTitle = '📝 Other Feedback';
+                if (topic === 'bug') { embedColor = 16711680; embedTitle = '🐛 Bug Report'; } // สีแดง
+                else if (topic === 'suggestion') { embedColor = 16776960; embedTitle = '💡 Suggestion'; } // สีเหลือง
+
+                // โครงสร้างข้อความแบบ Embed ของ Discord
+                const payload = {
+                    username: "Wolvesville API Feedback", // ชื่อบอทที่จะแสดงในดิสคอร์ด
+                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png", // รูปโปรไฟล์บอท
+                    embeds: [{
+                        title: embedTitle,
+                        description: msg,
+                        color: embedColor,
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+
+                // ส่งคำสั่งยิง Webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ${response.status}`);
+                }
+
+                // แจ้งเตือนเมื่อส่งสำเร็จ
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('สำเร็จ', '✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อความของคุณเรียบร้อยแล้ว');
+                } else {
+                    alert('✅ ขอบคุณสำหรับฟีดแบคครับ! ระบบได้รับข้อความของคุณเรียบร้อยแล้ว');
+                }
+                
+                // เคลียร์กล่องข้อความ
+                if (feedbackMsg) feedbackMsg.value = ''; 
+                
+            } catch (e) {
+                console.error("Feedback Error:", e);
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('ข้อผิดพลาด', '❌ ไม่สามารถส่งฟีดแบคได้: ' + e.message);
+                } else {
+                    alert('❌ ไม่สามารถส่งฟีดแบคได้: ' + e.message);
+                }
+            } finally {
+                // คืนค่าปุ่มให้กลับมาเป็นแบบเดิม
+                submitFeedbackBtn.innerHTML = originalText;
+                submitFeedbackBtn.style.pointerEvents = 'auto';
+            }
+        });
     }
 
     document.querySelector('.nav-link[data-page="dashboard"]')?.click();
