@@ -17,6 +17,12 @@ let clanVotesCache = {};
 let clanMembersCache = {}; 
 let allQuestsCache = []; 
 
+// New Roles Caches
+let rolesCache = new Map();
+let advancedRolesMappingCache = {};
+let randomRolesMappingCache = {};
+let rankedRandomExcludedRolesCache = [];
+
 // Polling & State
 let clanPollingInterval = null;
 let currentViewingClanId = null;
@@ -229,6 +235,18 @@ async function fetchAndCacheAvatarItems() {
         res.forEach(item => {
             avatarItemsCache.set(item.id, item);
         });
+    }
+}
+
+async function fetchAndCacheRoles() {
+    if (rolesCache.size > 0) return;
+    const res = await fetchData('/roles', false, false);
+    if (!res.error && res.roles) {
+        res.roles.forEach(r => rolesCache.set(r.id, r));
+        advancedRolesMappingCache = res.advancedRolesMapping || {};
+        randomRolesMappingCache = res.randomRolesMapping || {};
+        rankedRandomExcludedRolesCache = res.rankedRandomExcludedRoles || [];
+        console.log('[Roles] Data cached successfully.');
     }
 }
 
@@ -1123,6 +1141,9 @@ async function fetchAndDisplayData() {
         
         // Render Global Announcements if data is available
         renderGlobalAnnouncements(check);
+        
+        // Fetch roles cache in the background on startup
+        fetchAndCacheRoles();
 
     } else {
         if(apiStatusDot) { apiStatusDot.classList.remove('connected'); apiStatusDot.style.backgroundColor = '#D32F2F'; }
@@ -1153,6 +1174,9 @@ async function searchAndDisplayPlayer() {
 
     const data = await fetchData(`/players/${id}`);
     if (data && !data.error) {
+        // Ensure roles are cached before displaying profile
+        await fetchAndCacheRoles();
+        
         if (data.clanId) {
             const clan = await fetchData(`/clans/${data.clanId}/info`);
             if (!clan.error) {
@@ -1222,25 +1246,41 @@ function renderPlayerProfile(data) {
     const topRoles = achievements
         .sort((a, b) => b.level - a.level || b.points - a.points)
         .slice(0, 3)
-        .map(a => `
-            <div class="achievement-tag">
-                <strong>${a.roleId.replace(/-/g,' ').toUpperCase()}</strong>
-                <span class="achievement-lvl">Lv.${a.level}</span>
-            </div>
-        `).join('');
+        .map(a => {
+            const rData = rolesCache.get(a.roleId) || {};
+            const rName = rData.name || a.roleId.replace(/-/g,' ').toUpperCase();
+            return `
+                <div class="achievement-tag">
+                    <strong>${rName}</strong>
+                    <span class="achievement-lvl">Lv.${a.level}</span>
+                </div>
+            `;
+        }).join('');
 
     const cardsHtml = roles.map(c => {
+        const roleData = rolesCache.get(c.roleId1) || {};
+        const roleName = roleData.name || c.roleId1.replace(/-/g,' ').toUpperCase();
+        
+        let roleIconHtml = `<span class="material-icons" style="color:rgba(255,255,255,0.8);">style</span>`;
+        if (roleData.image && roleData.image.url) {
+            roleIconHtml = `<img src="${roleData.image.url}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));" alt="${roleName}">`;
+        }
+
         const advancedList = (c.roleIdsAdvanced || [])
-            .map(id => `<span style="display:inline-block; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin:2px 2px 2px 0; font-size:0.7rem; border:1px solid #e2e8f0; color:#475569;">${id.replace(/-/g, ' ')}</span>`)
+            .map(id => {
+                const advData = rolesCache.get(id) || {};
+                const advName = advData.name || id.replace(/-/g, ' ');
+                return `<span style="display:inline-block; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin:2px 2px 2px 0; font-size:0.7rem; border:1px solid #e2e8f0; color:#475569;">${advName}</span>`;
+            })
             .join('');
 
         return `
         <div class="game-card">
-            <div class="card-top rarity-${c.rarity}">
-                <span class="material-icons" style="color:rgba(255,255,255,0.8);">style</span>
+            <div class="card-top rarity-${c.rarity}" style="display: flex; align-items: center; justify-content: center;">
+                ${roleIconHtml}
             </div>
             <div class="card-body">
-                <div class="card-title">${c.roleId1.replace(/-/g,' ').toUpperCase()}</div>
+                <div class="card-title">${roleName}</div>
                 <div class="card-subtitle">${c.rarity}</div>
                 ${advancedList ? `<div style="margin-bottom:8px; display:flex; flex-wrap:wrap;">${advancedList}</div>` : ''}
                 <ul class="ability-list">${[c.abilityId1,c.abilityId2,c.abilityId3,c.abilityId4].filter(x=>x).map(a=>`<li class="ability-item">${a.replace(/-/g,' ')}</li>`).join('')}</ul>
