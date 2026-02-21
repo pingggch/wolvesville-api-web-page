@@ -1823,11 +1823,29 @@ function renderPlayerProfile(data) {
     const total = (stats.totalWinCount||0) + (stats.totalLoseCount||0) + (stats.totalTieCount||0);
     const winRate = total > 0 ? ((stats.totalWinCount/total)*100).toFixed(1) : 0;
     
-    const rankTotal = (data.rankedWins||0) + (data.rankedLosses||0);
-    const rankWR = rankTotal > 0 ? ((data.rankedWins/rankTotal)*100).toFixed(1) : 0;
-    const rankSkill = data.rankedSeasonSkill || '-';
-    const rankMaxSkill = data.rankedSeasonMaxSkill || '-';
-    const bestRank = data.rankedSeasonBestRank ? `#${data.rankedSeasonBestRank.toLocaleString()}` : '-';
+    // --- แก้ไขระบบอ่านข้อมูลโหมดจัดอันดับให้ตรงกับในเกมเป๊ะๆ ---
+    const bestSkill = data.rankedSeasonMaxSkill || 0;
+    const bestRank = data.rankedSeasonBestRank || 0;
+    const playedSeasons = data.rankedSeasonPlayedCount || 0;
+    const currentSkill = data.rankedSeasonSkill; 
+
+    const hasRankedData = bestSkill > 0 || bestRank > 0 || playedSeasons > 0;
+    
+    let rankContentHtml = `<div style="padding:20px; text-align:center; color:#ccc">${t('txt_no_ranked')}</div>`;
+
+    if (hasRankedData) {
+        const strBestSkill = getLocale() === 'en' ? 'Overall best skill' : 'คะแนนสูงสุดรวม';
+        const strBestRank = getLocale() === 'en' ? 'Best season final rank' : 'อันดับจบซีซั่นสูงสุด';
+        const strSeasons = getLocale() === 'en' ? 'Participated seasons' : 'ซีซั่นที่เข้าร่วม';
+        const strCurrent = getLocale() === 'en' ? 'Current season skill' : 'คะแนนซีซั่นปัจจุบัน';
+
+        rankContentHtml = `
+            ${currentSkill > 0 ? `<div class="stat-row"><span class="stat-label">${strCurrent}</span><span class="stat-val" style="color:var(--primary-color); font-weight:bold;">${currentSkill.toLocaleString()}</span></div>` : ''}
+            <div class="stat-row"><span class="stat-label">${strBestSkill}</span><span class="stat-val">${bestSkill > 0 ? bestSkill.toLocaleString() : '-'}</span></div>
+            <div class="stat-row"><span class="stat-label">${strBestRank}</span><span class="stat-val" style="color:var(--warning); font-weight:bold;">${bestRank > 0 ? bestRank.toLocaleString() + ' 🏆' : '-'}</span></div>
+            <div class="stat-row"><span class="stat-label">${strSeasons}</span><span class="stat-val">${playedSeasons > 0 ? playedSeasons.toLocaleString() : '-'}</span></div>
+        `;
+    }
 
     const calcWR = (w, l) => { const t = (w||0)+(l||0); return t > 0 ? ((w/t)*100).toFixed(0) : 0; };
     const vilWR = calcWR(stats.villageWinCount, stats.villageLoseCount);
@@ -1949,15 +1967,7 @@ function renderPlayerProfile(data) {
 
             <div class="stat-box">
                 <h4 class="box-title">${t('txt_ranked')}</h4>
-                ${rankTotal > 0 ? `
-                    <div class="stat-row"><span class="stat-label">${t('txt_score_max')}</span><span class="stat-val">${rankSkill} / ${rankMaxSkill}</span></div>
-                    <div class="stat-row"><span class="stat-label">${t('txt_best_rank')}</span><span class="stat-val" style="color:var(--warning)">${bestRank}</span></div>
-                    <div class="stat-row"><span class="stat-label">${t('txt_win_loss')}</span><span class="stat-val"><span class="value-green">${data.rankedWins}</span> / <span class="value-red">${data.rankedLosses}</span></span></div>
-                    <div class="progress-container">
-                        <div class="progress-label"><span>${t('txt_winrate')}</span><span>${rankWR}%</span></div>
-                        <div class="progress-track"><div class="progress-fill fill-solo" style="width:${rankWR}%"></div></div>
-                    </div>
-                ` : `<div style="padding:20px; text-align:center; color:#ccc">${t('txt_no_ranked')}</div>`}
+                ${rankContentHtml}
             </div>
 
             <div class="stat-box">
