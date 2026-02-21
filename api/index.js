@@ -24,12 +24,15 @@ let statsDirty = false;
 let cachedStats = null;
 let cachedItemsData = null;
 
-// FILES CONFIGURATION (Local Fallback)
-const STATS_FILE = path.join(__dirname, 'stats.json');
-const TEMP_STATS_FILE = path.join(__dirname, 'stats.json.tmp');
+// 🌟 ส่วนสำคัญที่แก้: ตรวจสอบว่าเป็น Vercel หรือไม่ ถ้าใช่ให้เซฟลง /tmp 🌟
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+const dataDir = isVercel ? '/tmp' : __dirname;
 
-const ITEMS_CACHE_FILE = path.join(__dirname, 'items_cache.json');
-const TEMP_ITEMS_CACHE_FILE = path.join(__dirname, 'items_cache.json.tmp');
+const STATS_FILE = path.join(dataDir, 'stats.json');
+const TEMP_STATS_FILE = path.join(dataDir, 'stats.json.tmp');
+
+const ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json');
+const TEMP_ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json.tmp');
 
 const WOLVESVILLE_BASE_URL = 'https://api.wolvesville.com';
 const ITEM_ENDPOINTS = [
@@ -286,7 +289,6 @@ app.get('/api/items/total', async (req, res) => {
 // 4. AUTO QUEST BUYER (Vercel KV & Cron Job)
 // **********************************************
 
-// Endpoint สำหรับรับข้อมูลการตั้งเวลาจากหน้าเว็บ (รับมาจาก script.js)
 app.post('/api/schedule-quest', async (req, res) => {
     const { clanId, questId, questTitle, apiKey } = req.body;
     if (!clanId || !questId || !apiKey) {
@@ -310,9 +312,7 @@ app.post('/api/schedule-quest', async (req, res) => {
     }
 });
 
-// Endpoint ที่ Vercel Cron Job จะแอบเข้ามาเรียกทุกๆ 10 นาที (ตามที่ตั้งใน vercel.json)
 app.get('/api/cron-buy-quest', async (req, res) => {
-    // ป้องกันคนนอกเรียก API นี้เล่นๆ (เช็คกับ Environment Variable)
     const authHeader = req.headers.authorization;
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -331,19 +331,16 @@ app.get('/api/cron-buy-quest', async (req, res) => {
             if (!data || data.status !== 'pending') continue;
 
             try {
-                // เช็คแคลนว่าว่างมั้ย มีเควสที่กำลัง Active อยู่หรือไม่
                 const activeCheckRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/active`, {
                     headers: { 'Authorization': `Bot ${data.apiKey}`, 'Accept': 'application/json' }
                 });
                 const activeData = await activeCheckRes.json();
                 
-                // ถ้ามีเควสอยู่แล้ว ให้ข้ามไปรอบหน้า
                 if (activeData && activeData.quest) {
                     results.push({ clanId, status: 'skipped', reason: 'Quest already active' });
                     continue;
                 }
 
-                // ถ้าแคลนว่าง สั่งซื้อเควสเลย!
                 const buyRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/claim`, {
                     method: 'POST',
                     headers: { 
@@ -355,7 +352,6 @@ app.get('/api/cron-buy-quest', async (req, res) => {
                 });
 
                 if (buyRes.ok) {
-                    // ถ้าซื้อสำเร็จ อัปเดตสถานะเป็น completed ใน DB
                     await kv.hset(`clan_auto_quest:${clanId}`, { status: 'completed' });
                     await kv.srem('active_auto_quests_clans', clanId);
                     results.push({ clanId, status: 'success', questId: data.questId });
@@ -426,7 +422,7 @@ const proxyHandler = async (req, res) => {
 app.get('/api/wolvesville', proxyHandler);
 app.post('/api/wolvesville', proxyHandler);
 
-// 🌟 ส่งออก app เพื่อให้ Vercel Serverless นำไปรัน 🌟
+// ส่งออก app แทนการสั่ง listen เพื่อให้เข้ากับระบบ Serverless ของ Vercel
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`\n==============================================`);
