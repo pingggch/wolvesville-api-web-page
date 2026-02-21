@@ -122,10 +122,10 @@ const langDict = {
         txt_best_rank: "อันดับสูงสุด",
         txt_win_loss: "ชนะ / แพ้",
         txt_no_ranked: "ไม่มีข้อมูลในโหมดจัดอันดับ",
-        txt_perf: "ประสิทธิภาพแบ่งตามฝ่าย",
+        txt_perf: "อัตราชนะ",
         txt_village: "ฝ่ายหมู่บ้าน",
         txt_werewolf: "ฝ่ายหมาป่า",
-        txt_solo: "โหวต / ฉายเดี่ยว",
+        txt_solo: "โหวต / เดี่ยว",
         txt_role_cards: "การ์ดบทบาท",
 
         // Clan UI
@@ -154,7 +154,7 @@ const langDict = {
         txt_buy_quest: "ซื้อเควส",
         
         // Auto Quest System
-        txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
+        txt_auto_buy: "ตั้งเวลาซื้ออัตโนมัติ",
         txt_auto_buy_confirm: "ระบบจะทำการซื้อเควสนี้ให้ทันทีที่แคลนว่าง และมีเงินเพียงพอ ยืนยันการตั้งเวลาสำหรับเควส:",
         txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ! (ระบบจะตรวจสอบและซื้ออัตโนมัติ)",
 
@@ -164,11 +164,11 @@ const langDict = {
         txt_btn_post: "โพสต์",
         txt_recent_ann: "ประกาศล่าสุด",
         txt_no_ann: "ยังไม่มีประกาศในแคลนนี้ครับ",
-        txt_clan_chat: "แชทแคลน (ล่าสุด)",
+        txt_clan_chat: "แชทแคลน",
         txt_ph_chat: "พิมพ์ข้อความ...",
         txt_clan_logs: "บันทึกกิจกรรมแคลน",
         txt_clan_ledger: "บัญชีรายรับรายจ่ายแคลน",
-        txt_quest_hist: "ประวัติเควส (ที่ยังไม่ได้กดรับรางวัล)",
+        txt_quest_hist: "ประวัติเควส",
         txt_no_unclaim: "ไม่มีเควสที่ค้างรับรางวัล",
         txt_parts_list: "รายชื่อผู้เข้าร่วม",
         txt_no_parts: "ไม่มีข้อมูลผู้เข้าร่วม",
@@ -359,11 +359,11 @@ const langDict = {
         txt_btn_post: "POST",
         txt_recent_ann: "Recent Announcements",
         txt_no_ann: "No announcements yet.",
-        txt_clan_chat: "Clan Chat (Recent)",
+        txt_clan_chat: "Clan Chat",
         txt_ph_chat: "Type a message...",
         txt_clan_logs: "Clan Logs",
         txt_clan_ledger: "Clan Ledger",
-        txt_quest_hist: "Quest History (Unclaimed)",
+        txt_quest_hist: "Quest History",
         txt_no_unclaim: "No unclaimed quests",
         txt_parts_list: "Participants List",
         txt_no_parts: "No participants data",
@@ -555,14 +555,27 @@ function showSchedulePrompt(title, message) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         
-        // คำนวณเวลาปัจจุบันเพื่อไม่ให้เลือกเวลาย้อนหลัง
+        // คำนวณเวลาปัจจุบันเพื่อเป็นค่า min (ไม่ให้เลือกเวลาย้อนหลัง)
         const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const nowStr = now.toISOString().slice(0, 16);
+        const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        const nowStr = localNow.toISOString().slice(0, 16);
+        
+        // คำนวณเวลารีเซ็ตเควส (วันจันทร์ 07:00 น.) เพื่อเป็นค่า max
+        let reset = new Date();
+        const day = reset.getDay();
+        const diff = (8 - day) % 7; 
+        const isTodayReset = (day === 1 && reset.getHours() < 7);
+        reset.setDate(reset.getDate() + (isTodayReset ? 0 : diff));
+        reset.setHours(7, 0, 0, 0);
+        if (reset < new Date()) {
+            reset.setDate(reset.getDate() + 7);
+        }
+        const localReset = new Date(reset.getTime() - reset.getTimezoneOffset() * 60000);
+        const maxStr = localReset.toISOString().slice(0, 16);
         
         const labelStr = getLocale() === 'en' 
-            ? 'Scheduled Time (Leave empty to buy ASAP):' 
-            : 'ตั้งเวลาระบุวันที่ (เว้นว่างไว้เพื่อซื้อทันทีที่แคลนว่าง):';
+            ? 'Scheduled Time (Max: Mon 07:00 AM):' 
+            : 'ตั้งเวลาระบุวันที่ (ไม่เกินจันทร์ 07:00 น.):';
 
         overlay.innerHTML = `
             <div class="modal-content">
@@ -572,7 +585,8 @@ function showSchedulePrompt(title, message) {
                     <label style="font-size:0.9rem; color:#475569; display:block; margin-bottom:8px; font-weight:bold;">
                         <span class="material-icons" style="font-size:18px; vertical-align:middle; color:#8b5cf6;">schedule</span> ${labelStr}
                     </label>
-                    <input type="datetime-local" id="schedule-time-input" min="${nowStr}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size:1rem; cursor:pointer;">
+                    <input type="datetime-local" id="schedule-time-input" min="${nowStr}" max="${maxStr}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size:1rem; cursor:pointer;">
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:5px;">* ปล่อยว่างไว้หากต้องการให้ซื้อทันทีที่แคลนว่าง</div>
                 </div>
                 <div class="custom-modal-buttons">
                     <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
