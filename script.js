@@ -153,9 +153,9 @@ const langDict = {
         txt_shuffle_votes: "รายชื่อคนโหวตสุ่ม",
         txt_buy_quest: "ซื้อเควส",
         
-        // Auto Quest System
+        // Auto Quest System - แก้ไขข้อความแจ้งเตือนให้อ่านง่ายและโปร่งใสเรื่อง API Key
         txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
-        txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ ยืนยันการตั้งเวลาสำหรับเควส:",
+        txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ<br><br><span style='color:#ef4444; font-size:0.85rem; padding:8px; background:#fee2e2; border-radius:6px; display:inline-block; border:1px solid #fecaca;'>⚠️ <b>ข้อควรระวัง:</b> เพื่อให้ระบบอัตโนมัติทำงานได้ API Key ของคุณจะถูกบันทึกไว้ในฐานข้อมูลเซิร์ฟเวอร์ชั่วคราว</span><br><br>ยืนยันการตั้งเวลาสำหรับเควส:",
         txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ (ระบบจะตรวจสอบและซื้อให้อัตโนมัติ)",
 
         txt_rewards: "รางวัลที่จะได้รับ",
@@ -350,7 +350,7 @@ const langDict = {
 
         // Auto Quest System
         txt_auto_buy: "🤖 Schedule Auto-Buy",
-        txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready. Confirm for:",
+        txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready.<br><br><span style='color:#ef4444; font-size:0.85rem; padding:8px; background:#fee2e2; border-radius:6px; display:inline-block; border:1px solid #fecaca;'>⚠️ <b>Notice:</b> To allow automated background tasks, your API Key will be temporarily stored in our server database.</span><br><br>Confirm schedule for:",
         txt_auto_buy_success: "✅ Schedule saved! (System will auto-buy)",
 
         txt_rewards: "Rewards",
@@ -1715,7 +1715,7 @@ function renderGlobalAnnouncements(data) {
     const eventsHtml = buildList(isEn ? 'Events' : 'กิจกรรม', 'event', data.discordEvents, '#a855f7');
 
     container.innerHTML = `
-        <h2 style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+        <h2 style="margin: 20px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; align-items: center; gap: 10px;">
             <span class="material-icons" style="color: var(--primary-color);">newspaper</span> 
             ${isEn ? 'Server News & Updates' : 'ข่าวสารและอัปเดตเซิร์ฟเวอร์'}
         </h2>
@@ -2725,7 +2725,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
         <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
             <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">💬 ${t('txt_clan_chat')}</div>
+                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">chat</span> ${t('txt_clan_chat')}</div>
                 <div id="clan-chat-container" class="clan-scroll-area">${chatHtml}</div>
                     <div style="display:flex; gap:10px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                     <input type="text" id="clan-chat-input" placeholder="${t('txt_ph_chat')}" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key==='Enter') window.sendClanChatMessage('${clanId}')">
@@ -2733,18 +2733,18 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
             </div>
             <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">📜 ${t('txt_clan_logs')}</div>
+                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history</span> ${t('txt_clan_logs')}</div>
                 <div id="clan-logs-list" class="clan-scroll-area">${logsHtml}</div>
             </div>
         </div>
 
         <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
             <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">💰 ${t('txt_clan_ledger')}</div>
+                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">account_balance_wallet</span> ${t('txt_clan_ledger')}</div>
                 <div id="clan-ledger-list" class="clan-scroll-area">${ledgerHtml}</div>
             </div>
             <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem;">📜 ${t('txt_quest_hist')}</div>
+                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history_toggle_off</span> ${t('txt_quest_hist')}</div>
                 <div id="clan-history-list" class="clan-scroll-area">${historyHtml}</div>
             </div>
         </div>
