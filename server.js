@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const cors = require('cors');
 const fetch = require('node-fetch');
+const { kv } = require('@vercel/kv'); // นำเข้า Vercel KV สำหรับระบบตั้งเวลาซื้อเควส
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -13,7 +14,7 @@ const PORT = process.env.PORT || 4000;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
 const GITHUB_REPO = process.env.GITHUB_REPO; 
 const GITHUB_STATS_PATH = 'stats.json';
-const GITHUB_ITEMS_CACHE_PATH = 'items_cache.json'; // เพิ่มไฟล์ items_cache.json ตามในรูป
+const GITHUB_ITEMS_CACHE_PATH = 'items_cache.json';
 
 // State ตัวแปรสำหรับเก็บ SHA เพื่อใช้ตอน Commit ทับไฟล์เดิม
 let currentStatsSha = null;
@@ -67,7 +68,6 @@ async function loadJsonFile(filePath, defaultValue) {
     }
 }
 
-// 🟢 ฟังก์ชันหลักสำหรับ: ดึงไฟล์จาก GitHub
 async function fetchFileFromGitHub(filePath) {
     if (!GITHUB_TOKEN || !GITHUB_REPO) return { data: null, sha: null };
     try {
@@ -88,7 +88,6 @@ async function fetchFileFromGitHub(filePath) {
     return { data: null, sha: null };
 }
 
-// 🟢 ฟังก์ชันหลักสำหรับ: อัปเดตไฟล์ทับบน GitHub อัตโนมัติ
 async function pushFileToGitHub(filePath, jsonData, currentSha) {
     if (!GITHUB_TOKEN || !GITHUB_REPO) return currentSha;
     try {
@@ -99,7 +98,6 @@ async function pushFileToGitHub(filePath, jsonData, currentSha) {
             message: `Auto-update ${filePath} via Dashboard`,
             content: encodedContent
         };
-        // ถ้าเคยมีไฟล์นี้อยู่แล้วให้แนบ SHA ไปทับไฟล์เดิม
         if (currentSha) bodyData.sha = currentSha;
 
         const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`, {
@@ -115,10 +113,9 @@ async function pushFileToGitHub(filePath, jsonData, currentSha) {
         if (res.ok) {
             const data = await res.json();
             console.log(`[GitHub] ${filePath} synced successfully!`);
-            return data.content.sha; // คืนค่า SHA ใหม่
+            return data.content.sha;
         } else {
             console.error(`[GitHub] Push failed for ${filePath}. Fetching fresh SHA...`);
-            // กรณีมีคนแก้ไฟล์พร้อมกัน (Conflict) ให้ไปดึงค่าล่าสุดมาเตรียมไว้รอบหน้า
             const latest = await fetchFileFromGitHub(filePath);
             return latest.sha;
         }
@@ -128,7 +125,6 @@ async function pushFileToGitHub(filePath, jsonData, currentSha) {
     }
 }
 
-// Loop การตรวจสอบและอัปเดต `stats.json` ลง GitHub (ทำทุก 1 นาที เพื่อไม่ให้ติด Limit ของ GitHub)
 setInterval(async () => {
     if (statsDirty && cachedStats) {
         statsDirty = false;
@@ -142,14 +138,12 @@ setInterval(async () => {
 
 async function loadStats() {
     if (!cachedStats) {
-        // ดึงจาก GitHub ก่อนเป็นอันดับแรก
         const ghData = await fetchFileFromGitHub(GITHUB_STATS_PATH);
         if (ghData.data) {
             cachedStats = ghData.data;
             currentStatsSha = ghData.sha;
-            await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats); // เซฟลง Local ไว้ด้วย
+            await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats);
         } else {
-            // ถ้าดึงไม่ได้ ให้ใช้ค่าเริ่มต้น
             const initialStats = {
                 date_today: new Date().toISOString().split('T')[0],
                 date_this_month: new Date().toISOString().substring(0, 7),
@@ -194,7 +188,6 @@ function checkAndResetStats(stats) {
     return { stats, updated };
 }
 
-// Stats Endpoints
 app.get('/api/stats', async (req, res) => {
     let stats = await loadStats();
     const { stats: updatedStats, updated } = checkAndResetStats(stats);
@@ -221,7 +214,7 @@ app.post('/api/stats/increment/:type', async (req, res) => {
         cachedStats[type].count_lifetime++; 
         
         await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats);
-        statsDirty = true; // มาร์คไว้รออัปเดตลง GitHub
+        statsDirty = true;
 
         return res.status(200).json({ success: true, newCount: cachedStats[type].count_today });
     }
@@ -229,13 +222,12 @@ app.post('/api/stats/increment/:type', async (req, res) => {
 });
 
 // **********************************************
-// 3. ITEMS CACHE LOGIC (Sync with GitHub added)
+// 3. ITEMS CACHE LOGIC
 // **********************************************
 
 app.get('/api/items/total', async (req, res) => {
     const apiKey = req.query.apiKey;
     
-    // โหลดข้อมูลล่าสุด (ใช้ GitHub เป็นหลัก ถ้าไม่มีใช้จาก Local)
     if (!cachedItemsData) {
         const ghData = await fetchFileFromGitHub(GITHUB_ITEMS_CACHE_PATH);
         if (ghData.data) {
@@ -249,9 +241,7 @@ app.get('/api/items/total', async (req, res) => {
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
     const now = Date.now();
 
-    // เช็คว่า Cache หมดอายุหรือยัง
     if (now - cachedItemsData.timestamp < ONE_DAY_MS && cachedItemsData.count > 0) {
-        console.log(`[Items Cache] Hit! Returning cached count: ${cachedItemsData.count}`);
         return res.json({ count: cachedItemsData.count, fromCache: true });
     }
 
@@ -259,8 +249,6 @@ app.get('/api/items/total', async (req, res) => {
         if (cachedItemsData.count > 0) return res.json({ count: cachedItemsData.count, fromCache: true, stale: true });
         return res.status(400).json({ error: 'API Key required to refresh cache' });
     }
-
-    console.log(`[Items Cache] Miss/Expired. Fetching fresh data...`);
 
     try {
         const fetchPromises = ITEM_ENDPOINTS.map(endpoint => 
@@ -283,28 +271,112 @@ app.get('/api/items/total', async (req, res) => {
 
         const newCount = uniqueIds.size;
 
-        // อัปเดต Cache ใหม่
-        cachedItemsData = {
-            timestamp: now,
-            count: newCount
-        };
-        
+        cachedItemsData = { timestamp: now, count: newCount };
         await saveJsonFile(ITEMS_CACHE_FILE, TEMP_ITEMS_CACHE_FILE, cachedItemsData);
-
-        // ดันไฟล์ items_cache.json ขึ้นไปทับบน GitHub อัตโนมัติ (ทำทันที ไม่ต้องรอ Loop เพราะดึงวันละรอบ)
         currentItemsCacheSha = await pushFileToGitHub(GITHUB_ITEMS_CACHE_PATH, cachedItemsData, currentItemsCacheSha);
 
-        console.log(`[Items Cache] Updated. New count: ${newCount}`);
         return res.json({ count: newCount, fromCache: false });
 
     } catch (error) {
-        console.error('[Items Cache] Error fetching items:', error);
         return res.json({ count: cachedItemsData.count || 0, error: true });
     }
 });
 
 // **********************************************
-// 4. PROXY & SERVER START
+// 4. AUTO QUEST BUYER (Vercel KV & Cron Job)
+// **********************************************
+
+// Endpoint สำหรับรับข้อมูลการตั้งเวลาจากหน้าเว็บ (รับมาจาก script.js)
+app.post('/api/schedule-quest', async (req, res) => {
+    const { clanId, questId, questTitle, apiKey } = req.body;
+    if (!clanId || !questId || !apiKey) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        await kv.hset(`clan_auto_quest:${clanId}`, {
+            questId: questId,
+            questTitle: questTitle,
+            apiKey: apiKey,
+            status: 'pending',
+            timestamp: Date.now()
+        });
+        await kv.sadd('active_auto_quests_clans', clanId);
+
+        return res.status(200).json({ success: true, message: 'Schedule saved' });
+    } catch (error) {
+        console.error('KV Save Error:', error);
+        return res.status(500).json({ error: 'Failed to save schedule to database' });
+    }
+});
+
+// Endpoint ที่ Vercel Cron Job จะแอบเข้ามาเรียกทุกๆ 10 นาที (ตามที่ตั้งใน vercel.json)
+app.get('/api/cron-buy-quest', async (req, res) => {
+    // ป้องกันคนนอกเรียก API นี้เล่นๆ (เช็คกับ Environment Variable)
+    const authHeader = req.headers.authorization;
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+        const activeClans = await kv.smembers('active_auto_quests_clans');
+        if (!activeClans || activeClans.length === 0) {
+            return res.status(200).json({ message: 'No active quests scheduled.' });
+        }
+
+        let results = [];
+
+        for (const clanId of activeClans) {
+            const data = await kv.hgetall(`clan_auto_quest:${clanId}`);
+            if (!data || data.status !== 'pending') continue;
+
+            try {
+                // เช็คแคลนว่าว่างมั้ย มีเควสที่กำลัง Active อยู่หรือไม่
+                const activeCheckRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/active`, {
+                    headers: { 'Authorization': `Bot ${data.apiKey}`, 'Accept': 'application/json' }
+                });
+                const activeData = await activeCheckRes.json();
+                
+                // ถ้ามีเควสอยู่แล้ว ให้ข้ามไปรอบหน้า
+                if (activeData && activeData.quest) {
+                    results.push({ clanId, status: 'skipped', reason: 'Quest already active' });
+                    continue;
+                }
+
+                // ถ้าแคลนว่าง สั่งซื้อเควสเลย!
+                const buyRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/claim`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bot ${data.apiKey}`, 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ questId: data.questId })
+                });
+
+                if (buyRes.ok) {
+                    // ถ้าซื้อสำเร็จ อัปเดตสถานะเป็น completed ใน DB
+                    await kv.hset(`clan_auto_quest:${clanId}`, { status: 'completed' });
+                    await kv.srem('active_auto_quests_clans', clanId);
+                    results.push({ clanId, status: 'success', questId: data.questId });
+                } else {
+                    const errorData = await buyRes.json();
+                    results.push({ clanId, status: 'failed', error: errorData });
+                }
+            } catch (err) {
+                results.push({ clanId, status: 'error', message: err.message });
+            }
+        }
+        return res.status(200).json({ message: 'Cron job executed', details: results });
+    } catch (error) {
+        console.error('Cron Error:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+// **********************************************
+// 5. PROXY & SERVER START
 // **********************************************
 
 const proxyHandler = async (req, res) => {
@@ -354,7 +426,7 @@ const proxyHandler = async (req, res) => {
 app.get('/api/wolvesville', proxyHandler);
 app.post('/api/wolvesville', proxyHandler);
 
-// 🌟 สิ่งที่แก้ไขใหม่สำหรับ Vercel: ให้ export app ออกมาแทนการสั่ง listen เสมอ 🌟
+// 🌟 ส่งออก app เพื่อให้ Vercel Serverless นำไปรัน 🌟
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`\n==============================================`);
