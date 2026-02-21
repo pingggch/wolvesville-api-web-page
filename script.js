@@ -153,9 +153,9 @@ const langDict = {
         txt_shuffle_votes: "รายชื่อคนโหวตสุ่ม",
         txt_buy_quest: "ซื้อเควส",
         
-        // Auto Quest System - แก้ไขข้อความแจ้งเตือนให้อ่านง่ายและโปร่งใสเรื่อง API Key
+        // Auto Quest System - แก้ไขข้อความแจ้งเตือนให้สบายใจขึ้น
         txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
-        txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ<br><br><span style='color:#ef4444; font-size:0.85rem; padding:8px; background:#fee2e2; border-radius:6px; display:inline-block; border:1px solid #fecaca;'>⚠️ <b>ข้อควรระวัง:</b> เพื่อให้ระบบอัตโนมัติทำงานได้ API Key ของคุณจะถูกบันทึกไว้ในฐานข้อมูลเซิร์ฟเวอร์ชั่วคราว</span><br><br>ยืนยันการตั้งเวลาสำหรับเควส:",
+        txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ<br><br><span style='color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:8px; display:inline-block; border:1px solid #fecaca; line-height: 1.5; text-align: left;'>⚠️ <b>ข้อชี้แจง:</b> เพื่อให้ระบบทำงานแทนคุณได้ตอนปิดเว็บ API Key ของคุณจะถูกบันทึกไว้ในเซิร์ฟเวอร์ชั่วคราว<br>🛡️ <i>เราขอให้คำมั่นสัญญาว่าจะไม่มีการแอบดู หรือนำ API ของคุณไปใช้ทำอย่างอื่นโดยเด็ดขาดครับ</i></span><br><br>ยืนยันการตั้งเวลาสำหรับเควส:",
         txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ (ระบบจะตรวจสอบและซื้อให้อัตโนมัติ)",
 
         txt_rewards: "รางวัลที่จะได้รับ",
@@ -180,6 +180,12 @@ const langDict = {
         txt_all_on: "เปิดทุกคน",
         txt_all_off: "ปิดทุกคน",
         
+        // API Consent
+        api_consent_title: "🛡️ ข้อตกลงการใช้งาน API Key",
+        api_consent_desc: "เว็บไซต์นี้จำเป็นต้องใช้ API Key ของท่านเพื่ออ่านข้อมูลจากเกม Wolvesville มาแสดงผลบนเว็บไซต์",
+        api_consent_cb: "ข้าพเจ้ายอมรับให้เว็บไซต์อ่านข้อมูล และรับทราบว่าเว็บไซต์จะไม่แอบดูหรือนำ API ของท่านไปใช้งานอื่นโดยเด็ดขาด",
+        api_consent_err: "⚠️ กรุณากดยอมรับเงื่อนไขก่อนบันทึก API Key",
+
         // Loading Steps
         load_init: "กำลังเตรียมระบบ...",
         load_info: "กำลังดึงข้อมูลพื้นฐาน...",
@@ -350,7 +356,7 @@ const langDict = {
 
         // Auto Quest System
         txt_auto_buy: "🤖 Schedule Auto-Buy",
-        txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready.<br><br><span style='color:#ef4444; font-size:0.85rem; padding:8px; background:#fee2e2; border-radius:6px; display:inline-block; border:1px solid #fecaca;'>⚠️ <b>Notice:</b> To allow automated background tasks, your API Key will be temporarily stored in our server database.</span><br><br>Confirm schedule for:",
+        txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready.<br><br><span style='color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:8px; display:inline-block; border:1px solid #fecaca; line-height: 1.5; text-align: left;'>⚠️ <b>Notice:</b> To allow background tasks, your API Key will be temporarily stored in our server.<br>🛡️ <i>We promise not to peek at or use your API key for any other purposes.</i></span><br><br>Confirm schedule for:",
         txt_auto_buy_success: "✅ Schedule saved! (System will auto-buy)",
 
         txt_rewards: "Rewards",
@@ -374,6 +380,12 @@ const langDict = {
         txt_no_blocks: "No blocked members found.",
         txt_all_on: "All ON",
         txt_all_off: "All OFF",
+
+        // API Consent
+        api_consent_title: "🛡️ API Key Usage Consent",
+        api_consent_desc: "This website requires your API Key to fetch and display data from Wolvesville.",
+        api_consent_cb: "I consent to let the website read my data and acknowledge that my API Key will not be peeked at or misused.",
+        api_consent_err: "⚠️ Please check the consent box before saving.",
 
         // Loading Steps
         load_init: "Initializing system...",
@@ -575,6 +587,14 @@ function showSchedulePrompt(title, message) {
             ? 'Scheduled Time (Max: Mon 07:00 AM):' 
             : 'ตั้งเวลาระบุวันที่ (ไม่เกินวันจันทร์ 07:00 น.):';
 
+        const consentLabel = getLocale() === 'en'
+            ? 'I consent to temporarily save my API Key on the server for automated purchasing.'
+            : 'ฉันยอมรับให้ระบบบันทึก API Key ชั่วคราว เพื่อใช้รันคำสั่งอัตโนมัติ';
+
+        const errorMsg = getLocale() === 'en'
+            ? '⚠️ Please check the consent box before confirming.'
+            : '⚠️ กรุณากดยอมรับเงื่อนไขการบันทึก API Key ก่อนยืนยัน';
+
         overlay.innerHTML = `
             <div class="modal-content">
                 <h3 style="display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-icons" style="color:var(--primary-color);">schedule</span> ${title}</h3>
@@ -585,6 +605,16 @@ function showSchedulePrompt(title, message) {
                     </label>
                     <input type="datetime-local" id="schedule-time-input" min="${nowStr}" max="${maxStr}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size:1rem; cursor:pointer;">
                     <div style="font-size:0.75rem; color:#94a3b8; margin-top:5px;">* ปล่อยว่างไว้หากต้องการให้ซื้อทันทีที่แคลนว่าง</div>
+                    
+                    <div style="margin-top: 15px; display: flex; align-items: flex-start; gap: 10px; background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; transition: all 0.2s;" id="consent-box-wrapper">
+                        <input type="checkbox" id="consent-save-api" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; accent-color: #d97706;">
+                        <label for="consent-save-api" style="font-size: 0.85rem; color: #b45309; cursor: pointer; line-height: 1.4; font-weight: bold;">
+                            ${consentLabel}
+                        </label>
+                    </div>
+                    <div id="consent-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 10px; display: none; text-align: center; font-weight: bold; transition: 0.2s;">
+                        ${errorMsg}
+                    </div>
                 </div>
                 <div class="custom-modal-buttons">
                     <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
@@ -595,11 +625,106 @@ function showSchedulePrompt(title, message) {
         
         const close = (val) => { overlay.remove(); resolve(val); };
         overlay.querySelector('.btn-cancel').onclick = () => close(null);
+        
         overlay.querySelector('.btn-confirm').onclick = () => {
+            const isConsent = overlay.querySelector('#consent-save-api').checked;
+            if (!isConsent) {
+                // แจ้งเตือนถ้ายังไม่ติ๊กยอมรับ
+                const errEl = overlay.querySelector('#consent-error');
+                const boxWrapper = overlay.querySelector('#consent-box-wrapper');
+                errEl.style.display = 'block';
+                boxWrapper.style.borderColor = '#ef4444';
+                boxWrapper.style.backgroundColor = '#fef2f2';
+                
+                // แอนิเมชันสั่นเบาๆ
+                errEl.style.transform = 'translateX(-5px)';
+                setTimeout(() => errEl.style.transform = 'translateX(5px)', 50);
+                setTimeout(() => errEl.style.transform = 'translateX(-5px)', 100);
+                setTimeout(() => errEl.style.transform = 'translateX(0)', 150);
+                return;
+            }
+            
             const timeVal = overlay.querySelector('#schedule-time-input').value;
             close(timeVal ? new Date(timeVal).getTime() : 0); 
         };
+
+        // ซ่อนข้อความแจ้งเตือนเมื่อติ๊กถูกแล้ว
+        overlay.querySelector('#consent-save-api').onchange = (e) => {
+            if (e.target.checked) {
+                overlay.querySelector('#consent-error').style.display = 'none';
+                overlay.querySelector('#consent-box-wrapper').style.borderColor = '#fde68a';
+                overlay.querySelector('#consent-box-wrapper').style.backgroundColor = '#fffbeb';
+            }
+        };
+
         overlay.onclick = (e) => { if(e.target === overlay) close(null); };
+        
+        document.body.appendChild(overlay);
+    });
+}
+
+function showApiConsentModal() {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        const title = t('api_consent_title');
+        const desc = t('api_consent_desc');
+        const cbLabel = t('api_consent_cb');
+        const errMsg = t('api_consent_err');
+
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <h3 style="display:flex; align-items:center; justify-content:center; gap:8px;">${title}</h3>
+                <p style="margin-top: 10px; text-align:center;">${desc}</p>
+                <div style="margin: 20px 0; text-align: left; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px; background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; transition: all 0.2s;" id="api-consent-box-wrapper">
+                        <input type="checkbox" id="api-consent-checkbox" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; accent-color: #d97706;">
+                        <label for="api-consent-checkbox" style="font-size: 0.85rem; color: #b45309; cursor: pointer; line-height: 1.4; font-weight: bold;">
+                            ${cbLabel}
+                        </label>
+                    </div>
+                    <div id="api-consent-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 10px; display: none; text-align: center; font-weight: bold; transition: 0.2s;">
+                        ${errMsg}
+                    </div>
+                </div>
+                <div class="custom-modal-buttons">
+                    <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
+                    <button class="btn-modal btn-confirm">${t('btn_confirm')}</button>
+                </div>
+            </div>
+        `;
+        
+        const close = (val) => { overlay.remove(); resolve(val); };
+        overlay.querySelector('.btn-cancel').onclick = () => close(false);
+        
+        overlay.querySelector('.btn-confirm').onclick = () => {
+            const isConsent = overlay.querySelector('#api-consent-checkbox').checked;
+            if (!isConsent) {
+                const errEl = overlay.querySelector('#api-consent-error');
+                const boxWrapper = overlay.querySelector('#api-consent-box-wrapper');
+                errEl.style.display = 'block';
+                boxWrapper.style.borderColor = '#ef4444';
+                boxWrapper.style.backgroundColor = '#fef2f2';
+                
+                errEl.style.transform = 'translateX(-5px)';
+                setTimeout(() => errEl.style.transform = 'translateX(5px)', 50);
+                setTimeout(() => errEl.style.transform = 'translateX(-5px)', 100);
+                setTimeout(() => errEl.style.transform = 'translateX(0)', 150);
+                return;
+            }
+            close(true); 
+        };
+
+        overlay.querySelector('#api-consent-checkbox').onchange = (e) => {
+            if (e.target.checked) {
+                overlay.querySelector('#api-consent-error').style.display = 'none';
+                overlay.querySelector('#api-consent-box-wrapper').style.borderColor = '#fde68a';
+                overlay.querySelector('#api-consent-box-wrapper').style.backgroundColor = '#fffbeb';
+            }
+        };
+
+        overlay.onclick = (e) => { if(e.target === overlay) close(false); };
         
         document.body.appendChild(overlay);
     });
@@ -2989,14 +3114,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', () => {
+    if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', async () => {
         const v = apiKeyInput.value.trim();
         if(v.length>10) { 
-            localStorage.setItem('wolvesville_api_key',v); 
-            showCustomAlert(t('alert_success'), '✅ บันทึก API Key เรียบร้อยแล้ว'); 
-            fetchAndDisplayData(); 
+            const isConfirmed = await showApiConsentModal();
+            if (isConfirmed) {
+                localStorage.setItem('wolvesville_api_key',v); 
+                showCustomAlert(t('alert_success'), '✅ ' + (getLocale() === 'en' ? 'API Key saved successfully!' : 'บันทึก API Key เรียบร้อยแล้ว')); 
+                fetchAndDisplayData(); 
+            }
         }
-        else showCustomAlert(t('alert_warning'), 'รูปแบบ API Key ไม่ถูกต้อง');
+        else showCustomAlert(t('alert_warning'), getLocale() === 'en' ? 'Invalid API Key format' : 'รูปแบบ API Key ไม่ถูกต้อง');
     });
 
     const savedLocale = localStorage.getItem('wolvesville_api_locale');
