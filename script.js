@@ -7,83 +7,83 @@ const langDict = {
         menu_dashboard: "แดชบอร์ด",
         menu_player: "ค้นหาผู้เล่น",
         menu_clan: "จัดการแคลน",
-        menu_roles: "บทบาททั้งหมด",
-        menu_quests: "เควสแคลนทั้งหมด",
-        menu_donate: "สนับสนุน",
-        menu_settings: "การตั้งค่า",
-        head_dashboard: "ภาพรวม API",
+        menu_roles: "สารานุกรมบทบาท",
+        menu_quests: "สารานุกรมเควส",
+        menu_donate: "สนับสนุนผู้พัฒนา",
+        menu_settings: "ตั้งค่า",
+        head_dashboard: "ภาพรวมระบบ (API Overview)",
         head_player: "ค้นหาข้อมูลผู้เล่น",
         head_clan: "จัดการแคลน",
-        head_roles: "บทบาททั้งหมด",
-        head_quests: "เควสแคลนทั้งหมด",
+        head_roles: "ข้อมูลบทบาททั้งหมด",
+        head_quests: "ข้อมูลเควสแคลนทั้งหมด",
         head_donate: "สนับสนุนการพัฒนา",
-        head_settings: "การตั้งค่า",
+        head_settings: "ตั้งค่าระบบ",
         
         // Stats & Time
         stat_items: "ไอเทมทั้งหมดในเกม",
         stat_status: "สถานะการเชื่อมต่อ API",
         stat_checking: "กำลังตรวจสอบ...",
-        stat_api_usage: "การใช้ API",
-        stat_visitors: "การเยี่ยมชมเว็บ",
+        stat_api_usage: "ปริมาณการเรียกใช้ API",
+        stat_visitors: "จำนวนผู้เข้าชมเว็บไซต์",
         time_today: "วันนี้",
         time_month: "เดือนนี้",
         time_year: "ปีนี้",
-        time_all: "ทั้งหมด",
+        time_all: "ตลอดกาล",
 
         // Forms & Buttons
-        search_player_ph: "ชื่อผู้ใช้ หรือ Player ID...",
-        search_clan_ph: "ชื่อแคลน หรือ Clan ID...",
+        search_player_ph: "พิมพ์ชื่อผู้เล่น หรือ Player ID...",
+        search_clan_ph: "พิมพ์ชื่อแคลน หรือ Clan ID...",
         btn_search: "ค้นหา",
         btn_my_clan: "⭐ แคลนของฉัน",
-        empty_search_player: "กรุณาใส่ชื่อผู้ใช้เพื่อเริ่มค้นหา",
-        empty_search_clan: "ค้นหาแคลน หรือกด \"แคลนของฉัน\" เพื่อดูข้อมูล",
+        empty_search_player: "กรุณาพิมพ์ชื่อผู้เล่นที่ต้องการค้นหา",
+        empty_search_clan: "พิมพ์ชื่อเพื่อค้นหาแคลน หรือกดดู \"แคลนของฉัน\"",
         loading_roles: "กำลังโหลดข้อมูลบทบาท...",
         loading_quests: "กำลังโหลดข้อมูลเควส...",
         
         // Donate
-        donate_title: "สนับสนุนเซิร์ฟเวอร์และนักพัฒนา",
-        donate_desc: "หากคุณชื่นชอบ Wolvesville API Dashboard นี้ สามารถช่วยสนับสนุนค่าเซิร์ฟเวอร์ ค่ากาแฟ เพื่อให้ระบบพัฒนาต่อไปได้ครับ ❤️",
+        donate_title: "สนับสนุนค่าเซิร์ฟเวอร์และผู้พัฒนา",
+        donate_desc: "หากคุณใช้งานแล้วชื่นชอบ สามารถช่วยสมทบทุนค่าเซิร์ฟเวอร์หรือเลี้ยงกาแฟผู้พัฒนาได้นะครับ เพื่อให้ระบบเปิดใช้งานได้ในระยะยาว",
         donate_acc_name: "ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ",
-        donate_truemoney: "โอนเข้าวอลเล็ท",
-        donate_ingame: "ของขวัญในเกม (In-game)",
-        donate_ingame_desc: "แอดเพื่อนแล้วส่งของขวัญให้ในเกมได้เลยครับ 🌹",
-        donate_thanks: "ขอขอบคุณทุกการสนับสนุนที่มีให้เสมอมาครับ 🙏",
+        donate_truemoney: "โอนผ่านทรูมันนี่วอลเล็ท",
+        donate_ingame: "ส่งของขวัญในเกม",
+        donate_ingame_desc: "สามารถแอดเพื่อนมาส่งของขวัญในเกมได้เช่นกันครับ",
+        donate_thanks: "ขอขอบคุณทุกการสนับสนุนครับ",
 
         // Settings
-        settings_api_desc: "กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่",
-        btn_save_key: "บันทึก Key",
+        settings_api_desc: "กรุณาวาง API Key จาก Wolvesville Bot ของคุณที่นี่",
+        btn_save_key: "บันทึกข้อมูล",
         settings_lang_title: "<span class=\"material-icons\" style=\"vertical-align: middle;\">language</span> ภาษา (Language)",
-        settings_lang_desc: "เลือกภาษาสำหรับข้อมูลที่ดึงมาจาก API และเมนูต่างๆ",
-        btn_save_lang: "บันทึกภาษา / Save Language",
-        msg_lang_saved: "✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)",
+        settings_lang_desc: "เลือกภาษาสำหรับการแสดงผลและข้อมูลหน้าเว็บ",
+        btn_save_lang: "บันทึกการตั้งค่าภาษา",
+        msg_lang_saved: "✅ บันทึกภาษาเรียบร้อยแล้ว (กำลังรีเฟรชข้อมูล...)",
         footer_cr: "Wolvesville API Dashboard | พัฒนาและออกแบบโดย PingkungXD",
 
         // Feedback Modal
-        feedback_title: "<span class=\"material-icons\">rate_review</span> ส่งฟีดแบค",
-        feedback_desc: "พบเจอบัค หรือมีไอเดียใหม่ๆ พิมพ์บอกเราและแนบรูปภาพได้เลยครับ!",
+        feedback_title: "<span class=\"material-icons\">rate_review</span> ส่งคำติชม / รายงานปัญหา",
+        feedback_desc: "หากพบเจอบัคหรือมีไอเดียใหม่ๆ สามารถพิมพ์แจ้งเราได้เลยครับ (แนบรูปภาพได้ด้วยนะ)",
         feedback_topic: "หัวข้อ",
         feedback_opt_bug: "🐛 รายงานปัญหา (Bug)",
-        feedback_opt_sug: "💡 เสนอแนะ (Suggestion)",
+        feedback_opt_sug: "💡 ข้อเสนอแนะ (Suggestion)",
         feedback_opt_oth: "📝 อื่นๆ (Other)",
         feedback_detail: "รายละเอียด",
-        feedback_ph: "พิมพ์ข้อความของคุณที่นี่...",
-        feedback_img: "แนบรูปภาพ (ถ้ามี)",
+        feedback_ph: "อธิบายรายละเอียดเพิ่มเติมที่นี่...",
+        feedback_img: "แนบรูปภาพประกอบ (ถ้ามี)",
         btn_send_feedback: "ส่งข้อความ",
 
         // Alerts & Common
         alert_success: "สำเร็จ",
-        alert_error: "ข้อผิดพลาด",
+        alert_error: "เกิดข้อผิดพลาด",
         alert_warning: "แจ้งเตือน",
-        alert_fatal: "ข้อผิดพลาดร้ายแรง",
+        alert_fatal: "ระบบขัดข้อง",
         btn_cancel: "ยกเลิก",
         btn_confirm: "ยืนยัน",
         btn_close: "ปิด",
         btn_save: "บันทึก",
         btn_ok: "ตกลง",
-        btn_reload: "รีโหลด",
-        no_api_key: "กรุณาใส่ API Key ในหน้าตั้งค่าก่อนครับ",
+        btn_reload: "โหลดข้อมูลใหม่",
+        no_api_key: "กรุณาใส่ API Key ในหน้าตั้งค่าก่อนใช้งาน",
         unknown_err: "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
-        req_limit: "ระบบถูกจำกัดการเรียกใช้งานชั่วคราว กรุณารอสักครู่ (Too many requests)",
+        req_limit: "ระบบถูกจำกัดการใช้งานชั่วคราว กรุณารอสักครู่",
 
         // Player UI
         txt_level: "เลเวล",
@@ -92,7 +92,7 @@ const langDict = {
         txt_joined: "เข้าร่วมเมื่อ",
         txt_last_online: "ออนไลน์ล่าสุด",
         txt_online: "ออนไลน์",
-        txt_playing: "กำลังเล่น",
+        txt_playing: "กำลังเล่นเกม",
         txt_dnd: "ห้ามรบกวน",
         txt_offline: "ออฟไลน์",
         txt_donations: "💰 สถิติการบริจาค",
@@ -100,91 +100,91 @@ const langDict = {
         txt_gold: "ทอง",
         txt_gem: "เพชร",
         txt_week: "สัปดาห์นี้",
-        txt_activity: "⚔️ กิจกรรมแคลน",
+        txt_activity: "⚔️ กิจกรรมภายในแคลน",
         txt_xp_week: "XP สัปดาห์นี้",
         txt_xp_month: "XP เดือนนี้",
         txt_xp_all: "✨ XP รวมทั้งหมด",
-        txt_g_quests: "ลงเควสทอง",
-        txt_d_quests: "ลงเควสเพชร",
+        txt_g_quests: "ทำเควสทอง",
+        txt_d_quests: "ทำเควสเพชร",
         txt_times: "ครั้ง",
-        txt_p_id: "ไอดีผู้เล่น",
+        txt_p_id: "ID ผู้เล่น",
         
         // Stats UI
         txt_overview: "ภาพรวม",
-        txt_games: "จำนวนเกม",
+        txt_games: "จำนวนรอบที่เล่น",
         txt_rounds: "รอบ",
         txt_playtime: "เวลาเล่นรวม",
-        txt_hrs: "ชม.",
+        txt_hrs: "ชั่วโมง",
         txt_winrate: "อัตราชนะ",
-        txt_top_roles: "บทบาทที่เล่นบ่อยสุด:",
-        txt_ranked: "โหมดจัดอันดับ",
+        txt_top_roles: "บทบาทที่เล่นบ่อยที่สุด:",
+        txt_ranked: "โหมดจัดอันดับ (Ranked)",
         txt_score_max: "คะแนน / สูงสุด",
         txt_best_rank: "อันดับสูงสุด",
         txt_win_loss: "ชนะ / แพ้",
-        txt_no_ranked: "ไม่มีข้อมูลในโหมดจัดอันดับ",
-        txt_perf: "อัตราชนะ",
+        txt_no_ranked: "ไม่มีข้อมูลโหมดจัดอันดับ",
+        txt_perf: "ผลงานการเล่น",
         txt_village: "ฝ่ายหมู่บ้าน",
         txt_werewolf: "ฝ่ายหมาป่า",
-        txt_solo: "โหวต / เดี่ยว",
-        txt_role_cards: "การ์ดบทบาท",
+        txt_solo: "ฝ่ายเดี่ยว / โหวต",
+        txt_role_cards: "การ์ดบทบาทที่มี",
 
         // Clan UI
-        txt_my_clan: "กำลังดึงข้อมูลแคลนของฉัน...",
+        txt_my_clan: "กำลังดึงข้อมูลแคลนของคุณ...",
         txt_search_clan: "กำลังค้นหาแคลน...",
-        txt_not_in_clan: "❌ บัญชีนี้ไม่ได้เข้าร่วมแคลนใดเลย",
-        txt_clan_not_found: "❌ ไม่พบแคลนที่ค้นหา",
-        txt_auto_update: "[อัปเดตอัตโนมัติ] เปิดใช้งานแล้ว (ทุกๆ 60 วินาที)",
+        txt_not_in_clan: "❌ บัญชีนี้ยังไม่ได้เข้าร่วมแคลนใดๆ",
+        txt_clan_not_found: "❌ ไม่พบแคลนที่คุณค้นหา",
+        txt_auto_update: "[ระบบอัปเดตอัตโนมัติ] เปิดใช้งานแล้ว (รีเฟรชทุก 60 วินาที)",
         txt_loading_clan: "กำลังโหลดข้อมูลแคลน...",
         txt_members: "สมาชิก",
         txt_clan_xp: "XP แคลน",
-        txt_created: "สร้างเมื่อ",
-        txt_active_quest: "แคลนเควส",
-        txt_no_active_quest: "ยังไม่มีเควสที่กำลังดำเนินการในตอนนี้",
+        txt_created: "ก่อตั้งเมื่อ",
+        txt_active_quest: "เควสที่กำลังดำเนินการ",
+        txt_no_active_quest: "ตอนนี้ยังไม่มีเควสที่กำลังทำอยู่",
         txt_tier: "ด่านที่",
-        txt_ends: "หมดเวลา",
-        txt_quest_prog: "ความคืบหน้าของรางวัลเควส",
+        txt_ends: "สิ้นสุดเวลา",
+        txt_quest_prog: "ความคืบหน้าของเควส",
         txt_add_time: "เพิ่มเวลา",
-        txt_skip_wait: "ข้ามเวลาการรอ",
+        txt_skip_wait: "ข้ามเวลารอ",
         txt_cancel_quest: "ยกเลิกเควส",
-        txt_top_parts: "ผู้เข้าร่วมสูงสุด",
-        txt_avail_quests: "เควสที่มีให้ซื้อ",
+        txt_top_parts: "ผู้ที่มีส่วนร่วมสูงสุด",
+        txt_avail_quests: "เควสที่สามารถซื้อได้",
         txt_quest_wiki: "สารานุกรมเควส",
-        txt_shuffle: "สุ่มใหม่",
-        txt_shuffle_votes: "โหวตสุ่มเควส",
+        txt_shuffle: "สุ่มเควสใหม่",
+        txt_shuffle_votes: "รายชื่อคนโหวตสุ่ม",
         txt_buy_quest: "ซื้อเควส",
         
         // Auto Quest System
-        txt_auto_buy: "ตั้งเวลาซื้ออัตโนมัติ",
-        txt_auto_buy_confirm: "ระบบจะทำการซื้อเควสนี้ให้ทันทีที่แคลนว่าง และมีเงินเพียงพอ ยืนยันการตั้งเวลาสำหรับเควส:",
-        txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ! (ระบบจะตรวจสอบและซื้ออัตโนมัติ)",
+        txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
+        txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ ยืนยันการตั้งเวลาสำหรับเควส:",
+        txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ (ระบบจะตรวจสอบและซื้อให้อัตโนมัติ)",
 
-        txt_rewards: "รางวัล",
-        txt_post_ann: "เขียนประกาศแคลน",
+        txt_rewards: "รางวัลที่จะได้รับ",
+        txt_post_ann: "ประกาศข้อความแคลน",
         txt_ph_ann: "พิมพ์ข้อความประกาศของคุณที่นี่...",
         txt_btn_post: "โพสต์",
         txt_recent_ann: "ประกาศล่าสุด",
-        txt_no_ann: "ยังไม่มีประกาศในแคลนนี้ครับ",
+        txt_no_ann: "ยังไม่มีประกาศในแคลน",
         txt_clan_chat: "แชทแคลน",
-        txt_ph_chat: "พิมพ์ข้อความ...",
+        txt_ph_chat: "พิมพ์ข้อความแชท...",
         txt_clan_logs: "บันทึกกิจกรรมแคลน",
-        txt_clan_ledger: "บัญชีรายรับรายจ่ายแคลน",
-        txt_quest_hist: "ประวัติเควส",
+        txt_clan_ledger: "บัญชีรายรับ-รายจ่ายแคลน",
+        txt_quest_hist: "ประวัติการทำเควส",
         txt_no_unclaim: "ไม่มีเควสที่ค้างรับรางวัล",
         txt_parts_list: "รายชื่อผู้เข้าร่วม",
         txt_no_parts: "ไม่มีข้อมูลผู้เข้าร่วม",
-        txt_blocklist_mgr: "ระบบจัดการรายชื่อแบล็คลิสต์",
-        txt_ph_block: "ระบุไอดีผู้เล่น (UUID) ที่ต้องการบล็อค...",
-        txt_btn_block: "บล็อคไอดี",
+        txt_blocklist_mgr: "จัดการแบล็คลิสต์ (บัญชีดำ)",
+        txt_ph_block: "ระบุ ID ผู้เล่น (UUID) ที่ต้องการบล็อค...",
+        txt_btn_block: "บล็อคผู้เล่น",
         txt_unblock: "ปลดบล็อค",
-        txt_no_blocks: "ไม่มีใครถูกบล็อคอยู่",
+        txt_no_blocks: "ไม่มีรายชื่อผู้เล่นที่ถูกบล็อค",
         txt_all_on: "เปิดทุกคน",
         txt_all_off: "ปิดทุกคน",
         
         // Loading Steps
         load_init: "กำลังเตรียมระบบ...",
-        load_info: "กำลังดึงข้อมูลทั่วไป...",
+        load_info: "กำลังดึงข้อมูลพื้นฐาน...",
         load_members: "กำลังดึงรายชื่อสมาชิก...",
-        load_quests: "กำลังดึงข้อมูลเควสที่เปิดอยู่...",
+        load_quests: "กำลังดึงข้อมูลเควสปัจจุบัน...",
         load_chat: "กำลังดึงประวัติแชท...",
         load_logs: "กำลังดึงบันทึกกิจกรรม...",
         load_ledger: "กำลังดึงบัญชีแคลน...",
@@ -192,8 +192,8 @@ const langDict = {
         load_ann: "กำลังดึงประกาศแคลน...",
         load_blocklist: "กำลังดึงรายชื่อแบล็คลิสต์...",
         load_blocked_p: "กำลังประมวลผลข้อมูลคนถูกบล็อค...",
-        load_avail_q: "กำลังดึงข้อมูลเควสที่มีให้ซื้อ...",
-        load_votes: "กำลังดึงผลโหวต...",
+        load_avail_q: "กำลังตรวจสอบเควสที่ซื้อได้...",
+        load_votes: "กำลังดึงข้อมูลการโหวต...",
         load_avatars: "กำลังโหลดรูปโปรไฟล์",
         load_dash: "กำลังสร้างหน้าแดชบอร์ด..."
     },
@@ -237,12 +237,12 @@ const langDict = {
 
         // Donate
         donate_title: "Support Server & Developer",
-        donate_desc: "If you like Wolvesville API Dashboard, you can support server costs and buy me a coffee! ❤️",
+        donate_desc: "If you like Wolvesville API Dashboard, you can support server costs and buy me a coffee!",
         donate_acc_name: "Account Name: Peerapat Phetchanphen",
         donate_truemoney: "Transfer to Wallet",
         donate_ingame: "In-game Gift",
-        donate_ingame_desc: "Add friend and send a gift in-game! 🌹",
-        donate_thanks: "Thank you for all your support! 🙏",
+        donate_ingame_desc: "Add friend and send a gift in-game!",
+        donate_thanks: "Thank you for all your support!",
 
         // Settings
         settings_api_desc: "Please paste your Wolvesville Bot API Key here",
@@ -337,7 +337,7 @@ const langDict = {
         txt_no_active_quest: "No Active Quests",
         txt_tier: "Tier",
         txt_ends: "Ends",
-        txt_quest_prog: "Quest Rewards Progression",
+        txt_quest_prog: "Quest Progression",
         txt_add_time: "Add Time",
         txt_skip_wait: "Skip Wait",
         txt_cancel_quest: "Cancel Quest",
@@ -351,7 +351,7 @@ const langDict = {
         // Auto Quest System
         txt_auto_buy: "🤖 Schedule Auto-Buy",
         txt_auto_buy_confirm: "The system will automatically purchase this quest when clan is ready. Confirm for:",
-        txt_auto_buy_success: "✅ Schedule saved! (Cron job will auto-buy)",
+        txt_auto_buy_success: "✅ Schedule saved! (System will auto-buy)",
 
         txt_rewards: "Rewards",
         txt_post_ann: "Post Announcement",
@@ -472,8 +472,8 @@ function showCustomConfirm(title, message, isDangerous = false) {
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-content">
-                <h3>${title}</h3>
-                <p>${message}</p>
+                <h3 style="display:flex; align-items:center; gap:8px;">${isDangerous ? '⚠️' : ''} ${title}</h3>
+                <p style="margin-top: 10px;">${message}</p>
                 <div class="custom-modal-buttons">
                     <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
                     <button class="btn-modal action-confirm ${isDangerous ? 'btn-danger' : 'btn-confirm'}">${t('btn_confirm')}</button>
@@ -520,7 +520,7 @@ function showCustomPrompt(title, message, defaultValue = '') {
         overlay.innerHTML = `
             <div class="modal-content">
                 <h3>${title}</h3>
-                <p>${message}</p>
+                <p style="margin-top: 10px;">${message}</p>
                 <input type="text" id="custom-prompt-input" value="${defaultValue.replace(/"/g, '&quot;')}" style="width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;">
                 <div class="custom-modal-buttons">
                     <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
@@ -555,12 +555,10 @@ function showSchedulePrompt(title, message) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         
-        // คำนวณเวลาปัจจุบันเพื่อเป็นค่า min (ไม่ให้เลือกเวลาย้อนหลัง)
         const now = new Date();
         const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
         const nowStr = localNow.toISOString().slice(0, 16);
         
-        // คำนวณเวลารีเซ็ตเควส (วันจันทร์ 07:00 น.) เพื่อเป็นค่า max
         let reset = new Date();
         const day = reset.getDay();
         const diff = (8 - day) % 7; 
@@ -575,15 +573,15 @@ function showSchedulePrompt(title, message) {
         
         const labelStr = getLocale() === 'en' 
             ? 'Scheduled Time (Max: Mon 07:00 AM):' 
-            : 'ตั้งเวลาระบุวันที่ (ไม่เกินจันทร์ 07:00 น.):';
+            : 'ตั้งเวลาระบุวันที่ (ไม่เกินวันจันทร์ 07:00 น.):';
 
         overlay.innerHTML = `
             <div class="modal-content">
-                <h3>${title}</h3>
-                <p>${message}</p>
+                <h3 style="display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-icons" style="color:var(--primary-color);">schedule</span> ${title}</h3>
+                <p style="margin-top: 10px; text-align:center;">${message}</p>
                 <div style="margin: 20px 0; text-align: left; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <label style="font-size:0.9rem; color:#475569; display:block; margin-bottom:8px; font-weight:bold;">
-                        <span class="material-icons" style="font-size:18px; vertical-align:middle; color:#8b5cf6;">schedule</span> ${labelStr}
+                        ${labelStr}
                     </label>
                     <input type="datetime-local" id="schedule-time-input" min="${nowStr}" max="${maxStr}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size:1rem; cursor:pointer;">
                     <div style="font-size:0.75rem; color:#94a3b8; margin-top:5px;">* ปล่อยว่างไว้หากต้องการให้ซื้อทันทีที่แคลนว่าง</div>
@@ -599,7 +597,7 @@ function showSchedulePrompt(title, message) {
         overlay.querySelector('.btn-cancel').onclick = () => close(null);
         overlay.querySelector('.btn-confirm').onclick = () => {
             const timeVal = overlay.querySelector('#schedule-time-input').value;
-            close(timeVal ? new Date(timeVal).getTime() : 0); // คืนค่าเป็นมิลลิวินาที (ถ้าไม่ใส่จะเป็น 0)
+            close(timeVal ? new Date(timeVal).getTime() : 0); 
         };
         overlay.onclick = (e) => { if(e.target === overlay) close(null); };
         
@@ -610,9 +608,10 @@ function showSchedulePrompt(title, message) {
 function showCustomAlert(title, message) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+
     overlay.innerHTML = `
         <div class="modal-content">
-            <h3>${title}</h3>
+            <h3 style="margin-bottom: 10px;">${title}</h3>
             <p>${message}</p>
             <div class="custom-modal-buttons">
                 <button class="btn-modal btn-confirm">${t('btn_ok')}</button>
@@ -666,7 +665,6 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // **********************************************
 
 window.goToPlayerSearch = (username) => {
-    console.log('Navigating to search for:', username);
     const input = document.getElementById('username-input');
     if(input) {
         input.value = username;
@@ -854,7 +852,7 @@ function showMemberModal(data) {
 
 window.showQuestModal = (questId) => {
     const quest = questDetailsCache.get(questId);
-    if (!quest) return showCustomAlert(t('alert_warning'), t('alert_error'));
+    if (!quest) return showCustomAlert(t('alert_warning'), '❌ ' + t('alert_error'));
 
     const title = quest.title || 'Clan Quest';
     const imageUrl = quest.promoImageUrl || 'https://via.placeholder.com/200';
@@ -927,7 +925,7 @@ window.sendClanAnnouncement = async (clanId) => {
             showCustomAlert(t('alert_error'), '❌ ' + errorMsg);
         } else {
             input.value = ''; 
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true); 
         }
     } catch (e) {
@@ -965,7 +963,7 @@ window.sendClanChatMessage = async (clanId) => {
 window.blockMemberFromList = async (clanId, playerId, username) => {
     const confirmed = await showCustomConfirm(
         t('alert_warning'),
-        `⚠️ Block <span style="color:#ef4444; font-weight:bold;">${username}</span>?`,
+        `ต้องการบล็อคผู้เล่น <span style="color:#ef4444; font-weight:bold;">${username}</span> หรือไม่?`,
         true 
     );
     if (!confirmed) return;
@@ -974,7 +972,7 @@ window.blockMemberFromList = async (clanId, playerId, username) => {
         const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), `✅ Blocked <strong>${username}</strong>`);
+            showCustomAlert(t('alert_success'), `✅ บล็อคผู้เล่น ${username} สำเร็จ`);
             fetchClanData(clanId, true, true); 
         }
     } catch (e) {
@@ -994,26 +992,26 @@ window.unblockMember = async (clanId, playerId) => {
 
 window.manualAddToBlocklist = async (clanId) => {
     const playerId = document.getElementById('manual-block-input').value.trim();
-    if (!playerId) return showCustomAlert(t('alert_warning'), 'Please enter a Player ID.');
-    if (!isUUID(playerId)) return showCustomAlert(t('alert_warning'), 'Invalid UUID format.');
+    if (!playerId) return showCustomAlert(t('alert_warning'), 'กรุณาระบุ ID ผู้เล่น');
+    if (!isUUID(playerId)) return showCustomAlert(t('alert_warning'), 'รูปแบบ UUID ไม่ถูกต้อง');
 
     try {
         const res = await sendPayload(`/clans/${clanId}/members/${playerId}/block`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), `✅ Blocked ID ${playerId}`);
+            showCustomAlert(t('alert_success'), `✅ บล็อค ID ${playerId} สำเร็จ`);
             document.getElementById('manual-block-input').value = '';
             fetchClanData(clanId, true, true);
         }
     } catch (e) {
-        showCustomAlert(t('alert_error'), e.message);
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
     }
 };
 
 window.kickMemberFromList = async (clanId, playerId, username) => {
     const confirmed = await showCustomConfirm(
         t('alert_warning'),
-        `⚠️ Kick <span style="color:#ef4444; font-weight:bold;">${username}</span>?`,
+        `ต้องการเตะผู้เล่น <span style="color:#ef4444; font-weight:bold;">${username}</span> ออกจากแคลนหรือไม่?`,
         true 
     );
     if (!confirmed) return;
@@ -1022,10 +1020,10 @@ window.kickMemberFromList = async (clanId, playerId, username) => {
         const res = await sendPayload(`/clans/${clanId}/members/${playerId}/kick`, 'POST', {});
         if (res.error) {
              let errMsg = res.message || t('unknown_err');
-             if (res.status === 403) errMsg = 'Forbidden';
+             if (res.status === 403) errMsg = 'Forbidden (ไม่มีสิทธิ์)';
              showCustomAlert(t('alert_error'), '❌ ' + errMsg);
         } else {
-            showCustomAlert(t('alert_success'), `✅ Kicked <strong>${username}</strong>`);
+            showCustomAlert(t('alert_success'), `✅ เตะ ${username} ออกจากแคลนสำเร็จ`);
             fetchClanData(clanId, true, true);
         }
     } catch (e) {
@@ -1090,14 +1088,14 @@ function updatePricesClientSide() {
 }
 
 window.editFlairFromList = async (clanId, playerId, currentFlair) => {
-    const newFlair = await showCustomPrompt(t('alert_warning'), 'Edit Flair:', currentFlair);
+    const newFlair = await showCustomPrompt(t('alert_warning'), 'ตั้งค่าฉายา:', currentFlair);
     if (newFlair === null) return; 
 
     try {
         const res = await sendPayload(`/clans/${clanId}/members/${playerId}/flair`, 'PUT', { flair: newFlair });
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true);
         }
     } catch (e) {
@@ -1106,10 +1104,10 @@ window.editFlairFromList = async (clanId, playerId, currentFlair) => {
 };
 
 window.toggleAllQuestParticipation = async (clanId, isParticipating) => {
-    const actionTh = isParticipating ? 'ON' : 'OFF';
+    const actionTh = isParticipating ? 'เปิด' : 'ปิด';
     const confirmed = await showCustomConfirm(
         t('alert_warning'), 
-        `⚠️ Are you sure you want to turn <strong>${actionTh}</strong> quest participation for ALL members?`, 
+        `ยืนยันการ <strong>${actionTh}</strong> เควสแคลนให้กับสมาชิกทุกคน?`, 
         !isParticipating 
     );
     if(!confirmed) return;
@@ -1118,7 +1116,7 @@ window.toggleAllQuestParticipation = async (clanId, isParticipating) => {
         const res = await sendPayload(`/clans/${clanId}/members/all/participateInQuests`, 'PUT', { participateInQuests: isParticipating });
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), `✅ Success!`);
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             setTimeout(() => { fetchClanData(clanId, true, true); }, 1000); 
         }
     } catch (e) {
@@ -1129,7 +1127,7 @@ window.toggleAllQuestParticipation = async (clanId, isParticipating) => {
 window.shuffleClanQuests = async (clanId) => {
     const confirmed = await showCustomConfirm(
         t('txt_shuffle'),
-        '⚠️ <strong>Cost: 500 Gold</strong><br>Are you sure?',
+        'ระบบจะหักเงินแคลน <strong>500 ทอง</strong><br>เพื่อทำการสุ่มเควสใหม่ ยืนยันหรือไม่?',
         false 
     );
     if (!confirmed) return;
@@ -1138,7 +1136,7 @@ window.shuffleClanQuests = async (clanId) => {
         const res = await sendPayload(`/clans/${clanId}/quests/available/shuffle`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true); 
         }
     } catch (e) {
@@ -1147,57 +1145,57 @@ window.shuffleClanQuests = async (clanId) => {
 };
 
 window.skipQuestWaitingTime = async (clanId) => {
-    const confirmed = await showCustomConfirm(t('txt_skip_wait'), '⚠️ Confirm skip wait time?', false);
+    const confirmed = await showCustomConfirm(t('txt_skip_wait'), 'ยืนยันการใช้ทองข้ามเวลารอหรือไม่?', false);
     if (!confirmed) return;
 
     try {
         const res = await sendPayload(`/clans/${clanId}/quests/active/skipWaitingTime`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true);
         }
     } catch(e) {
-        showCustomAlert(t('alert_error'), e.message);
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
     }
 };
 
 window.claimQuestExtraTime = async (clanId) => {
-    const confirmed = await showCustomConfirm(t('txt_add_time'), '⚠️ Confirm add time?', false);
+    const confirmed = await showCustomConfirm(t('txt_add_time'), 'ยืนยันการใช้ทองเพิ่มเวลาเควสหรือไม่?', false);
     if (!confirmed) return;
 
     try {
         const res = await sendPayload(`/clans/${clanId}/quests/active/claimTime`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true);
         }
     } catch(e) {
-        showCustomAlert(t('alert_error'), e.message);
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
     }
 };
 
 window.cancelActiveQuest = async (clanId) => {
-    const confirmed = await showCustomConfirm(t('txt_cancel_quest'), '⚠️ Confirm cancel quest?', true);
+    const confirmed = await showCustomConfirm(t('txt_cancel_quest'), 'ยืนยันการยกเลิกเควสที่กำลังทำอยู่หรือไม่?', true);
     if (!confirmed) return;
 
     try {
         const res = await sendPayload(`/clans/${clanId}/quests/active/cancel`, 'POST', {});
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             fetchClanData(clanId, true, true);
         }
     } catch(e) {
-        showCustomAlert(t('alert_error'), e.message);
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
     }
 };
 
 window.claimClanQuest = async (clanId, questId, questTitle) => {
     const confirmed = await showCustomConfirm(
         t('txt_buy_quest'),
-        `⚠️ Buy <strong>${questTitle}</strong>?`,
+        `ยืนยันการซื้อเควส <strong>${questTitle}</strong> หรือไม่?`,
         false 
     );
     if (!confirmed) return;
@@ -1206,7 +1204,7 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
         const res = await sendPayload(`/clans/${clanId}/quests/claim`, 'POST', { questId: questId });
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
         else {
-            showCustomAlert(t('alert_success'), '✅ Success!');
+            showCustomAlert(t('alert_success'), '✅ ' + t('alert_success'));
             setTimeout(() => { fetchClanData(clanId, true, true); }, 3000);
         }
     } catch (e) {
@@ -1214,7 +1212,7 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
     }
 };
 
-// --- NEW: ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
+// --- ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
 window.scheduleQuest = async (clanId, questId, questTitle) => {
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
     
@@ -1226,7 +1224,6 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
     if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
 
     try {
-        // ยิงไปที่ API Endpoint ของเราเองบน Vercel ที่เชื่อมกับ Database
         const res = await fetch(`${localServerUrl}/api/schedule-quest`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1235,7 +1232,7 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
                 questId: questId, 
                 questTitle: questTitle,
                 apiKey: apiKey,
-                targetTime: targetTimeMs // ส่งค่าเวลาที่เลือกลง Database
+                targetTime: targetTimeMs 
             })
         });
 
@@ -1244,7 +1241,7 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
                 ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
                 : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
             
-            showCustomAlert(t('alert_success'), `✅ บันทึกการตั้งเวลาสำเร็จ!<br><br><span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span>`);
+            showCustomAlert(t('alert_success'), `✅ ${t('txt_auto_buy_success')}<br><br><span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span>`);
         } else {
             const text = await res.text();
             try {
@@ -1363,7 +1360,7 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
                     countdownHtml = `
                         <div style="background: #fef2f2; border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #b91c1c; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span class="material-icons" style="font-size: 20px;">error_outline</span>
-                            ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว! กรุณาเพิ่มเวลาหรือยกเลิก'}
+                            ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว กรุณาเพิ่มเวลาหรือยกเลิก'}
                         </div>
                     `;
                 }
@@ -1384,7 +1381,7 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
                     countdownHtml = `
                         <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span class="material-icons" style="font-size: 20px;">check_circle</span>
-                            ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ! กำลังเตรียมด่านต่อไป...'}
+                            ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ กำลังเตรียมด่านต่อไป...'}
                         </div>
                     `;
                 }
@@ -1415,12 +1412,12 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
             if (qData.participants && Array.isArray(qData.participants) && qData.participants.length > 0) {
                 const sortedParts = [...qData.participants].sort((a, b) => b.xp - a.xp);
                 const listHtml = sortedParts.map((p, index) => {
-                    const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index + 1}.`));
+                    const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
                     const safeUsername = escapeJsString(p.username || 'Unknown');
                     return `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-size:0.9rem;">
                             <div>
-                                <span style="display:inline-block; width:24px; color:#64748b; font-weight:bold; text-align:center;">${medal}</span>
+                                <span style="display:inline-block; width:24px; text-align:center; font-size:1.1rem;">${medal}</span>
                                 <strong style="cursor:pointer; color:var(--primary-color); margin-left:5px;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong>
                             </div>
                             <span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:2px 8px; border-radius:12px; font-size:0.8rem;">
@@ -1481,7 +1478,7 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
 window.redeemApiHat = async () => {
     const confirmed = await showCustomConfirm(
         'Redeem API Hat',
-        '⚠️ Claim exclusive API Hat for Bot Owner?',
+        'ยืนยันการรับหมวก API สำหรับเจ้าของบอทหรือไม่?',
         false 
     );
     if (!confirmed) return;
@@ -1492,7 +1489,7 @@ window.redeemApiHat = async () => {
         document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
 
         if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
-        else showCustomAlert(t('alert_success'), '✅ Item delivered to your in-game inventory!');
+        else showCustomAlert(t('alert_success'), '✅ ส่งไอเทมเข้ากระเป๋าในเกมของคุณเรียบร้อยแล้ว');
     } catch (e) {
         document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
         showCustomAlert(t('alert_error'), '❌ ' + e.message);
@@ -1542,7 +1539,7 @@ function getQuestResetTimeDisplay() {
     const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
 
-    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `แคลนเควสจะรีในอีก ${d} วัน ${h} ชม. ${m} นาที`;
+    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `เควสจะรีเซ็ตในอีก ${d} วัน ${h} ชม. ${m} นาที`;
     return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">${txt}</span>`;
 }
 
@@ -1823,7 +1820,6 @@ function renderPlayerProfile(data) {
     const total = (stats.totalWinCount||0) + (stats.totalLoseCount||0) + (stats.totalTieCount||0);
     const winRate = total > 0 ? ((stats.totalWinCount/total)*100).toFixed(1) : 0;
     
-    // --- แก้ไขระบบอ่านข้อมูลโหมดจัดอันดับให้ตรงกับในเกมเป๊ะๆ ---
     const bestSkill = data.rankedSeasonMaxSkill || 0;
     const bestRank = data.rankedSeasonBestRank || 0;
     const playedSeasons = data.rankedSeasonPlayedCount || 0;
@@ -1842,7 +1838,7 @@ function renderPlayerProfile(data) {
         rankContentHtml = `
             ${currentSkill > 0 ? `<div class="stat-row"><span class="stat-label">${strCurrent}</span><span class="stat-val" style="color:var(--primary-color); font-weight:bold;">${currentSkill.toLocaleString()}</span></div>` : ''}
             <div class="stat-row"><span class="stat-label">${strBestSkill}</span><span class="stat-val">${bestSkill > 0 ? bestSkill.toLocaleString() : '-'}</span></div>
-            <div class="stat-row"><span class="stat-label">${strBestRank}</span><span class="stat-val" style="color:var(--warning); font-weight:bold;">${bestRank > 0 ? bestRank.toLocaleString() + ' 🏆' : '-'}</span></div>
+            <div class="stat-row"><span class="stat-label">${strBestRank}</span><span class="stat-val">${bestRank > 0 ? bestRank.toLocaleString() : '-'}</span></div>
             <div class="stat-row"><span class="stat-label">${strSeasons}</span><span class="stat-val">${playedSeasons > 0 ? playedSeasons.toLocaleString() : '-'}</span></div>
         `;
     }
@@ -2001,7 +1997,7 @@ async function fetchMyClan() {
     
     clanContentContainer.innerHTML = `
         <div class="loading-container">
-            <div style="font-size:24px; margin-bottom:10px;">🛡️</div>
+            <div style="font-size:36px; margin-bottom:10px;">🛡️</div>
             <h3 style="color:#1e293b; margin:0;">${t('txt_my_clan')}</h3>
             <div class="loading-bar-track"><div class="loading-bar-fill" style="width: 5%;"></div></div>
         </div>
@@ -2025,7 +2021,7 @@ async function searchClan() {
     
     clanContentContainer.innerHTML = `
         <div class="loading-container">
-            <div style="font-size:24px; margin-bottom:10px;">🔍</div>
+            <div style="font-size:36px; margin-bottom:10px;">🔍</div>
             <h3 style="color:#1e293b; margin:0;">${t('txt_search_clan')}</h3>
             <div class="loading-bar-track"><div class="loading-bar-fill" style="width: 10%;"></div></div>
         </div>
@@ -2072,7 +2068,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
             const loadingMsg = t(textKey) + extraText;
             clanContentContainer.innerHTML = `
                 <div class="loading-container">
-                    <div style="font-size:24px; margin-bottom:10px; animation: bounce 1s infinite;">🛡️</div>
+                    <div style="font-size:36px; margin-bottom:10px; animation: bounce 1s infinite;">🛡️</div>
                     <h3 style="color:#1e293b; margin:0; margin-bottom: 10px;">${t('txt_loading_clan')}</h3>
                     <div style="color:var(--primary-color); font-weight:500; font-size:0.95rem; margin-bottom: 5px;">${loadingMsg}</div>
                     <div class="loading-bar-track"><div class="loading-bar-fill" style="width: ${percent}%;"></div></div>
@@ -2152,7 +2148,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     let members = membersRaw;
     if (!membersRaw.error && Array.isArray(membersRaw)) {
-        updateProgress('load_avatars', ` (${membersRaw.length} ${getLocale() === 'en' ? 'players' : 'คน'})...`);
+        updateProgress('load_avatars', ` (${membersRaw.length} คน)...`);
         const membersList = [];
         for (const m of membersRaw) {
             if (playerAvatarCache.has(m.playerId)) membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
@@ -2273,7 +2269,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 countdownHtml = `
                     <div style="background: #fef2f2; border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #b91c1c; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <span class="material-icons" style="font-size: 20px;">error_outline</span>
-                        ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว! กรุณาเพิ่มเวลาหรือยกเลิก'}
+                        ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว กรุณาเพิ่มเวลาหรือยกเลิก'}
                     </div>
                 `;
             }
@@ -2294,7 +2290,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 countdownHtml = `
                     <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <span class="material-icons" style="font-size: 20px;">check_circle</span>
-                        ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ! กำลังเตรียมด่านต่อไป...'}
+                        ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ กำลังเตรียมด่านต่อไป...'}
                     </div>
                 `;
             }
@@ -2325,12 +2321,12 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         if (qData.participants && Array.isArray(qData.participants) && qData.participants.length > 0) {
             const sortedParts = [...qData.participants].sort((a, b) => b.xp - a.xp);
             const listHtml = sortedParts.map((p, index) => {
-                const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index + 1}.`));
+                const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
                 const safeUsername = escapeJsString(p.username || 'Unknown');
                 return `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-size:0.9rem;">
                         <div>
-                            <span style="display:inline-block; width:24px; color:#64748b; font-weight:bold; text-align:center;">${medal}</span>
+                            <span style="display:inline-block; width:24px; text-align:center; font-size:1.1rem;">${medal}</span>
                             <strong style="cursor:pointer; color:var(--primary-color); margin-left:5px;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong>
                         </div>
                         <span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:2px 8px; border-radius:12px; font-size:0.8rem;">
@@ -2364,7 +2360,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 <div class="active-quest-body">
                     <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
-                        <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> ${t('txt_quest_prog')}
+                        🎁 <span style="margin-left:5px;">${t('txt_quest_prog')}</span>
                     </h4>
                     ${rewardsTrackHtml}
                     ${countdownHtml}
@@ -2425,7 +2421,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
             
             let claimBtn = '';
-            // 🌟 เพิ่มปุ่มสำหรับ Auto-Buy ไว้ตรงนี้ 🌟
             let autoBuyBtn = '';
             
             if (!hasActiveQuest) {
@@ -2437,7 +2432,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 `;
             }
 
-            // ปุ่มตั้งเวลาซื้อ จะแสดงตลอด (หรือจะซ่อนถ้ามี Active Quest ก็ได้ แต่ให้แสดงไว้เพื่อตั้งเวลาล่วงหน้าดีกว่า)
             autoBuyBtn = `
                 <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}')" 
                         style="background:#8b5cf6; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2);">
@@ -2628,10 +2622,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                  if (h.participants && Array.isArray(h.participants)) {
                      const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
                      participantsHtml = sortedParts.map((p, index) => {
-                         const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
+                         const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
                          return `
                              <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                                 <span>${medal} <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
+                                 <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
                                  <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
                              </div>
                           `;
@@ -2999,10 +2993,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const v = apiKeyInput.value.trim();
         if(v.length>10) { 
             localStorage.setItem('wolvesville_api_key',v); 
-            showCustomAlert(t('alert_success'), '✅ API Key Saved!'); 
+            showCustomAlert(t('alert_success'), '✅ บันทึก API Key เรียบร้อยแล้ว'); 
             fetchAndDisplayData(); 
         }
-        else showCustomAlert(t('alert_warning'), '❌ Invalid API Key');
+        else showCustomAlert(t('alert_warning'), 'รูปแบบ API Key ไม่ถูกต้อง');
     });
 
     const savedLocale = localStorage.getItem('wolvesville_api_locale');
@@ -3115,7 +3109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
-                showCustomAlert(t('alert_success'), '✅ Success!');
+                showCustomAlert(t('alert_success'), '✅ ส่งข้อความสำเร็จ ขอบคุณสำหรับข้อเสนอแนะครับ!');
                 document.getElementById('feedback-msg').value = ''; 
                 imageInput.value = '';
                 feedbackModal.style.display = 'none';
