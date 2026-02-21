@@ -550,6 +550,49 @@ function showCustomPrompt(title, message, defaultValue = '') {
     });
 }
 
+function showSchedulePrompt(title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        // คำนวณเวลาปัจจุบันเพื่อไม่ให้เลือกเวลาย้อนหลัง
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const nowStr = now.toISOString().slice(0, 16);
+        
+        const labelStr = getLocale() === 'en' 
+            ? 'Scheduled Time (Leave empty to buy ASAP):' 
+            : 'ตั้งเวลาระบุวันที่ (เว้นว่างไว้เพื่อซื้อทันทีที่แคลนว่าง):';
+
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <h3>${title}</h3>
+                <p>${message}</p>
+                <div style="margin: 20px 0; text-align: left; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <label style="font-size:0.9rem; color:#475569; display:block; margin-bottom:8px; font-weight:bold;">
+                        <span class="material-icons" style="font-size:18px; vertical-align:middle; color:#8b5cf6;">schedule</span> ${labelStr}
+                    </label>
+                    <input type="datetime-local" id="schedule-time-input" min="${nowStr}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size:1rem; cursor:pointer;">
+                </div>
+                <div class="custom-modal-buttons">
+                    <button class="btn-modal btn-cancel">${t('btn_cancel')}</button>
+                    <button class="btn-modal btn-confirm">${t('btn_confirm')}</button>
+                </div>
+            </div>
+        `;
+        
+        const close = (val) => { overlay.remove(); resolve(val); };
+        overlay.querySelector('.btn-cancel').onclick = () => close(null);
+        overlay.querySelector('.btn-confirm').onclick = () => {
+            const timeVal = overlay.querySelector('#schedule-time-input').value;
+            close(timeVal ? new Date(timeVal).getTime() : 0); // คืนค่าเป็นมิลลิวินาที (ถ้าไม่ใส่จะเป็น 0)
+        };
+        overlay.onclick = (e) => { if(e.target === overlay) close(null); };
+        
+        document.body.appendChild(overlay);
+    });
+}
+
 function showCustomAlert(title, message) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1160,8 +1203,10 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 // --- NEW: ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
 window.scheduleQuest = async (clanId, questId, questTitle) => {
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
-    const confirmed = await showCustomConfirm(t('txt_auto_buy'), msg, false);
-    if (!confirmed) return;
+    
+    // เรียกหน้าต่างเลือกเวลา
+    const targetTimeMs = await showSchedulePrompt(t('txt_auto_buy'), msg);
+    if (targetTimeMs === null) return; // กดปุ่มยกเลิก
 
     const apiKey = localStorage.getItem('wolvesville_api_key');
     if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
@@ -1175,15 +1220,26 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
                 clanId: clanId, 
                 questId: questId, 
                 questTitle: questTitle,
-                apiKey: apiKey // ส่ง Key ไปเก็บใน DB เพื่อให้ Cron นำไปใช้
+                apiKey: apiKey,
+                targetTime: targetTimeMs // ส่งค่าเวลาที่เลือกลง Database
             })
         });
 
         if (res.ok) {
-            showCustomAlert(t('alert_success'), t('txt_auto_buy_success'));
+            const timeStr = targetTimeMs > 0 
+                ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
+                : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
+            
+            showCustomAlert(t('alert_success'), `✅ บันทึกการตั้งเวลาสำเร็จ!<br><br><span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span>`);
         } else {
-            const err = await res.json();
-            showCustomAlert(t('alert_error'), '❌ ' + (err.error || err.message || t('unknown_err')));
+            const text = await res.text();
+            try {
+                const err = JSON.parse(text);
+                showCustomAlert(t('alert_error'), '❌ ' + (err.error || err.message || t('unknown_err')));
+            } catch (parseError) {
+                console.error("Non-JSON Server Error:", text);
+                showCustomAlert(t('alert_error'), `❌ Server Error: ${res.status} (รอ Vercel อัปเดตโค้ดสักครู่)`);
+            }
         }
     } catch (e) {
         showCustomAlert(t('alert_error'), '❌ ' + e.message);
