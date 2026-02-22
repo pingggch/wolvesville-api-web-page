@@ -2,15 +2,15 @@
   "date_today": "2026-02-22",
   "date_this_month": "2026-02",
   "requests": {
-    "count_today": 3092,
-    "count_month": 11227,
-    "count_year": 11227,
-    "count_lifetime": 11227
+    "count_today": 3091,
+    "count_month": 11226,
+    "count_year": 11226,
+    "count_lifetime": 11226
   },
   "visitors": {
-    "count_today": 24,
-    "count_month": 250,
-    "count_year": 250,
-    "count_lifetime": 250
+    "count_today": 23,
+    "count_month": 249,
+    "count_year": 249,
+    "count_lifetime": 249
   }
 }
