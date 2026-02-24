@@ -1,14 +1,14 @@
 {
-  "date_today": "2026-02-23",
+  "date_today": "2026-02-24",
   "date_this_month": "2026-02",
   "requests": {
-    "count_today": 13,
-    "count_month": 11698,
-    "count_year": 11698,
-    "count_lifetime": 11698
+    "count_today": 1,
+    "count_month": 11699,
+    "count_year": 11699,
+    "count_lifetime": 11699
   },
   "visitors": {
-    "count_today": 9,
+    "count_today": 0,
     "count_month": 267,
     "count_year": 267,
     "count_lifetime": 267
