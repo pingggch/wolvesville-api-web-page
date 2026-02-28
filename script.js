@@ -3212,33 +3212,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let embedColor = 3447003; // สีน้ำเงิน
                 let embedTitle = '📝 แจ้งเตือนทั่วไป (Other)';
-                let topicName = '📝 อื่นๆ (Other)';
                 
                 if (topic === 'bug') { 
                     embedColor = 16711680; // สีแดง
-                    embedTitle = '🚨 แจ้งพบบัค/ปัญหาใหม่!'; 
-                    topicName = '🐛 รายงานปัญหา (Bug)';
+                    embedTitle = '🐛 รายงานปัญหา (Bug)'; 
                 } else if (topic === 'suggestion') { 
                     embedColor = 16776960; // สีเหลือง
-                    embedTitle = '💡 มีข้อเสนอแนะใหม่!'; 
-                    topicName = '💡 ข้อเสนอแนะ (Suggestion)';
+                    embedTitle = '💡 ข้อเสนอแนะ (Suggestion)'; 
                 } 
 
                 const formData = new FormData();
                 const payload = {
                     username: "Web Feedback",
                     avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
-                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ (แก้ตัวเลข ID เป็นของคุณเองเพื่อให้แจ้งเตือนเด้ง)
+                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ
                     content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
                     embeds: [{
                         title: embedTitle,
                         color: embedColor,
                         fields: [
-                            {
-                                name: "📌 หัวข้อ (Topic)",
-                                value: topicName,
-                                inline: true
-                            },
                             {
                                 name: "💬 รายละเอียดข้อความ",
                                 value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
