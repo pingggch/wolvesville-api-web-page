@@ -733,6 +733,7 @@ function showApiConsentModal() {
 function showCustomAlert(title, message) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9999'; // บังคับให้อยู่เลเยอร์บนสุดเสมอ
 
     overlay.innerHTML = `
         <div class="modal-content">
@@ -3207,7 +3208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 // ⚠️ DISCORD WEBHOOK URL ⚠️
-                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHS ক্রিমHSZaRBnb5p8ka-dydMuyxwk'; 
+                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
 
                 let embedColor = 3447003; 
                 let embedTitle = '📝 Feedback';
