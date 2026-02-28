@@ -3210,19 +3210,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ⚠️ DISCORD WEBHOOK URL ⚠️
                 const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
 
-                let embedColor = 3447003; 
-                let embedTitle = '📝 Feedback';
-                if (topic === 'bug') { embedColor = 16711680; embedTitle = '🐛 Bug Report'; } 
-                else if (topic === 'suggestion') { embedColor = 16776960; embedTitle = '💡 Suggestion'; } 
+                let embedColor = 3447003; // สีน้ำเงิน
+                let embedTitle = '📝 แจ้งเตือนทั่วไป (Other)';
+                let topicName = '📝 อื่นๆ (Other)';
+                
+                if (topic === 'bug') { 
+                    embedColor = 16711680; // สีแดง
+                    embedTitle = '🚨 แจ้งพบบัค/ปัญหาใหม่!'; 
+                    topicName = '🐛 รายงานปัญหา (Bug)';
+                } else if (topic === 'suggestion') { 
+                    embedColor = 16776960; // สีเหลือง
+                    embedTitle = '💡 มีข้อเสนอแนะใหม่!'; 
+                    topicName = '💡 ข้อเสนอแนะ (Suggestion)';
+                } 
 
                 const formData = new FormData();
                 const payload = {
-                    username: "Wolvesville API Feedback",
+                    username: "Web Feedback",
                     avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
+                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ (แก้ตัวเลข ID เป็นของคุณเองเพื่อให้แจ้งเตือนเด้ง)
+                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@ไอดี_DISCORD_ของคุณ>", 
                     embeds: [{
                         title: embedTitle,
-                        description: msg || "*No text provided*",
                         color: embedColor,
+                        fields: [
+                            {
+                                name: "📌 หัวข้อ (Topic)",
+                                value: `**${topicName}**`,
+                                inline: true
+                            },
+                            {
+                                name: "💬 รายละเอียดข้อความ",
+                                value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
+                                inline: false
+                            }
+                        ],
+                        footer: {
+                            text: "ส่งจากเว็บไซต์ Wolvesville API Dashboard",
+                            icon_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png"
+                        },
                         timestamp: new Date().toISOString()
                     }]
                 };
