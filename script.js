@@ -2486,7 +2486,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 <div class="active-quest-body">
                     <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
-                        🎁 <span style="margin-left:5px;">${t('txt_quest_prog')}</span>
+                        <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> ${t('txt_quest_prog')}
                     </h4>
                     ${rewardsTrackHtml}
                     ${countdownHtml}
@@ -3229,14 +3229,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     username: "Web Feedback",
                     avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
                     // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ (แก้ตัวเลข ID เป็นของคุณเองเพื่อให้แจ้งเตือนเด้ง)
-                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@ไอดี_DISCORD_ของคุณ>", 
+                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
                     embeds: [{
                         title: embedTitle,
                         color: embedColor,
                         fields: [
                             {
                                 name: "📌 หัวข้อ (Topic)",
-                                value: `**${topicName}**`,
+                                value: topicName,
                                 inline: true
                             },
                             {
