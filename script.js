@@ -461,6 +461,10 @@ let isFirstRender = true;
 let currentParticipatingCount = 0; 
 let questCooldownInterval = null;
 
+// 🌟 ตัวแปรเก็บ Request ID เพื่อป้องกัน API วิ่งชนกัน (Race Condition) 🌟
+let currentClanRequestId = 0; 
+let currentPlayerRequestId = 0;
+
 // Inject Lottie Player Script
 const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
@@ -1930,6 +1934,10 @@ async function searchAndDisplayPlayer() {
         return showCustomAlert(t('alert_warning'), t('no_api_key'));
     }
 
+    // รัน ID คิวใหม่
+    currentPlayerRequestId++;
+    const reqId = currentPlayerRequestId;
+
     const isEn = getLocale() === 'en';
 
     playerProfileContainer.innerHTML = `
@@ -1943,6 +1951,8 @@ async function searchAndDisplayPlayer() {
     let id = input;
     if (!isUUID(input)) {
         const search = await fetchData(`/players/search?username=${encodeURIComponent(input)}`);
+        if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+
         if (search && !search.error && search.length) id = search[0].id;
         else if (search && search.id) id = search.id;
         else {
@@ -1958,15 +1968,19 @@ async function searchAndDisplayPlayer() {
     }
 
     const data = await fetchData(`/players/${id}`);
+    if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+
     if (data && !data.error) {
         await fetchAndCacheRoles();
         if (data.clanId) {
             const clan = await fetchData(`/clans/${data.clanId}/info`);
+            if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
             if (!clan.error) {
                 data.clanName = clan.name;
                 data.clanTag = clan.tag;
             }
         }
+        if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
         renderPlayerProfile(data);
     } else {
         playerProfileContainer.innerHTML = `
@@ -2143,6 +2157,10 @@ async function fetchMyClan() {
     if (!localStorage.getItem('wolvesville_api_key')) return showCustomAlert(t('alert_warning'), t('no_api_key'));
     stopClanPolling();
     
+    // รัน ID คิวใหม่
+    currentClanRequestId++;
+    const reqId = currentClanRequestId;
+    
     clanContentContainer.innerHTML = `
         <div class="loading-container">
             <div style="font-size:36px; margin-bottom:10px;">🛡️</div>
@@ -2152,13 +2170,16 @@ async function fetchMyClan() {
     `;
     
     const authRes = await fetchData('/clans/authorized');
+    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+
     if (authRes.error || !authRes.length) {
         clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">${t('txt_not_in_clan')}</div>`;
         return;
     }
     
     const myClanId = authRes[0].id;
-    await fetchClanData(myClanId, true);
+    await fetchClanData(myClanId, true, false, reqId);
+    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
     startClanPolling(myClanId, true);
 }
 
@@ -2166,6 +2187,10 @@ async function searchClan() {
     stopClanPolling();
     const inputVal = clanNameInput.value.trim();
     if (!inputVal) return;
+    
+    // รัน ID คิวใหม่
+    currentClanRequestId++;
+    const reqId = currentClanRequestId;
     
     clanContentContainer.innerHTML = `
         <div class="loading-container">
@@ -2180,11 +2205,13 @@ async function searchClan() {
     // ตรวจสอบว่าเป็น UUID หรือไม่ (ค้นหาด้วย ID หรือ ชื่อ)
     if (isUUID(inputVal)) {
         const infoRes = await fetchData(`/clans/${inputVal}/info`);
+        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
         if (!infoRes.error && infoRes.id) {
             targetClanId = infoRes.id;
         }
     } else {
         const searchRes = await fetchData(`/clans/search?name=${encodeURIComponent(inputVal)}`);
+        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
         if (!searchRes.error && searchRes.length > 0) {
             targetClanId = searchRes[0].id;
         }
@@ -2201,7 +2228,7 @@ async function searchClan() {
         return;
     }
     
-    await fetchClanData(targetClanId, false);
+    await fetchClanData(targetClanId, false, false, reqId);
 }
 
 function startClanPolling(clanId, isMyClan) {
@@ -2212,7 +2239,11 @@ function startClanPolling(clanId, isMyClan) {
     console.log(t('txt_auto_update'));
     
     clanPollingInterval = setInterval(() => {
-        if (document.visibilityState === 'visible') fetchClanData(clanId, isMyClan, true); 
+        if (document.visibilityState === 'visible') {
+            // เมื่อ Polling ทำงาน ก็ส่งคิวใหม่ให้ไปเลย จะได้ไม่ขัดกัน
+            currentClanRequestId++;
+            fetchClanData(clanId, isMyClan, true, currentClanRequestId); 
+        }
     }, 60000); 
 }
 
@@ -2225,11 +2256,18 @@ function stopClanPolling() {
     isFirstRender = true;
 }
 
-async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
+async function fetchClanData(clanId, isMyClan = false, isBackground = false, reqId = null) {
     const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
 
+    // ถ้าไม่มี reqId ส่งมา (แสดงว่าถูกเรียกจากจุดอื่นที่ไม่ใช่ Search) ให้เจนคิวใหม่
+    if (reqId === null) {
+        currentClanRequestId++;
+        reqId = currentClanRequestId;
+    }
+
     const updateProgress = (textKey, extraText = '') => {
+        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้ามีคิวใหม่มาแทรก
         if(!isBackground) {
             currentStep++;
             const percent = Math.min(100, Math.round((currentStep / totalSteps) * 100));
@@ -2246,12 +2284,16 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         }
     };
 
+    if (reqId !== currentClanRequestId) return;
     if(!isBackground) { isFirstRender = true; updateProgress('load_init'); }
     
     await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
+    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
     
     updateProgress('load_info');
     const info = await fetchData(`/clans/${clanId}/info`);
+    if (reqId !== currentClanRequestId) return; 
+
     if (info.error) {
         if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
         return;
@@ -2259,7 +2301,10 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('load_members');
     let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
+    if (reqId !== currentClanRequestId) return;
+
     if (membersRaw.error) membersRaw = await fetchData(`/clans/${clanId}/members`);
+    if (reqId !== currentClanRequestId) return;
     
     if (!membersRaw.error && Array.isArray(membersRaw)) {
         clanMembersDetailedMap.clear();
@@ -2268,16 +2313,27 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     
     updateProgress('load_quests');
     const quests = await fetchData(`/clans/${clanId}/quests/active`);
+    if (reqId !== currentClanRequestId) return;
+
     updateProgress('load_chat');
     const chat = await fetchData(`/clans/${clanId}/chat`);
+    if (reqId !== currentClanRequestId) return;
+
     updateProgress('load_logs');
     const logs = await fetchData(`/clans/${clanId}/logs`);
+    if (reqId !== currentClanRequestId) return;
+
     updateProgress('load_ledger');
     const ledger = await fetchData(`/clans/${clanId}/ledger`);
+    if (reqId !== currentClanRequestId) return;
+
     updateProgress('load_history');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
+    if (reqId !== currentClanRequestId) return;
+
     updateProgress('load_ann');
     const announcements = await fetchData(`/clans/${clanId}/announcements`);
+    if (reqId !== currentClanRequestId) return;
 
     let blockedMembers = { error: true };
     let availableQuests = { error: true };
@@ -2286,16 +2342,20 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
     if(isMyClan) {
         updateProgress('load_blocklist');
         const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
+        if (reqId !== currentClanRequestId) return;
 
         if (!blocklistRes.error && Array.isArray(blocklistRes)) {
             const extractId = (item) => typeof item === 'string' ? item : (item.playerId || item.id || item.targetPlayerId);
             const playersData = [];
             updateProgress('load_blocked_p');
             for (const item of blocklistRes.slice(0, 50)) {
+                if (reqId !== currentClanRequestId) return; // เช็คถี่ๆ ตอนวนลูป
                 const pid = extractId(item);
                 if (pid) playersData.push(await fetchData(`/players/${pid}`));
                 else playersData.push({ error: true });
             }
+            if (reqId !== currentClanRequestId) return;
+
             blockedMembers = playersData.map((p, idx) => {
                 const originalId = extractId(blocklistRes[idx]) || 'Unknown';
                 if (p.error) return { id: originalId, username: 'Unknown', error: true };
@@ -2307,10 +2367,14 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
         updateProgress('load_avail_q');
         availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
+        if (reqId !== currentClanRequestId) return;
+
         if (Array.isArray(availableQuests)) availableQuests.forEach(q => questDetailsCache.set(q.id, q));
 
         updateProgress('load_votes');
         votesData = await fetchData(`/clans/${clanId}/quests/votes`);
+        if (reqId !== currentClanRequestId) return;
+
         clanVotesCache = votesData;
     }
 
@@ -2319,6 +2383,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         updateProgress('load_avatars', ` (${membersRaw.length} คน)...`);
         const membersList = [];
         for (const m of membersRaw) {
+            if (reqId !== currentClanRequestId) return; // เช็คถี่ๆ ตอนวนลูป
             if (playerAvatarCache.has(m.playerId)) membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
             else {
                 const detail = await fetchData(`/players/${m.playerId}`);
@@ -2330,6 +2395,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
         }
         members = membersList;
     }
+    if (reqId !== currentClanRequestId) return;
 
     if (Array.isArray(members)) members.forEach(m => clanMembersCache[m.playerId] = m.username);
     let participatingMemberCount = Array.isArray(members) ? members.filter(m => m.participateInClanQuests).length : 0;
@@ -2337,6 +2403,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false) {
 
     updateProgress('load_dash');
     setTimeout(() => {
+        if (reqId !== currentClanRequestId) return; // เช็คครั้งสุดท้ายก่อนวาด UI
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
 }
