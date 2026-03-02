@@ -1711,7 +1711,7 @@ function getQuestResetTimeDisplay() {
     const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
 
     const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `เควสจะรีเซ็ตในอีก ${d} วัน ${h} ชม. ${m} นาที`;
-    return `<span id="quest-reset-timer" style="font-size:0.8rem; color:#64748b; font-weight:normal; float:right;">${txt}</span>`;
+    return `<span id="quest-reset-timer" style="font-size:0.85rem; color:#64748b; font-weight:normal; display:flex; align-items:center; gap:4px; margin-top:4px;"><span class="material-icons" style="font-size:16px;">update</span> ${txt}</span>`;
 }
 
 function sendIncrementSignal(type) {
@@ -2621,19 +2621,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
         availableQuestsHtml = `
         <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <h3 style="margin:0; color:#334155; font-size:1.1rem; align-self:center;">🛒 ${t('txt_avail_quests')}</h3>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        ${getQuestResetTimeDisplay()}
-                        <button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                            <span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> ${t('txt_quest_wiki')}
-                        </button>
-                        <button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                            <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> ${t('txt_shuffle')} (500 💰)
-                        </button>
-                    </div>
-                    ${shuffleVotesHtml}
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:15px;">
+                <div>
+                    <h3 style="margin:0; color:#334155; font-size:1.1rem; display:flex; align-items:center; gap:5px;">🛒 ${t('txt_avail_quests')}</h3>
+                    ${getQuestResetTimeDisplay()}
+                </div>
+                <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; flex:1; min-width:250px;">
+                    <button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex:1; min-width:max-content; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        <span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> ${t('txt_quest_wiki')}
+                    </button>
+                    <button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex:1; min-width:max-content; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> ${t('txt_shuffle')} (500 💰)
+                    </button>
+                    ${shuffleVotesHtml ? `<div style="width: 100%; display: flex; justify-content: flex-end;">${shuffleVotesHtml}</div>` : ''}
                 </div>
             </div>
         </div>
