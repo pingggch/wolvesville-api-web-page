@@ -860,6 +860,29 @@ function getPlayerStatusData(playerData) {
     }
 }
 
+// --- ฟังก์ชันแปลงค่าสีและ Gradient โปรไฟล์ให้เป็น CSS ---
+function getProfileColorStyle(data) {
+    if (!data) return 'var(--primary-color)'; // Default Fallback
+    
+    if (data.profileIconColorMode === 'GRADIENT') {
+        const primary = data.profileIconGradientPrimary || '#1c94ff';
+        const accent = data.profileIconGradientAccent || '#e982ff';
+        const direction = data.profileIconGradientDirection || 'DIAGONAL';
+        
+        if (direction === 'RADIAL') {
+            return `radial-gradient(circle, ${primary}, ${accent})`;
+        } else {
+            let cssDir = '135deg'; // DIAGONAL
+            if (direction === 'VERTICAL') cssDir = 'to bottom';
+            else if (direction === 'HORIZONTAL') cssDir = 'to right';
+            return `linear-gradient(${cssDir}, ${primary}, ${accent})`;
+        }
+    }
+    
+    // แบบ SOLID หรืออื่นๆ ให้คืนค่าเป็นสีเดียว
+    return data.profileIconColor || 'var(--primary-color)';
+}
+
 window.fetchMemberDetails = async (clanId, playerId, canEdit) => {
     showCustomInfoModal('Loading...', `<div style="text-align:center; padding:30px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">${t('loading_roles')}</div></div>`);
     
@@ -933,6 +956,9 @@ function showMemberModal(data) {
     // ดึงสถานะจากฟังก์ชันกลาง
     const statusData = getPlayerStatusData(data);
     
+    // ดึงสไตล์สีโปรไฟล์
+    const bgStyle = getProfileColorStyle(data);
+    
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
 
     const fmt = (n) => (n || 0).toLocaleString();
@@ -940,7 +966,7 @@ function showMemberModal(data) {
 
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-            <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background:#f1f5f9; object-fit:contain;">
+            <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background: ${bgStyle}; object-fit:contain;">
             <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="Search Player">
@@ -1943,7 +1969,7 @@ async function searchAndDisplayPlayer() {
     playerProfileContainer.innerHTML = `
         <div style="text-align:center; padding:60px 20px; background:white; border-radius:var(--radius-lg); border:1px solid #e2e8f0; box-shadow:var(--shadow-sm); margin-top:20px; animation: fadeIn 0.3s ease-out;">
             <span class="material-icons loading-spinner" style="font-size:60px; color:var(--primary-color);">autorenew</span>
-            <h3 style="color:#1e293b; margin-top:20px; font-size:1.3rem;">${isEn ? 'Searching...' : 'กำลังค้นหาข้อมูล...'}</h3>
+            <h3 style="color:#1e293b; margin:top:20px; font-size:1.3rem;">${isEn ? 'Searching...' : 'กำลังค้นหาข้อมูล...'}</h3>
             <p style="color:#64748b; font-size:0.95rem; margin-top:5px;">${isEn ? 'Fetching data for' : 'กำลังดึงข้อมูลของ'} <strong style="color:var(--primary-color);">${escapeJsString(input)}</strong></p>
         </div>
     `;
@@ -2032,6 +2058,9 @@ function renderPlayerProfile(data) {
     // ดึงสถานะจากฟังก์ชันกลาง
     const statusData = getPlayerStatusData(data);
     const statusBadge = `<span class="status-badge ${statusData.cssClass}"><span class="material-icons">${statusData.icon}</span> ${statusData.text}</span>`;
+    
+    // ดึงสไตล์สีโปรไฟล์
+    const bgStyle = getProfileColorStyle(data);
 
     let clanHtml = '';
     if (data.clanName) clanHtml = `<span class="clan-tag" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'" onclick="window.goToClanSearch('${data.clanId}')" title="ค้นหาแคลน (ID: ${data.clanId})">[${data.clanTag||'CLAN'}] ${data.clanName}</span>`;
@@ -2084,9 +2113,10 @@ function renderPlayerProfile(data) {
     `}).join('');
 
     playerProfileContainer.innerHTML = `
-        <div class="profile-header-card">
+        <div class="profile-header-card" style="border-left: none;">
+            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: ${bgStyle}; box-shadow: inset -1px 0 3px rgba(0,0,0,0.1);"></div>
             <div class="profile-avatar-wrapper">
-                <img src="${data.equippedAvatar?.url || 'https://via.placeholder.com/150'}" class="profile-avatar-lg">
+                <img src="${data.equippedAvatar?.url || 'https://via.placeholder.com/150'}" class="profile-avatar-lg" style="background: ${bgStyle};">
                 <div class="level-badge">${t('txt_level')} ${data.level}</div>
             </div>
             <div class="profile-main-info">
@@ -2741,6 +2771,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         membersHtml = members.map(m => {
             // ดึงสถานะจากฟังก์ชันกลาง
             const statusData = getPlayerStatusData(m);
+            // ดึงสไตล์สีโปรไฟล์
+            const bgStyle = getProfileColorStyle(m);
 
             const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
             let roleBadge = '';
@@ -2768,7 +2800,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
             return `
                 <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})">
-                    <div id="member-avatar-${m.playerId}" class="member-avatar" style="background-image: url('${avatar}'); background-size: cover;"></div>
+                    <div id="member-avatar-${m.playerId}" class="member-avatar" style="background: url('${avatar}') center/cover no-repeat, ${bgStyle};"></div>
                     <div class="member-details">
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
                             <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')">${m.username || 'Unknown'}</span> 
