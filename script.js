@@ -811,6 +811,51 @@ window.goToPlayerSearch = (username) => {
     }
 };
 
+window.goToClanSearch = (clanId) => {
+    const input = document.getElementById('clan-name-input');
+    if(input) {
+        input.value = clanId;
+        const clanTab = document.querySelector('.nav-link[data-page="clan-manager"]');
+        if (clanTab) {
+            clanTab.click();
+        }
+        
+        if (typeof window.searchClan === 'function') {
+            window.searchClan();
+        } else {
+            try {
+                searchClan();
+            } catch (e) {
+                console.error('Error in clan search:', e);
+            }
+        }
+    }
+};
+
+// --- ฟังก์ชันกลางสำหรับคำนวณสถานะผู้เล่น ---
+function getPlayerStatusData(playerData) {
+    let isOnline = false;
+    if (playerData.lastOnline) {
+        const lastOnlineDate = new Date(playerData.lastOnline);
+        const diffMinutes = (Date.now() - lastOnlineDate.getTime()) / (1000 * 60);
+        isOnline = diffMinutes <= 5; // ตัดจบที่ 5 นาที
+    }
+
+    const rawStatus = (playerData.playerStatus || playerData.status || 'OFFLINE').toUpperCase();
+
+    if (isOnline) {
+        if (rawStatus === 'PLAY') {
+            return { text: t('txt_playing'), color: '#1e40af', cssClass: 'play', icon: 'sports_esports' };
+        } else if (rawStatus === 'DO_NOT_DISTURB' || rawStatus === 'DND') {
+            return { text: t('txt_dnd'), color: '#ef4444', cssClass: 'dnd', icon: 'do_not_disturb_on' };
+        } else {
+            return { text: t('txt_online'), color: 'var(--success)', cssClass: 'online', icon: 'fiber_manual_record' };
+        }
+    } else {
+        return { text: t('txt_offline'), color: '#cbd5e1', cssClass: 'offline', icon: 'cloud_off' };
+    }
+}
+
 window.fetchMemberDetails = async (clanId, playerId, canEdit) => {
     showCustomInfoModal('Loading...', `<div style="text-align:center; padding:30px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem; color:#64748b;">${t('loading_roles')}</div></div>`);
     
@@ -881,12 +926,8 @@ function showMemberModal(data) {
     const don = data.donated || {};
     const xpDur = data.xpDurations || {};
     
-    let statusClass = 'offline';
-    let statusLabel = data.status || 'UNKNOWN';
-    if(data.playerStatus === 'ONLINE' || data.status === 'ONLINE') { statusClass = 'online'; statusLabel = t('txt_online'); }
-    else if(data.playerStatus === 'PLAY' || data.status === 'PLAY') { statusClass = 'play'; statusLabel = t('txt_playing'); }
-    else if(data.playerStatus === 'DO_NOT_DISTURB' || data.status === 'DND') { statusClass = 'dnd'; statusLabel = t('txt_dnd'); }
-    else if(data.status === 'OFFLINE' || data.playerStatus === 'OFFLINE') { statusLabel = t('txt_offline'); }
+    // ดึงสถานะจากฟังก์ชันกลาง
+    const statusData = getPlayerStatusData(data);
     
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
 
@@ -903,7 +944,7 @@ function showMemberModal(data) {
             </h2>
             <div style="color:#64748b; font-size:0.9rem;">${data.flair ? `"${data.flair}"` : '-'}</div>
             <div style="margin-top:5px;">
-                <span class="status-badge ${statusClass}" style="font-size:0.7rem; padding:2px 8px;">${statusLabel}</span>
+                <span class="status-badge ${statusData.cssClass}" style="font-size:0.7rem; padding:2px 8px;">${statusData.text}</span>
                 <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">${t('txt_level')} ${data.level || 0}</span>
                 ${data.isCoLeader ? `<span style="background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:bold;">${t('txt_coleader')}</span>` : ''}
             </div>
@@ -1974,32 +2015,13 @@ function renderPlayerProfile(data) {
     const wolfWR = calcWR(stats.werewolfWinCount, stats.werewolfLoseCount);
     const voteWR = calcWR(stats.votingWinCount, stats.votingLoseCount);
 
-    let isReallyOnline = false;
-    if (data.lastOnline) {
-        const lastOnlineDate = new Date(data.lastOnline);
-        const now = new Date();
-        const diffMinutes = (now - lastOnlineDate) / (1000 * 60);
-        isReallyOnline = diffMinutes <= 5;
-    }
-
-    const rawStatus = (data.status || 'OFFLINE').toUpperCase();
-    let statusBadge = '';
-
-    if (isReallyOnline) {
-        if (rawStatus === 'PLAY') {
-            statusBadge = `<span class="status-badge play"><span class="material-icons">sports_esports</span> ${t('txt_playing')}</span>`;
-        } else if (rawStatus === 'DO_NOT_DISTURB' || rawStatus === 'DND') { 
-            statusBadge = `<span class="status-badge dnd"><span class="material-icons">do_not_disturb_on</span> ${t('txt_dnd')}</span>`;
-        } else { 
-            statusBadge = `<span class="status-badge online"><span class="material-icons">fiber_manual_record</span> ${t('txt_online')}</span>`;
-        }
-    } else {
-        statusBadge = `<span class="status-badge offline"><span class="material-icons">cloud_off</span> ${t('txt_offline')}</span>`;
-    }
+    // ดึงสถานะจากฟังก์ชันกลาง
+    const statusData = getPlayerStatusData(data);
+    const statusBadge = `<span class="status-badge ${statusData.cssClass}"><span class="material-icons">${statusData.icon}</span> ${statusData.text}</span>`;
 
     let clanHtml = '';
-    if (data.clanName) clanHtml = `<span class="clan-tag" title="${data.clanId}">[${data.clanTag||'CLAN'}] ${data.clanName}</span>`;
-    else if (data.clanId) clanHtml = `<span class="clan-tag error">Clan ID Only</span>`;
+    if (data.clanName) clanHtml = `<span class="clan-tag" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'" onclick="window.goToClanSearch('${data.clanId}')" title="ค้นหาแคลน (ID: ${data.clanId})">[${data.clanTag||'CLAN'}] ${data.clanName}</span>`;
+    else if (data.clanId) clanHtml = `<span class="clan-tag error" style="cursor:pointer;" onclick="window.goToClanSearch('${data.clanId}')" title="ค้นหาแคลน">Clan ID Only</span>`;
 
     const achievements = stats.achievements || [];
     const topRoles = achievements
@@ -2630,12 +2652,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     let membersHtml = '<div style="text-align:center; padding:20px;">No Data</div>';
     if (!members.error && Array.isArray(members)) {
         membersHtml = members.map(m => {
-            let statusColor = '#ccc';
-            let statusText = m.playerStatus || m.status || 'OFFLINE';
-            if (statusText === 'ONLINE' || statusText === 'DEFAULT') { statusColor = 'var(--success)'; statusText = t('txt_online'); }
-            else if (statusText === 'PLAY') { statusColor = '#1e40af'; statusText = t('txt_playing'); }
-            else if (statusText === 'DND' || statusText === 'DO_NOT_DISTURB') { statusColor = '#ef4444'; statusText = t('txt_dnd'); }
-            else if (statusText === 'OFFLINE') { statusColor = '#ccc'; statusText = t('txt_offline'); }
+            // ดึงสถานะจากฟังก์ชันกลาง
+            const statusData = getPlayerStatusData(m);
 
             const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
             let roleBadge = '';
@@ -2670,7 +2688,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                             ${roleBadge} ${questIconHtml} ${adminActionsHtml}
                         </div>
                         <div class="member-meta">
-                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusColor};"></span> ${statusText} ${flairHtml}
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusData.color};"></span> ${statusData.text} ${flairHtml}
                         </div>
                     </div>
                 </div>
