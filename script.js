@@ -2164,8 +2164,8 @@ async function fetchMyClan() {
 
 async function searchClan() {
     stopClanPolling();
-    const name = clanNameInput.value.trim();
-    if (!name) return;
+    const inputVal = clanNameInput.value.trim();
+    if (!inputVal) return;
     
     clanContentContainer.innerHTML = `
         <div class="loading-container">
@@ -2175,13 +2175,33 @@ async function searchClan() {
         </div>
     `;
     
-    const searchRes = await fetchData(`/clans/search?name=${encodeURIComponent(name)}`);
-    if (searchRes.error || !searchRes.length) {
-        clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:20px;">${t('txt_clan_not_found')}</div>`;
+    let targetClanId = null;
+
+    // ตรวจสอบว่าเป็น UUID หรือไม่ (ค้นหาด้วย ID หรือ ชื่อ)
+    if (isUUID(inputVal)) {
+        const infoRes = await fetchData(`/clans/${inputVal}/info`);
+        if (!infoRes.error && infoRes.id) {
+            targetClanId = infoRes.id;
+        }
+    } else {
+        const searchRes = await fetchData(`/clans/search?name=${encodeURIComponent(inputVal)}`);
+        if (!searchRes.error && searchRes.length > 0) {
+            targetClanId = searchRes[0].id;
+        }
+    }
+    
+    if (!targetClanId) {
+        clanContentContainer.innerHTML = `
+            <div class="empty-state" style="border-color: #fecaca; background: #fef2f2; margin-top:20px;">
+                <span class="material-icons" style="color: #ef4444; font-size: 60px;">group_off</span>
+                <h3 style="color: #991b1b; margin:10px 0; font-size:1.3rem;">${t('txt_clan_not_found')}</h3>
+                <p style="color: #ef4444; font-size:0.95rem;">${getLocale() === 'en' ? 'Could not find clan' : 'ไม่พบข้อมูลของแคลน'} <strong>${escapeJsString(inputVal)}</strong></p>
+            </div>
+        `;
         return;
     }
     
-    await fetchClanData(searchRes[0].id, false);
+    await fetchClanData(targetClanId, false);
 }
 
 function startClanPolling(clanId, isMyClan) {
