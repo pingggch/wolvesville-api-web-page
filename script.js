@@ -1931,23 +1931,22 @@ function renderGlobalAnnouncements(data) {
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
     if(availableItems) availableItems.textContent = '...';
-    // เพิ่มคลาส icon-no-bg เข้าไปที่ไอคอน sync
-    if(apiStatusText) apiStatusText.innerHTML = t('stat_checking') + '<span class="material-icons loading-spinner icon-no-bg" style="font-size:18px; vertical-align:middle; color:#64748b;">sync</span>';
-    if(apiStatusDot) apiStatusDot.style.backgroundColor = '#FFD700';
+    
+    // สร้างจุดสถานะสีเหลืองสำหรับตอนโหลด (แทรกเข้าไปในข้อความเลย)
+    const loadingDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#f59e0b; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(245,158,11,0.3);"></span>`;
+    if(apiStatusText) apiStatusText.innerHTML = loadingDot + t('stat_checking') + '<span class="material-icons loading-spinner icon-no-bg" style="font-size:18px; vertical-align:middle; margin-left:8px; color:#64748b;">sync</span>';
+    if(apiStatusDot) apiStatusDot.style.display = 'none'; // ปิดจุดเก่าของระบบทิ้งไปเลย ป้องกันซ้อนกัน
 
     const check = await fetchData('/announcements', true, false);
     
-    // เพิ่มคลาส refresh-btn เข้าไปแทนการเขียน style สดๆ ตรงๆ (ล้างมรดก CSS ของ .stat-card)
+    // เพิ่มคลาส refresh-btn เข้าไปแทนการเขียน style สดๆ ตรงๆ
     const refreshBtnHtml = `<span class="material-icons refresh-btn" style="cursor:pointer; vertical-align:middle; color:var(--primary-color); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
 
     if (!check.error) {
-        // 🟢 สีเขียวมรกต สำหรับสถานะ 200 ปกติ
-        if(apiStatusDot) { 
-            apiStatusDot.classList.add('connected'); 
-            apiStatusDot.style.backgroundColor = '#10b981'; 
-        }
+        // 🟢 จุดสีเขียวมรกต สำหรับสถานะ 200 ปกติ
+        const successDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#10b981; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(16,185,129,0.3);"></span>`;
         if(apiStatusText) {
-            apiStatusText.innerHTML = (getLocale() === 'en' ? 'Online (HTTP 200)' : 'ออนไลน์ (HTTP 200)') + refreshBtnHtml;
+            apiStatusText.innerHTML = successDot + (getLocale() === 'en' ? 'Online (HTTP 200)' : 'ออนไลน์ (HTTP 200)') + refreshBtnHtml;
         }
         
         const items = await fetchTotalItemsCount();
@@ -1978,16 +1977,14 @@ async function fetchAndDisplayData() {
             statusMessage = getLocale() === 'en' ? 'Not Found' : 'ไม่พบข้อมูล';
         }
 
-        if(apiStatusDot) { 
-            apiStatusDot.classList.remove('connected'); 
-            apiStatusDot.style.backgroundColor = dotColor; 
-        }
+        // 🔴 จุดสีตามรหัส Error
+        const errorDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${dotColor}; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>`;
         
-        // ดึง Error Code มาแสดง (ถ้ามี)
+        // ดึง Error Code มาแสดง
         const errStr = check.status ? `HTTP ${check.status}` : 'Unknown Error';
         if(apiStatusText) {
-            // ถอด Style ตัวหนาและขนาดออก ให้เป็นข้อความเพียวๆ เหมือนตอนออนไลน์
-            apiStatusText.innerHTML = `${statusMessage} (${errStr})` + refreshBtnHtml;
+            // เอาจุดไปแปะไว้หน้าสุดของข้อความ
+            apiStatusText.innerHTML = errorDot + `${statusMessage} (${errStr})` + refreshBtnHtml;
         }
         if(availableItems) availableItems.textContent = '-';
     }
