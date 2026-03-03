@@ -1951,12 +1951,37 @@ async function fetchAndDisplayData() {
         renderGlobalAnnouncements(check);
         fetchAndCacheRoles();
     } else {
-        if(apiStatusDot) { apiStatusDot.classList.remove('connected'); apiStatusDot.style.backgroundColor = '#D32F2F'; }
+        // กำหนดสีของจุดตามรหัส Error (HTTP Status)
+        let dotColor = '#D32F2F'; // สีแดง (Unknown)
+        let statusMessage = getLocale() === 'en' ? 'Offline' : 'เชื่อมต่อไม่ได้';
+
+        if (check.status === 401) {
+            dotColor = '#f59e0b'; // สีส้ม
+            statusMessage = getLocale() === 'en' ? 'Unauthorized' : 'API Key ไม่ถูกต้อง';
+        } else if (check.status === 429) {
+            dotColor = '#a855f7'; // สีม่วง
+            statusMessage = getLocale() === 'en' ? 'Rate Limited' : 'เรียกข้อมูลถี่เกินไป';
+        } else if (check.status >= 500) {
+            dotColor = '#991b1b'; // สีแดงเข้ม
+            statusMessage = getLocale() === 'en' ? 'Server Error' : 'เซิร์ฟเวอร์มีปัญหา';
+        } else if (check.status === 403) {
+            dotColor = '#ef4444'; // สีแดง
+            statusMessage = getLocale() === 'en' ? 'Forbidden' : 'ไม่มีสิทธิ์เข้าถึง';
+        } else if (check.status === 404) {
+            dotColor = '#64748b'; // สีเทา
+            statusMessage = getLocale() === 'en' ? 'Not Found' : 'ไม่พบข้อมูล';
+        }
+
+        if(apiStatusDot) { 
+            apiStatusDot.classList.remove('connected'); 
+            apiStatusDot.style.backgroundColor = dotColor; 
+        }
         
         // ดึง Error Code มาแสดง (ถ้ามี)
         const errStr = check.status ? `HTTP ${check.status}` : 'Unknown Error';
         if(apiStatusText) {
-            apiStatusText.innerHTML = `<span style="color:#ef4444; font-size:1.2rem; font-weight:bold;">${getLocale() === 'en' ? 'Offline' : 'เชื่อมต่อไม่ได้'} (${errStr})</span>` + refreshBtnHtml;
+            // คืนค่าตัวหนังสือให้เป็นสีปกติของระบบ (var(--text-main))
+            apiStatusText.innerHTML = `<span style="font-size:1.1rem; font-weight:bold; color:var(--text-main);">${statusMessage} (${errStr})</span>` + refreshBtnHtml;
         }
         if(availableItems) availableItems.textContent = '-';
     }
