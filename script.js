@@ -1980,8 +1980,8 @@ async function fetchAndDisplayData() {
         // ดึง Error Code มาแสดง (ถ้ามี)
         const errStr = check.status ? `HTTP ${check.status}` : 'Unknown Error';
         if(apiStatusText) {
-            // คืนค่าตัวหนังสือให้เป็นสีปกติของระบบ (var(--text-main))
-            apiStatusText.innerHTML = `<span style="font-size:1.1rem; font-weight:bold; color:var(--text-main);">${statusMessage} (${errStr})</span>` + refreshBtnHtml;
+            // ถอด Style ตัวหนาและขนาดออก ให้เป็นข้อความเพียวๆ เหมือนตอนออนไลน์
+            apiStatusText.innerHTML = `${statusMessage} (${errStr})` + refreshBtnHtml;
         }
         if(availableItems) availableItems.textContent = '-';
     }
