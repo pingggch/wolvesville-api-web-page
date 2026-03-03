@@ -322,6 +322,26 @@ h2 {
 .item-card .material-icons { color: var(--info); background: #f0f9ff; }
 .api-status-card .material-icons { color: var(--primary-color); background: #eef2ff; }
 
+/* เพิ่มคลาสนี้เพื่อล้างค่าพื้นหลังและขอบของไอคอนที่ไม่ต้องการ */
+.stat-card .material-icons.icon-no-bg {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    margin-left: 8px;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* ปรับปุ่ม refresh ให้สวยงามเมื่อไม่มีพื้นหลังหลัก */
+.stat-card .material-icons.refresh-btn {
+    background: #e0e7ff;
+    padding: 4px;
+    border-radius: 50%;
+    margin: 0 0 0 8px;
+    font-size: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
 .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-top: 5px; word-break: break-all; }
 .stat-label { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
 
