@@ -1931,13 +1931,18 @@ function renderGlobalAnnouncements(data) {
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
     if(availableItems) availableItems.textContent = '...';
-    if(apiStatusText) apiStatusText.textContent = t('stat_checking');
+    // แสดงสถานะกำลังตรวจสอบ พร้อมแอนิเมชันหมุน
+    if(apiStatusText) apiStatusText.innerHTML = t('stat_checking') + '<span class="material-icons loading-spinner" style="font-size:18px; vertical-align:middle; margin-left:8px; color:#64748b;">sync</span>';
     if(apiStatusDot) apiStatusDot.style.backgroundColor = '#FFD700';
 
     const check = await fetchData('/announcements', true, false);
+    
+    // สร้างปุ่มกดรีเฟรช
+    const refreshBtnHtml = `<span class="material-icons" style="font-size:20px; cursor:pointer; vertical-align:middle; margin-left:8px; color:var(--primary-color); background:#e0e7ff; padding:2px; border-radius:50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
+
     if (!check.error) {
         if(apiStatusDot) { apiStatusDot.classList.add('connected'); apiStatusDot.style.backgroundColor = '#4CAF50'; }
-        if(apiStatusText) apiStatusText.textContent = getLocale() === 'en' ? 'Online (200 OK)' : 'ออนไลน์ (200 OK)';
+        if(apiStatusText) apiStatusText.innerHTML = (getLocale() === 'en' ? 'Online (200 OK)' : 'ออนไลน์ (200 OK)') + refreshBtnHtml;
         
         const items = await fetchTotalItemsCount();
         if(availableItems) {
@@ -1947,7 +1952,12 @@ async function fetchAndDisplayData() {
         fetchAndCacheRoles();
     } else {
         if(apiStatusDot) { apiStatusDot.classList.remove('connected'); apiStatusDot.style.backgroundColor = '#D32F2F'; }
-        if(apiStatusText) apiStatusText.textContent = getLocale() === 'en' ? 'Offline' : 'เชื่อมต่อไม่ได้';
+        
+        // ดึง Error Code มาแสดง (ถ้ามี)
+        const errStr = check.status ? `HTTP ${check.status}` : 'Unknown Error';
+        if(apiStatusText) {
+            apiStatusText.innerHTML = `<span style="color:#ef4444; font-size:1.2rem; font-weight:bold;">${getLocale() === 'en' ? 'Offline' : 'เชื่อมต่อไม่ได้'} (${errStr})</span>` + refreshBtnHtml;
+        }
         if(availableItems) availableItems.textContent = '-';
     }
 }
