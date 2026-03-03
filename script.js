@@ -1941,8 +1941,14 @@ async function fetchAndDisplayData() {
     const refreshBtnHtml = `<span class="material-icons refresh-btn" style="cursor:pointer; vertical-align:middle; color:var(--primary-color); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
 
     if (!check.error) {
-        if(apiStatusDot) { apiStatusDot.classList.add('connected'); apiStatusDot.style.backgroundColor = '#4CAF50'; }
-        if(apiStatusText) apiStatusText.innerHTML = (getLocale() === 'en' ? 'Online (200 OK)' : 'ออนไลน์ (200 OK)') + refreshBtnHtml;
+        // 🟢 สีเขียวมรกต สำหรับสถานะ 200 ปกติ
+        if(apiStatusDot) { 
+            apiStatusDot.classList.add('connected'); 
+            apiStatusDot.style.backgroundColor = '#10b981'; 
+        }
+        if(apiStatusText) {
+            apiStatusText.innerHTML = (getLocale() === 'en' ? 'Online (HTTP 200)' : 'ออนไลน์ (HTTP 200)') + refreshBtnHtml;
+        }
         
         const items = await fetchTotalItemsCount();
         if(availableItems) {
