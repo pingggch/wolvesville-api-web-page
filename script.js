@@ -1931,14 +1931,14 @@ function renderGlobalAnnouncements(data) {
 async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
     if(availableItems) availableItems.textContent = '...';
-    // แสดงสถานะกำลังตรวจสอบ พร้อมแอนิเมชันหมุน
-    if(apiStatusText) apiStatusText.innerHTML = t('stat_checking') + '<span class="material-icons loading-spinner" style="font-size:18px; vertical-align:middle; margin-left:8px; color:#64748b;">sync</span>';
+    // เพิ่มคลาส icon-no-bg เข้าไปที่ไอคอน sync
+    if(apiStatusText) apiStatusText.innerHTML = t('stat_checking') + '<span class="material-icons loading-spinner icon-no-bg" style="font-size:18px; vertical-align:middle; color:#64748b;">sync</span>';
     if(apiStatusDot) apiStatusDot.style.backgroundColor = '#FFD700';
 
     const check = await fetchData('/announcements', true, false);
     
-    // สร้างปุ่มกดรีเฟรช
-    const refreshBtnHtml = `<span class="material-icons" style="font-size:20px; cursor:pointer; vertical-align:middle; margin-left:8px; color:var(--primary-color); background:#e0e7ff; padding:2px; border-radius:50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
+    // เพิ่มคลาส refresh-btn เข้าไปแทนการเขียน style สดๆ ตรงๆ (ล้างมรดก CSS ของ .stat-card)
+    const refreshBtnHtml = `<span class="material-icons refresh-btn" style="cursor:pointer; vertical-align:middle; color:var(--primary-color); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
 
     if (!check.error) {
         if(apiStatusDot) { apiStatusDot.classList.add('connected'); apiStatusDot.style.backgroundColor = '#4CAF50'; }
