@@ -2,10 +2,10 @@
   "date_today": "2026-04-12",
   "date_this_month": "2026-04",
   "requests": {
-    "count_today": 0,
-    "count_month": 48,
-    "count_year": 12366,
-    "count_lifetime": 12366
+    "count_today": 1,
+    "count_month": 49,
+    "count_year": 12367,
+    "count_lifetime": 12367
   },
   "visitors": {
     "count_today": 0,
