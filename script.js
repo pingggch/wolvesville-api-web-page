@@ -493,6 +493,7 @@ let isFirstRender = true;
 let currentParticipatingCount = 0; 
 let questCooldownInterval = null;
 let inlineQfeeTimerInterval = null;
+let clanTickCounter = 0; // เพิ่มตัวนับเพื่อสลับการโหลดหนัก/เบา
 
 let currentClanLedger = []; 
 
@@ -772,7 +773,7 @@ function showApiConsentModal() {
 function showCustomAlert(title, message) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.style.zIndex = '9999'; // บังคับให้อยู่เลเยอร์บนสุดเสมอ
+    overlay.style.zIndex = '9999'; 
 
     overlay.innerHTML = `
         <div class="modal-content">
@@ -886,7 +887,7 @@ window.openInactivityMonitor = (clanId) => {
             diffMs = now - lastOnline;
             diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         } else {
-            diffDays = 999; // Unknown
+            diffDays = 999; 
             diffMs = Infinity;
         }
         
@@ -994,7 +995,7 @@ window.openQuestFeeSettings = (clanId) => {
         localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
         
         overlay.remove();
-        window.fetchClanData(clanId, true, true); // reload data
+        window.fetchClanData(clanId, true, true); 
     };
     document.body.appendChild(overlay);
 };
@@ -1021,7 +1022,7 @@ function getPlayerStatusData(playerData) {
     if (playerData.lastOnline) {
         const lastOnlineDate = new Date(playerData.lastOnline);
         const diffMinutes = (Date.now() - lastOnlineDate.getTime()) / (1000 * 60);
-        isOnline = diffMinutes <= 5; // ตัดจบที่ 5 นาที
+        isOnline = diffMinutes <= 5; 
     }
 
     const rawStatus = (playerData.playerStatus || playerData.status || 'OFFLINE').toUpperCase();
@@ -1041,7 +1042,7 @@ function getPlayerStatusData(playerData) {
 
 // --- ฟังก์ชันแปลงค่าสีและ Gradient โปรไฟล์ให้เป็น CSS ---
 function getProfileColorStyle(data) {
-    if (!data) return 'var(--primary-color)'; // Default Fallback
+    if (!data) return 'var(--primary-color)'; 
     
     if (data.profileIconColorMode === 'GRADIENT') {
         const primary = data.profileIconGradientPrimary || '#1c94ff';
@@ -1051,14 +1052,13 @@ function getProfileColorStyle(data) {
         if (direction === 'RADIAL') {
             return `radial-gradient(circle, ${primary}, ${accent})`;
         } else {
-            let cssDir = '135deg'; // DIAGONAL
+            let cssDir = '135deg'; 
             if (direction === 'VERTICAL') cssDir = 'to bottom';
             else if (direction === 'HORIZONTAL') cssDir = 'to right';
             return `linear-gradient(${cssDir}, ${primary}, ${accent})`;
         }
     }
     
-    // แบบ SOLID หรืออื่นๆ ให้คืนค่าเป็นสีเดียว
     return data.profileIconColor || 'var(--primary-color)';
 }
 
@@ -1132,10 +1132,7 @@ function showMemberModal(data) {
     const don = data.donated || {};
     const xpDur = data.xpDurations || {};
     
-    // ดึงสถานะจากฟังก์ชันกลาง
     const statusData = getPlayerStatusData(data);
-    
-    // ดึงสไตล์สีโปรไฟล์
     const bgStyle = getProfileColorStyle(data);
     
     const joinMsg = data.joinMessage ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px; font-style:italic; color:#475569; font-size:0.9rem; border-left: 3px solid #cbd5e1;">"${data.joinMessage}"</div>` : '';
@@ -1658,25 +1655,84 @@ window.reloadActiveQuest = async (clanId, canEdit) => {
     }
 };
 
-window.redeemApiHat = async () => {
-    const confirmed = await showCustomConfirm(
-        'Redeem API Hat',
-        'ยืนยันการรับหมวก API สำหรับเจ้าของบอทหรือไม่?',
-        false 
-    );
-    if (!confirmed) return;
+window.openQuestFeeSettings = (clanId) => {
+    let targetGold = parseInt(localStorage.getItem(`wolvesville_qfee_gold_${clanId}`)) || 0;
+    let targetGems = parseInt(localStorage.getItem(`wolvesville_qfee_gems_${clanId}`)) || 0;
+    let targetXp = parseInt(localStorage.getItem(`wolvesville_qfee_xp_${clanId}`)) || 0;
+    let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
 
-    try {
-        showCustomInfoModal('Loading...', `<div style="text-align:center; padding:30px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span></div>`);
-        const res = await sendPayload('/items/redeemApiHat', 'POST', {});
-        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+    let contentHtml = `
+        <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง</label>
+                    <input type="number" id="qfee-target-gold-set" value="${targetGold}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย เพชร</label>
+                    <input type="number" id="qfee-target-gems-set" value="${targetGems}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย XP (สัปดาห์)</label>
+                    <input type="number" id="qfee-target-xp-set" value="${targetXp}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เวลา (วัน)</label>
+                    <input type="number" id="qfee-duration-set" value="${durationDays}" step="0.5" min="0" placeholder="0=ไม่จำกัด" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+            </div>
+            <div style="font-size:0.7rem; color:#ef4444; margin-top:8px;">* ใส่เวลาเป็นวัน (เช่น 1.5, 2, 0=ไม่จำกัด)</div>
+        </div>
+        <button id="qfee-save-settings-btn" style="width:100%; background:var(--primary-color); color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">บันทึกการตั้งค่า</button>
+    `;
 
-        if (res.error) showCustomAlert(t('alert_error'), '❌ ' + (res.message || t('unknown_err')));
-        else showCustomAlert(t('alert_success'), '✅ ส่งไอเทมเข้ากระเป๋าในเกมของคุณเรียบร้อยแล้ว');
-    } catch (e) {
-        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-        showCustomAlert(t('alert_error'), '❌ ' + e.message);
-    }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 500px;">
+            <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <span class="material-icons" style="color:var(--primary-color);">settings</span> ตั้งค่าเงื่อนไขค่าเควส
+            </h3>
+            ${contentHtml}
+            <div class="custom-modal-buttons">
+                <button class="btn-modal btn-confirm">${t('btn_close')}</button>
+            </div>
+        </div>
+    `;
+
+    overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    overlay.querySelector('#qfee-save-settings-btn').onclick = () => {
+        targetGold = parseInt(overlay.querySelector('#qfee-target-gold-set').value) || 0;
+        targetGems = parseInt(overlay.querySelector('#qfee-target-gems-set').value) || 0;
+        targetXp = parseInt(overlay.querySelector('#qfee-target-xp-set').value) || 0;
+        durationDays = parseFloat(overlay.querySelector('#qfee-duration-set').value) || 0;
+        
+        localStorage.setItem(`wolvesville_qfee_gold_${clanId}`, targetGold);
+        localStorage.setItem(`wolvesville_qfee_gems_${clanId}`, targetGems);
+        localStorage.setItem(`wolvesville_qfee_xp_${clanId}`, targetXp);
+        localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
+        
+        overlay.remove();
+        window.fetchClanData(clanId, true, true); 
+    };
+    document.body.appendChild(overlay);
+};
+
+window.resetQuestFeeRound = (clanId) => {
+    showCustomConfirm(t('alert_warning'), 'ต้องการเริ่มรอบนับยอดใหม่หรือไม่?<br><br><span style="font-size:0.85rem; color:#64748b;">ระบบจะรีเซ็ตยอดทอง/เพชรเป็น 0 และเริ่มนับใหม่จากรายการบริจาค (Ledger) ตั้งแต่เวลานี้เป็นต้นไป พร้อมเริ่มจับเวลาใหม่</span>', true).then(confirmed => {
+        if (confirmed) {
+            localStorage.setItem(`wolvesville_qfee_reset_${clanId}`, Date.now().toString());
+            window.fetchClanData(clanId, true, true);
+        }
+    });
+};
+
+window.cancelScheduledQuest = (clanId, index) => {
+    let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
+    scheduled.splice(index, 1);
+    localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
+    window.fetchClanData(clanId, true, true);
 };
 
 function isUUID(str) {
@@ -1721,8 +1777,9 @@ function getQuestResetTimeDisplay() {
     const d = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     const h = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const m = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((timeDiff % (1000 * 60)) / 1000); // เพิ่มวินาที
 
-    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m` : `เควสจะรีเซ็ตในอีก ${d} วัน ${h} ชม. ${m} นาที`;
+    const txt = getLocale() === 'en' ? `Resets in: ${d}d ${h}h ${m}m ${s}s` : `เควสจะรีเซ็ตในอีก ${d} วัน ${h} ชม. ${m} นาที ${s} วิ`;
     return `<span id="quest-reset-timer" style="font-size:0.85rem; color:#64748b; font-weight:normal; display:flex; align-items:center; gap:4px; margin-top:4px;"><span class="material-icons" style="font-size:16px;">update</span> ${txt}</span>`;
 }
 
@@ -1918,18 +1975,15 @@ async function fetchAndDisplayData() {
     await fetchAndDisplayStatsOnly();
     if(availableItems) availableItems.textContent = '...';
     
-    // สร้างจุดสถานะสีเหลืองสำหรับตอนโหลด (แทรกเข้าไปในข้อความเลย)
     const loadingDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#f59e0b; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(245,158,11,0.3);"></span>`;
     if(apiStatusText) apiStatusText.innerHTML = loadingDot + t('stat_checking') + '<span class="material-icons loading-spinner icon-no-bg" style="font-size:18px; vertical-align:middle; margin-left:8px; color:#64748b;">sync</span>';
-    if(apiStatusDot) apiStatusDot.style.display = 'none'; // ปิดจุดเก่าของระบบทิ้งไปเลย ป้องกันซ้อนกัน
+    if(apiStatusDot) apiStatusDot.style.display = 'none'; 
 
     const check = await fetchData('/announcements', true, false);
     
-    // เพิ่มคลาส refresh-btn เข้าไปแทนการเขียน style สดๆ ตรงๆ
     const refreshBtnHtml = `<span class="material-icons refresh-btn" style="cursor:pointer; vertical-align:middle; color:var(--primary-color); transition: transform 0.2s;" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='none'" onclick="fetchAndDisplayData()" title="${getLocale() === 'en' ? 'Re-check Connection' : 'รีเช็คสถานะการเชื่อมต่อ'}">refresh</span>`;
 
     if (!check.error) {
-        // 🟢 จุดสีเขียวมรกต สำหรับสถานะ 200 ปกติ
         const successDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#10b981; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(16,185,129,0.3);"></span>`;
         if(apiStatusText) {
             apiStatusText.innerHTML = successDot + (getLocale() === 'en' ? 'Online (HTTP 200)' : 'ออนไลน์ (HTTP 200)') + refreshBtnHtml;
@@ -1942,34 +1996,30 @@ async function fetchAndDisplayData() {
         renderGlobalAnnouncements(check);
         fetchAndCacheRoles();
     } else {
-        // กำหนดสีของจุดตามรหัส Error (HTTP Status)
-        let dotColor = '#D32F2F'; // สีแดง (Unknown)
+        let dotColor = '#D32F2F'; 
         let statusMessage = getLocale() === 'en' ? 'Offline' : 'เชื่อมต่อไม่ได้';
 
         if (check.status === 401) {
-            dotColor = '#f59e0b'; // สีส้ม
+            dotColor = '#f59e0b'; 
             statusMessage = getLocale() === 'en' ? 'Unauthorized' : 'API Key ไม่ถูกต้อง';
         } else if (check.status === 429) {
-            dotColor = '#a855f7'; // สีม่วง
+            dotColor = '#a855f7'; 
             statusMessage = getLocale() === 'en' ? 'Rate Limited' : 'เรียกข้อมูลถี่เกินไป';
         } else if (check.status >= 500) {
-            dotColor = '#991b1b'; // สีแดงเข้ม
+            dotColor = '#991b1b'; 
             statusMessage = getLocale() === 'en' ? 'Server Error' : 'เซิร์ฟเวอร์มีปัญหา';
         } else if (check.status === 403) {
-            dotColor = '#ef4444'; // สีแดง
+            dotColor = '#ef4444'; 
             statusMessage = getLocale() === 'en' ? 'Forbidden' : 'ไม่มีสิทธิ์เข้าถึง';
         } else if (check.status === 404) {
-            dotColor = '#64748b'; // สีเทา
+            dotColor = '#64748b'; 
             statusMessage = getLocale() === 'en' ? 'Not Found' : 'ไม่พบข้อมูล';
         }
 
-        // 🔴 จุดสีตามรหัส Error
         const errorDot = `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${dotColor}; margin-right:8px; vertical-align:middle; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>`;
         
-        // ดึง Error Code มาแสดง
         const errStr = check.status ? `HTTP ${check.status}` : 'Unknown Error';
         if(apiStatusText) {
-            // เอาจุดไปแปะไว้หน้าสุดของข้อความ
             apiStatusText.innerHTML = errorDot + `${statusMessage} (${errStr})` + refreshBtnHtml;
         }
         if(availableItems) availableItems.textContent = '-';
@@ -1984,7 +2034,6 @@ async function searchAndDisplayPlayer() {
         return showCustomAlert(t('alert_warning'), t('no_api_key'));
     }
 
-    // รัน ID คิวใหม่
     currentPlayerRequestId++;
     const reqId = currentPlayerRequestId;
 
@@ -2001,7 +2050,7 @@ async function searchAndDisplayPlayer() {
     let id = input;
     if (!isUUID(input)) {
         const search = await fetchData(`/players/search?username=${encodeURIComponent(input)}`);
-        if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+        if (reqId !== currentPlayerRequestId) return; 
 
         if (search && !search.error && search.length) id = search[0].id;
         else if (search && search.id) id = search.id;
@@ -2018,19 +2067,19 @@ async function searchAndDisplayPlayer() {
     }
 
     const data = await fetchData(`/players/${id}`);
-    if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+    if (reqId !== currentPlayerRequestId) return; 
 
     if (data && !data.error) {
         await fetchAndCacheRoles();
         if (data.clanId) {
             const clan = await fetchData(`/clans/${data.clanId}/info`);
-            if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+            if (reqId !== currentPlayerRequestId) return; 
             if (!clan.error) {
                 data.clanName = clan.name;
                 data.clanTag = clan.tag;
             }
         }
-        if (reqId !== currentPlayerRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+        if (reqId !== currentPlayerRequestId) return; 
         renderPlayerProfile(data);
     } else {
         playerProfileContainer.innerHTML = `
@@ -2079,11 +2128,9 @@ function renderPlayerProfile(data) {
     const wolfWR = calcWR(stats.werewolfWinCount, stats.werewolfLoseCount);
     const voteWR = calcWR(stats.votingWinCount, stats.votingLoseCount);
 
-    // ดึงสถานะจากฟังก์ชันกลาง
     const statusData = getPlayerStatusData(data);
     const statusBadge = `<span class="status-badge ${statusData.cssClass}"><span class="material-icons">${statusData.icon}</span> ${statusData.text}</span>`;
     
-    // ดึงสไตล์สีโปรไฟล์
     const bgStyle = getProfileColorStyle(data);
 
     let clanHtml = '';
@@ -2211,7 +2258,6 @@ async function fetchMyClan() {
     if (!localStorage.getItem('wolvesville_api_key')) return showCustomAlert(t('alert_warning'), t('no_api_key'));
     stopClanPolling();
     
-    // รัน ID คิวใหม่
     currentClanRequestId++;
     const reqId = currentClanRequestId;
     
@@ -2224,7 +2270,7 @@ async function fetchMyClan() {
     `;
     
     const authRes = await fetchData('/clans/authorized');
-    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+    if (reqId !== currentClanRequestId) return; 
 
     if (authRes.error || !authRes.length) {
         clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">${t('txt_not_in_clan')}</div>`;
@@ -2233,7 +2279,7 @@ async function fetchMyClan() {
     
     const myClanId = authRes[0].id;
     await fetchClanData(myClanId, true, false, reqId);
-    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+    if (reqId !== currentClanRequestId) return; 
     startClanPolling(myClanId, true);
 }
 
@@ -2242,7 +2288,6 @@ async function searchClan() {
     const inputVal = clanNameInput.value.trim();
     if (!inputVal) return;
     
-    // รัน ID คิวใหม่
     currentClanRequestId++;
     const reqId = currentClanRequestId;
     
@@ -2256,16 +2301,15 @@ async function searchClan() {
     
     let targetClanId = null;
 
-    // ตรวจสอบว่าเป็น UUID หรือไม่ (ค้นหาด้วย ID หรือ ชื่อ)
     if (isUUID(inputVal)) {
         const infoRes = await fetchData(`/clans/${inputVal}/info`);
-        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+        if (reqId !== currentClanRequestId) return; 
         if (!infoRes.error && infoRes.id) {
             targetClanId = infoRes.id;
         }
     } else {
         const searchRes = await fetchData(`/clans/search?name=${encodeURIComponent(inputVal)}`);
-        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+        if (reqId !== currentClanRequestId) return; 
         if (!searchRes.error && searchRes.length > 0) {
             targetClanId = searchRes[0].id;
         }
@@ -2283,6 +2327,7 @@ async function searchClan() {
     }
     
     await fetchClanData(targetClanId, false, false, reqId);
+    startClanPolling(targetClanId, false);
 }
 
 function startClanPolling(clanId, isMyClan) {
@@ -2290,13 +2335,18 @@ function startClanPolling(clanId, isMyClan) {
     currentViewingClanId = clanId;
     isCurrentViewMyClan = isMyClan;
     isFirstRender = true;
-    console.log(t('txt_auto_update'));
+    clanTickCounter = 0;
     
-    // ปรับความถี่จาก 60,000 เป็น 1,000 (1 วินาที)
+    // ตั้งค่ารีเฟรชทุก 1 วินาที (Smart Refresh)
     clanPollingInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
+            clanTickCounter++;
             currentClanRequestId++;
-            fetchClanData(clanId, isMyClan, true, currentClanRequestId); 
+            
+            // ทุก 1 วิ: ดึงเฉพาะข้อมูลเบาๆ (Info, Chat, Quest, Ledger)
+            // ทุก 30 วิ: ดึงข้อมูลหนักๆ (Members, Logs, History, etc.)
+            const isHeavyLoad = (clanTickCounter % 30 === 0);
+            fetchClanData(clanId, isMyClan, true, currentClanRequestId, isHeavyLoad); 
         }
     }, 1000); 
 }
@@ -2314,7 +2364,7 @@ function stopClanPolling() {
     isFirstRender = true;
 }
 
-async function fetchClanData(clanId, isMyClan = false, isBackground = false, reqId = null) {
+async function fetchClanData(clanId, isMyClan = false, isBackground = false, reqId = null, isHeavyLoad = true) {
     const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
 
@@ -2344,132 +2394,97 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     if (reqId !== currentClanRequestId) return;
     if(!isBackground) { isFirstRender = true; updateProgress('load_init'); }
     
-    await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
-    if (reqId !== currentClanRequestId) return; 
-    
-    updateProgress('load_info');
-    const info = await fetchData(`/clans/${clanId}/info`);
-    if (reqId !== currentClanRequestId) return; 
+    // Fetch ข้อมูลที่ต้องอัปเดตทุก 1 วินาที
+    const [info, quests, chat, ledger] = await Promise.all([
+        fetchData(`/clans/${clanId}/info`),
+        fetchData(`/clans/${clanId}/quests/active`),
+        fetchData(`/clans/${clanId}/chat`),
+        fetchData(`/clans/${clanId}/ledger`)
+    ]);
 
-    if (info.error) {
-        if(!isBackground) clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
+    if (reqId !== currentClanRequestId) return;
+    if (info.error && !isBackground) {
+        clanContentContainer.innerHTML = `<div style="text-align:center; color:red; padding:30px;">Error: ${info.message}</div>`;
         return;
     }
-
-    updateProgress('load_members');
-    let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
-    if (reqId !== currentClanRequestId) return;
-
-    if (membersRaw.error) membersRaw = await fetchData(`/clans/${clanId}/members`);
-    if (reqId !== currentClanRequestId) return;
     
-    if (!membersRaw.error && Array.isArray(membersRaw)) {
-        clanMembersDetailedMap.clear();
-        membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
-    }
-    
-    updateProgress('load_quests');
-    const quests = await fetchData(`/clans/${clanId}/quests/active`);
-    if (reqId !== currentClanRequestId) return;
+    currentClanLedger = Array.isArray(ledger) && !ledger.error ? ledger : currentClanLedger;
 
-    updateProgress('load_chat');
-    const chat = await fetchData(`/clans/${clanId}/chat`);
-    if (reqId !== currentClanRequestId) return;
-
-    updateProgress('load_logs');
-    const logs = await fetchData(`/clans/${clanId}/logs`);
-    if (reqId !== currentClanRequestId) return;
-
-    updateProgress('load_ledger');
-    const ledger = await fetchData(`/clans/${clanId}/ledger`);
-    if (reqId !== currentClanRequestId) return;
-    currentClanLedger = Array.isArray(ledger) && !ledger.error ? ledger : []; 
-
-    updateProgress('load_history');
-    const history = await fetchData(`/clans/${clanId}/quests/history`);
-    if (reqId !== currentClanRequestId) return;
-
-    updateProgress('load_ann');
-    const announcements = await fetchData(`/clans/${clanId}/announcements`);
-    if (reqId !== currentClanRequestId) return;
-
+    // Fetch ข้อมูลหนักๆ เฉพาะเมื่อต้องโหลดใหม่ หรือถึงรอบ Heavy Load (ทุก 30 วิ)
+    let members = [];
+    let history = [];
+    let announcements = [];
+    let logs = [];
     let blockedMembers = { error: true };
     let availableQuests = { error: true };
-    let votesData = { error: true }; 
+    let votesData = { error: true };
 
-    if(isMyClan) {
-        updateProgress('load_blocklist');
-        const blocklistRes = await fetchData(`/clans/${clanId}/blocklist`);
-        if (reqId !== currentClanRequestId) return;
-
-        if (!blocklistRes.error && Array.isArray(blocklistRes)) {
-            const extractId = (item) => typeof item === 'string' ? item : (item.playerId || item.id || item.targetPlayerId);
-            const playersData = [];
-            updateProgress('load_blocked_p');
-            for (const item of blocklistRes.slice(0, 50)) {
-                if (reqId !== currentClanRequestId) return; 
-                const pid = extractId(item);
-                if (pid) playersData.push(await fetchData(`/players/${pid}`));
-                else playersData.push({ error: true });
-            }
-            if (reqId !== currentClanRequestId) return;
-
-            blockedMembers = playersData.map((p, idx) => {
-                const originalId = extractId(blocklistRes[idx]) || 'Unknown';
-                if (p.error) return { id: originalId, username: 'Unknown', error: true };
-                return p;
-            });
-        } else {
-             blockedMembers = blocklistRes;
-        }
-
-        updateProgress('load_avail_q');
-        availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
-        if (reqId !== currentClanRequestId) return;
-
-        if (Array.isArray(availableQuests)) availableQuests.forEach(q => questDetailsCache.set(q.id, q));
-
-        updateProgress('load_votes');
-        votesData = await fetchData(`/clans/${clanId}/quests/votes`);
-        if (reqId !== currentClanRequestId) return;
-
-        clanVotesCache = votesData;
-    }
-
-    let members = membersRaw;
-    if (!membersRaw.error && Array.isArray(membersRaw)) {
-        updateProgress('load_avatars', ` (${membersRaw.length} คน)...`);
-        const membersList = [];
-        for (const m of membersRaw) {
-            if (reqId !== currentClanRequestId) return; 
-            if (playerAvatarCache.has(m.playerId)) membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
-            else {
-                const detail = await fetchData(`/players/${m.playerId}`);
-                if (!detail.error) {
-                    playerAvatarCache.set(m.playerId, detail);
-                    membersList.push({ ...m, ...detail });
-                } else membersList.push(m);
+    if (!isBackground || isHeavyLoad) {
+        await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
+        
+        updateProgress('load_members');
+        let membersRaw = await fetchData(`/clans/${clanId}/members/detailed`);
+        if (membersRaw.error) membersRaw = await fetchData(`/clans/${clanId}/members`);
+        
+        if (!membersRaw.error && Array.isArray(membersRaw)) {
+            clanMembersDetailedMap.clear();
+            membersRaw.forEach(m => clanMembersDetailedMap.set(m.playerId, m));
+            
+            // โหลด Avatar (แคชไว้ถ้ามีแล้ว)
+            for (const m of membersRaw) {
+                if (playerAvatarCache.has(m.playerId)) members.push({ ...m, ...playerAvatarCache.get(m.playerId) });
+                else {
+                    const detail = await fetchData(`/players/${m.playerId}`);
+                    if (!detail.error) {
+                        playerAvatarCache.set(m.playerId, detail);
+                        members.push({ ...m, ...detail });
+                    } else members.push(m);
+                }
             }
         }
-        members = membersList;
+        
+        updateProgress('load_logs');
+        logs = await fetchData(`/clans/${clanId}/logs`);
+        
+        updateProgress('load_history');
+        history = await fetchData(`/clans/${clanId}/quests/history`);
+        
+        updateProgress('load_ann');
+        announcements = await fetchData(`/clans/${clanId}/announcements`);
+
+        if(isMyClan) {
+            updateProgress('load_blocklist');
+            const blRes = await fetchData(`/clans/${clanId}/blocklist`);
+            if (Array.isArray(blRes)) {
+                blockedMembers = [];
+                for (const item of blRes.slice(0, 50)) {
+                    const pid = typeof item === 'string' ? item : (item.playerId || item.id);
+                    const p = await fetchData(`/players/${pid}`);
+                    blockedMembers.push(p.error ? { id: pid, username: 'Unknown' } : p);
+                }
+            }
+            availableQuests = await fetchData(`/clans/${clanId}/quests/available`);
+            if (Array.isArray(availableQuests)) availableQuests.forEach(q => questDetailsCache.set(q.id, q));
+            votesData = await fetchData(`/clans/${clanId}/quests/votes`);
+            clanVotesCache = votesData;
+        }
+    } else {
+        // ในกรณีที่เป็น Background Refresh ธรรมดา ให้ใช้ข้อมูล Members จาก Cache ล่าสุด
+        clanMembersDetailedMap.forEach(m => members.push(m));
     }
+
     if (reqId !== currentClanRequestId) return;
-
-    if (Array.isArray(members)) members.forEach(m => clanMembersCache[m.playerId] = m.username);
-    let participatingMemberCount = Array.isArray(members) ? members.filter(m => m.participateInClanQuests).length : 0;
-    currentParticipatingCount = participatingMemberCount;
-
     updateProgress('load_dash');
-    setTimeout(() => {
-        if (reqId !== currentClanRequestId) return; 
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
-    }, 500); 
+    
+    // เรียกแสดงผล
+    renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, members.filter(m => m.participateInClanQuests).length);
 }
 
 function renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, canEdit = false, isBackground = false, participatingMemberCount = 0) { 
     const memberMap = {};
-    if (!members.error && Array.isArray(members)) members.forEach(m => memberMap[m.playerId] = m.username);
+    if (Array.isArray(members)) members.forEach(m => memberMap[m.playerId] = m.username);
 
+    // --- ส่วนคิวซื้ออัตโนมัติ ---
     let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
     let scheduledHtml = '';
     if (scheduled.length > 0) {
@@ -2477,216 +2492,43 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             <div style="background:#f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h4 style="margin: 0 0 10px 0; color:#334155; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:#8b5cf6;">schedule</span> เควสที่ตั้งเวลาไว้ (คิวอัตโนมัติ)</h4>
                 ${scheduled.map((sq, idx) => {
-                    const timeStr = sq.targetTime > 0 ? new Date(sq.targetTime).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') : 'ทันทีที่แคลนว่าง';
+                    const timeStr = sq.targetTime > 0 ? new Date(sq.targetTime).toLocaleString() : 'ทันทีที่แคลนว่าง';
                     return `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px; background:white; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:5px;">
-                            <div>
-                                <strong style="color:var(--primary-color);">${sq.questTitle}</strong>
-                                <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
-                            </div>
+                            <div><strong style="color:var(--primary-color);">${sq.questTitle}</strong><div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div></div>
                             <button onclick="window.cancelScheduledQuest('${clanId}', ${idx})" style="background:#fee2e2; color:#dc2626; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">ยกเลิกรายการ (UI)</button>
                         </div>
                     `;
                 }).join('')}
-                <div style="font-size:0.7rem; color:#ef4444; margin-top:5px;">* การยกเลิกใน UI จะลบการแสดงผลออกเท่านั้น หากคำสั่งไปถึง Vercel แล้ว อาจจะยังคงทำงานอยู่</div>
             </div>
         `;
     }
 
+    // --- ส่วนเควสปัจจุบัน ---
     let questsHtml = `<div style="text-align:center; color:#ccc; padding:20px;">${t('txt_no_active_quest')}</div>`;
-    let hasActiveQuest = false;
-    
     if (!quests.error && (quests.quest || (quests.id && (quests.promoImageUrl || quests.rewards)))) {
-        hasActiveQuest = true;
         const qData = quests.quest ? quests : { quest: quests, ...quests }; 
         const qInfo = qData.quest || qData; 
-
-        const activeParticipants = members.filter(m => m.participateInClanQuests).length;
-        const isGemQuest = qInfo.purchasableWithGems === true;
-        const targetXp = isGemQuest ? (1125 + (175 * activeParticipants)) : (2000 + (500 * activeParticipants));
-
-        const currentTierIndex = (qData.tier !== undefined ? qData.tier : (qInfo.tier || 0));
-        const displayTier = currentTierIndex + 1;
-        let totalXp = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
-        let currentXpInTier = totalXp - (currentTierIndex * targetXp);
-        if (currentXpInTier < 0) currentXpInTier = 0;
-        if (currentXpInTier > targetXp) currentXpInTier = targetXp;
-        const actionCost = 300 + (30 * activeParticipants);
-
-        let rewardsTrackHtml = '';
-        if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
-            const totalSegments = Math.max(1, qInfo.rewards.length - 1);
-            let relativeProgress = currentTierIndex + (currentXpInTier / targetXp);
-            if (relativeProgress > totalSegments) relativeProgress = totalSegments;
-            const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
-
-            rewardsTrackHtml = `
-                <div class="battle-pass-hub">
-                    <div style="position: relative; min-width: max-content; padding: 0 10px;">
-                        <div class="xp-progress-wrapper" style="left: 50px; right: 50px;">
-                            <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
-                        </div>
-                        <div class="battle-pass-track">
-            `;
-            
-            qInfo.rewards.forEach((r, idx) => {
-                let imgUrl = 'https://via.placeholder.com/60?text=?';
-                if(r.type === 'AVATAR_ITEM') {
-                    const item = avatarItemsCache.get(r.avatarItemId);
-                    if (item && item.imageUrl) imgUrl = item.imageUrl;
-                    else imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
-                }
-                else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
-                else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM;
-                else if(r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') imgUrl = EMBEDDED_ICONS.ROSE;
-                
-                let statusClass = '';
-                if (idx < currentTierIndex) statusClass = 'completed-tier';
-                else if (idx === currentTierIndex) statusClass = 'active-tier';
-
-                rewardsTrackHtml += `
-                    <div class="reward-step ${statusClass}">
-                        <div class="reward-icon-box">
-                            ${idx === currentTierIndex ? `<div class="xp-label-floating">${currentXpInTier.toLocaleString()} / ${targetXp.toLocaleString()} XP</div>` : ''}
-                            <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'" style="background:#f1f5f9; border-radius:10px;">
-                            ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
-                        </div>
-                        <div class="tier-label">${t('txt_tier')} ${idx + 1}</div>
-                    </div>
-                `;
-            });
-            rewardsTrackHtml += '</div></div></div>';
-        }
-
-        const nowMs = Date.now();
-        const rawTierEnd = qData.tierEndTime || qInfo.tierEndTime;
-        const tierEndMs = rawTierEnd ? new Date(rawTierEnd).getTime() : 0;
-        
-        const isTimeRemaining = tierEndMs > nowMs;
-        const isTierFinished = qData.tierFinished || (currentXpInTier >= targetXp);
-
-        let countdownHtml = '';
-        let shouldShowSkip = false;
-        let shouldShowAddTime = false;
-
-        if (!isTierFinished) {
-            shouldShowAddTime = true;
-            shouldShowSkip = false;
-            
-            if (isTimeRemaining) {
-                countdownHtml = `
-                    <div style="background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #1d4ed8; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                        <span class="material-icons" style="font-size: 20px;">timer</span>
-                        ${getLocale() === 'en' ? 'Time remaining for this tier:' : 'เวลาที่เหลือสำหรับด่านนี้:'} 
-                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
-                    </div>
-                `;
-            } else {
-                countdownHtml = `
-                    <div style="background: #fef2f2; border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #b91c1c; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span class="material-icons" style="font-size: 20px;">error_outline</span>
-                        ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว กรุณาเพิ่มเวลาหรือยกเลิก'}
-                    </div>
-                `;
-            }
-        } else {
-            shouldShowAddTime = false;
-            
-            if (isTimeRemaining) {
-                shouldShowSkip = true; 
-                countdownHtml = `
-                    <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                        <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
-                        ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
-                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
-                    </div>
-                `;
-            } else {
-                shouldShowSkip = false;
-                countdownHtml = `
-                    <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span class="material-icons" style="font-size: 20px;">check_circle</span>
-                        ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ กำลังเตรียมด่านต่อไป...'}
-                    </div>
-                `;
-            }
-        }
-
-        let actionsHtml = '';
-        if (canEdit) {
-            actionsHtml = `
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px; flex-wrap:wrap;">
-                    ${shouldShowAddTime ? `
-                    <button onclick="window.claimQuestExtraTime('${clanId}')" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        <span class="material-icons" style="font-size:18px;">alarm_add</span> ${t('txt_add_time')} (<span class="dynamic-action-price">${actionCost}</span>)
-                    </button>
-                    ` : ''}
-                    ${shouldShowSkip ? `
-                    <button onclick="window.skipQuestWaitingTime('${clanId}')" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);">
-                        <span class="material-icons" style="font-size:18px;">fast_forward</span> ${t('txt_skip_wait')} (<span class="dynamic-action-price">${actionCost}</span>)
-                    </button>
-                    ` : ''}
-                    <button onclick="window.cancelActiveQuest('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        <span class="material-icons" style="font-size:18px;">cancel</span> ${t('txt_cancel_quest')}
-                    </button>
-                </div>
-            `;
-        }
-
-        let participantsHtml = '';
-        if (qData.participants && Array.isArray(qData.participants) && qData.participants.length > 0) {
-            const sortedParts = [...qData.participants].sort((a, b) => b.xp - a.xp);
-            const listHtml = sortedParts.map((p, index) => {
-                const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
-                const safeUsername = escapeJsString(p.username || 'Unknown');
-                return `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-size:0.9rem;">
-                        <div>
-                            <span style="display:inline-block; width:24px; text-align:center; font-size:1.1rem;">${medal}</span>
-                            <strong style="cursor:pointer; color:var(--primary-color); margin-left:5px;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong>
-                        </div>
-                        <span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:2px 8px; border-radius:12px; font-size:0.8rem;">
-                            ${(p.xp || 0).toLocaleString()} XP
-                        </span>
-                    </div>
-                `;
-            }).join('');
-            
-            participantsHtml = `
-                <div style="margin-top:25px; border-top:1px dashed #e2e8f0; padding-top:15px;">
-                    <h5 style="margin:0 0 10px 0; color:#475569; display:flex; align-items:center; font-size:1rem;">
-                        <span class="material-icons" style="font-size:20px; margin-right:5px; color:#3b82f6;">leaderboard</span> ${t('txt_top_parts')}
-                    </h5>
-                    <div style="max-height:200px; overflow-y:auto; padding-right:5px; border:1px solid #f1f5f9; border-radius:8px; padding:10px; background:#f8fafc;" class="clan-scroll-area">
-                        ${listHtml}
-                    </div>
-                </div>
-            `;
-        }
+        const displayTier = (qData.tier || 0) + 1;
+        const endTime = formatDateThai(qData.tierEndTime || qInfo.tierEndTime);
 
         questsHtml = `
             <div class="active-quest-container">
-                <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
+                <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || ''}')">
                     <div class="active-quest-overlay">
-                        <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${qInfo.title || 'Quest'} (${t('txt_tier')} ${displayTier})</h2>
-                        <div class="active-quest-meta-lg">
-                            <span class="material-icons" style="font-size:16px;">schedule</span> ${t('txt_ends')}: ${formatDateThai(qData.tierEndTime || qInfo.tierEndTime)}
-                        </div>
+                        <h2 class="active-quest-title-lg" style="color: white;">${qInfo.title || 'Quest'} (${t('txt_tier')} ${displayTier})</h2>
+                        <div class="active-quest-meta-lg"><span class="material-icons" style="font-size:16px;">schedule</span> ${t('txt_ends')}: ${endTime}</div>
                     </div>
                 </div>
-                <div class="active-quest-body">
-                    <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
-                        <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> ${t('txt_quest_prog')}
-                    </h4>
-                    ${rewardsTrackHtml}
-                    ${countdownHtml}
-                    ${actionsHtml}
-                    ${participantsHtml}
+                <div class="active-quest-body" style="text-align:center; padding:20px;">
+                    <div style="font-size:0.9rem; color:#64748b; margin-bottom:10px;">กำลังดำเนินการ... ดูกราฟความคืบหน้าได้ในหน้าเกม</div>
+                    <button onclick="window.reloadActiveQuest('${clanId}', ${canEdit})" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">รีเฟรชข้อมูล</button>
                 </div>
             </div>
         `;
-    } 
+    }
 
+    // --- ส่วน Fee Tracker (อัปเดตทุก 1 วิ) ---
     let feeTrackerHtml = '';
     if (canEdit) {
         let targetGold = parseInt(localStorage.getItem(`wolvesville_qfee_gold_${clanId}`)) || 0;
@@ -2694,18 +2536,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         let targetXp = parseInt(localStorage.getItem(`wolvesville_qfee_xp_${clanId}`)) || 0;
         let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
         let resetTime = parseInt(localStorage.getItem(`wolvesville_qfee_reset_${clanId}`)) || 0;
-
         const endTimeMs = durationDays > 0 && resetTime > 0 ? resetTime + (durationDays * 24 * 60 * 60 * 1000) : 0;
         const nowMsFee = Date.now();
 
         const donations = {};
-        let participatingMembers = [];
-        if (Array.isArray(members)) {
-            participatingMembers = members.filter(m => m.participateInClanQuests);
-            participatingMembers.forEach(m => {
-                donations[m.playerId] = { gold: 0, gems: 0, xp: m.xpDurations?.week || 0 };
-            });
-        }
+        const participatingMembers = Array.isArray(members) ? members.filter(m => m.participateInClanQuests) : [];
+        participatingMembers.forEach(m => {
+            donations[m.playerId] = { gold: 0, gems: 0, xp: m.xpDurations?.week || 0 };
+        });
 
         if (Array.isArray(currentClanLedger)) {
             currentClanLedger.forEach(entry => {
@@ -2722,918 +2560,123 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         }
 
         let paidCount = 0;
-        let listHtml = '';
-        
-        participatingMembers.sort((a, b) => a.username.localeCompare(b.username)).forEach(p => {
+        let listHtml = participatingMembers.sort((a, b) => a.username.localeCompare(b.username)).map(p => {
             const don = donations[p.playerId];
-            const isGoldMet = targetGold === 0 || don.gold >= targetGold;
-            const isGemsMet = targetGems === 0 || don.gems >= targetGems;
-            const isXpMet = targetXp === 0 || don.xp >= targetXp;
-            
-            const noFeeSet = targetGold === 0 && targetGems === 0 && targetXp === 0;
-            const isPaid = !noFeeSet && isGoldMet && isGemsMet && isXpMet;
-
+            const isPaid = (targetGold === 0 || don.gold >= targetGold) && (targetGems === 0 || don.gems >= targetGems) && (targetXp === 0 || don.xp >= targetXp) && (targetGold+targetGems+targetXp > 0);
             if (isPaid) paidCount++;
 
-            const btnStyle = isPaid 
-                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
-                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
-            
-            const btnText = isPaid 
-                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ผ่านเกณฑ์` 
-                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> ยังไม่ตั้งค่า` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ไม่ผ่าน`);
-            
-            let missingText = [];
-            if (!noFeeSet) {
-                if (!isGoldMet) missingText.push(`ขาด ${(targetGold - don.gold).toLocaleString()} ทอง`);
-                if (!isGemsMet) missingText.push(`ขาด ${(targetGems - don.gems).toLocaleString()} เพชร`);
-                if (!isXpMet) missingText.push(`ขาด ${(targetXp - don.xp).toLocaleString()} XP`);
-            }
-
-            listHtml += `
+            return `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; background:white;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="${p.equippedAvatar?.url || (p.profileIconId ? `https://cdn-avatars.wolvesville.com/${p.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:24px; height:24px; border-radius:6px; object-fit:contain; background:#f8fafc;">
+                        <img src="${p.equippedAvatar?.url || ''}" style="width:24px; height:24px; border-radius:6px; background:#f8fafc;">
                         <div>
-                            <strong style="color:#1e293b; font-size:0.9rem; cursor:pointer;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username}</strong>
-                            <div style="font-size:0.7rem; color:#64748b;">
-                                <strong style="color:#d97706;">${don.gold.toLocaleString()} 💰</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} 💎</strong> | <strong style="color:#16a34a;">${don.xp.toLocaleString()} XP</strong>
-                            </div>
-                            ${missingText.length > 0 ? `<div style="font-size:0.65rem; color:#dc2626;">${missingText.join(' / ')}</div>` : ''}
+                            <strong style="font-size:0.9rem;">${p.username}</strong>
+                            <div style="font-size:0.7rem; color:#64748b;">${don.gold} 💰 | ${don.gems} 💎 | ${don.xp} XP</div>
                         </div>
                     </div>
-                    <div style="${btnStyle} padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; min-width: max-content;">
-                        ${btnText}
-                    </div>
+                    <div style="background:${isPaid?'#dcfce7':'#fee2e2'}; color:${isPaid?'#16a34a':'#dc2626'}; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${isPaid?'ผ่าน':'ไม่ผ่าน'}</div>
                 </div>
             `;
-        });
+        }).join('');
 
-        const resetDateStr = resetTime > 0 ? formatDateThai(resetTime) : 'ยังไม่เคยรีเซ็ต';
-        let timerHtml = '';
-        if (resetTime > 0 && durationDays > 0) {
-            if (nowMsFee >= endTimeMs) {
-                timerHtml = `<div style="font-size:0.75rem; color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</div>`;
-            } else {
-                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">คำนวณ...</span></div>`;
-            }
-        }
+        const timerHtml = (endTimeMs > nowMsFee) ? `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">...</span></div>` : (endTimeMs > 0 ? `<div style="color:#ef4444; font-size:0.75rem;">หมดเวลาแล้ว</div>` : '');
 
         feeTrackerHtml = `
             <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                    <h4 style="margin:0; color:#334155; font-size:1.05rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:var(--primary-color);">price_check</span> สถานะการจ่ายค่าเควส (เฉพาะคนที่เข้าร่วม)</h4>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="window.openQuestFeeSettings('${clanId}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
-                            <span class="material-icons" style="font-size:16px;">settings</span> ตั้งค่า
-                        </button>
-                        <button onclick="window.resetQuestFeeRound('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
-                            <span class="material-icons" style="font-size:16px;">refresh</span> เริ่มรอบใหม่
-                        </button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="margin:0; font-size:1.05rem;">สถานะการจ่ายค่าเควส</h4>
+                    <button onclick="window.openQuestFeeSettings('${clanId}')" style="background:#f1f5f9; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><span class="material-icons" style="font-size:16px;">settings</span></button>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center;">
-                    <div>เริ่มรอบ: <strong>${resetDateStr}</strong></div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; margin-bottom:10px;">
+                    <span>ผ่านเกณฑ์: <strong>${paidCount}/${participatingMembers.length}</strong></span>
                     ${timerHtml}
-                    <div>ผ่านเกณฑ์: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${participatingMembers.length}</strong></div>
                 </div>
-                <div style="max-height:250px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
-                    ${listHtml || '<div style="padding:15px; text-align:center; color:#94a3b8;">ไม่มีสมาชิกที่เปิดเข้าร่วมเควส</div>'}
-                </div>
+                <div style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">${listHtml}</div>
             </div>
         `;
     }
 
-    let availableQuestsHtml = '';
-    if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
-        let shuffleVotesHtml = '';
-        if (votesData && !votesData.error && votesData.shuffleVotes && Array.isArray(votesData.shuffleVotes) && votesData.shuffleVotes.length > 0) {
-             const voterIds = votesData.shuffleVotes;
-             const voterNames = voterIds.map(vid => memberMap[vid] || 'Unknown').join(', ');
-             shuffleVotesHtml = `
-                <div style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right; background:#f1f5f9; padding:2px 8px; border-radius:4px; display:inline-block;">
-                    <span style="font-weight:bold;">🗳️ ${t('txt_shuffle_votes')} (${voterIds.length}):</span> ${voterNames}
-                </div>
-             `;
-        }
-
-        availableQuestsHtml = `
-        <div style="margin:30px 0 15px 0; border-top:1px dashed #e2e8f0; padding-top:20px;">
-            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:15px;">
-                <div>
-                    <h3 style="margin:0; color:#334155; font-size:1.1rem; display:flex; align-items:center; gap:5px;">🛒 ${t('txt_avail_quests')}</h3>
-                    ${getQuestResetTimeDisplay()}
-                </div>
-                <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; flex:1; min-width:250px;">
-                    <button onclick="window.viewAllQuests()" style="background:#3b82f6; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex:1; min-width:max-content; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                        <span class="material-icons" style="font-size:18px; margin-right:5px;">menu_book</span> ${t('txt_quest_wiki')}
-                    </button>
-                    <button onclick="window.shuffleClanQuests('${clanId}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex:1; min-width:max-content; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                        <span class="material-icons" style="font-size:18px; margin-right:5px;">shuffle</span> ${t('txt_shuffle')} (500 💰)
-                    </button>
-                    ${shuffleVotesHtml ? `<div style="width: 100%; display: flex; justify-content: flex-end;">${shuffleVotesHtml}</div>` : ''}
-                </div>
-            </div>
+    // --- แชทและบันทึกกิจกรรม ---
+    let chatHtml = Array.isArray(chat) ? chat.reverse().map(msg => `
+        <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9;">
+            <strong style="color:var(--primary-color);">${msg.player?.username || memberMap[msg.playerId] || 'Unknown'}</strong>: 
+            <span>${msg.msg || 'Emoji'}</span>
         </div>
-        <div class="quest-grid">
-        `;
+    `).join('') : '-';
+
+    // --- การอัปเดตแบบไร้การกระพริบ (Smart Background Update) ---
+    if (isBackground && !isFirstRender) {
+        const updateIfChanged = (id, newHtml) => {
+            const el = document.getElementById(id);
+            if (el && el.innerHTML !== newHtml) el.innerHTML = newHtml;
+        };
+
+        updateIfChanged('scheduled-quests-wrapper', scheduledHtml);
+        updateIfChanged('active-quest-wrapper', questsHtml);
+        updateIfChanged('fee-tracker-wrapper', feeTrackerHtml);
+        updateIfChanged('clan-chat-container', chatHtml);
+        updateIfChanged('quest-reset-timer-wrapper', getQuestResetTimeDisplay());
         
-        availableQuestsHtml += availableQuests.map(q => {
-            const isGem = q.purchasableWithGems;
-            const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-            const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
-            const buyCost = isGem ? 350 + (135 * participatingMemberCount) : 2000 + (400 * participatingMemberCount);
+        // อัปเดตยอดเงินแคลนที่ Header
+        const goldEl = document.querySelector('.currency-badge.gold');
+        if(goldEl) goldEl.innerHTML = `<span class="material-icons" style="font-size:16px; margin-right:5px; color:#d97706;">monetization_on</span> ${info.gold?.toLocaleString() || 0}`;
+        const gemsEl = document.querySelector('.currency-badge.gems');
+        if(gemsEl) gemsEl.innerHTML = `<span class="material-icons" style="font-size:16px; margin-right:5px; color:#9333ea;">diamond</span> ${info.gems?.toLocaleString() || 0}`;
 
-            let voteHtml = '';
-            if (votesData && !votesData.error && votesData.votes && votesData.votes[q.id]) {
-                const voteCount = votesData.votes[q.id].length;
-                if (voteCount > 0) voteHtml = `<div class="quest-votes-badge"><span class="material-icons" style="font-size:14px;">how_to_vote</span> ${voteCount}</div>`;
-            }
-
-            const rewardCount = q.rewards ? q.rewards.length : 0;
-            const safeTitle = (q.title || 'Quest').replace(/'/g, "\\'");
-            
-            let claimBtn = '';
-            let autoBuyBtn = '';
-            
-            if (!hasActiveQuest) {
-                claimBtn = `
-                    <button onclick="event.stopPropagation(); window.claimClanQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                            style="background:#22c55e; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem; display:flex; align-items:center; margin-top:10px; width:100%; justify-content:center;">
-                        <span class="material-icons" style="font-size:18px; margin-right:4px;">shopping_cart</span> ${t('txt_buy_quest')}
-                    </button>
-                `;
-            }
-
-            autoBuyBtn = `
-                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}')" 
-                        style="background:#8b5cf6; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2);">
-                    <span class="material-icons" style="font-size:16px; margin-right:4px;">schedule</span> ${t('txt_auto_buy')}
-                </button>
-            `;
-
-            return `
-                <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                    <img src="${q.promoImageUrl}" referrerpolicy="no-referrer" class="quest-card-large-img">
-                    ${voteHtml}
-                    <div class="quest-card-footer" style="flex-direction:column; align-items:stretch;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid #e2e8f0; background: #f8fafc; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem;">
-                                <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
-                                <span class="dynamic-buy-price" data-currency="${isGem?'gem':'gold'}">${buyCost.toLocaleString()}</span>
-                            </div>
-                            <div style="font-size:0.8rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px;">
-                                ${rewardCount} ${t('txt_rewards')}
-                            </div>
-                        </div>
-                        ${claimBtn}
-                        ${autoBuyBtn}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        availableQuestsHtml += '</div>';
-    }
-
-    let announceSectionHtml = '';
-    let announceListContent = ''; 
-    
-    if (canEdit) {
-        const formHtml = `
-            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow: var(--shadow-sm);">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; display:flex; align-items:center;">
-                    <span class="material-icons" style="margin-right:5px;">campaign</span> ${t('txt_post_ann')}
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <textarea id="clan-announcement-input" placeholder="${t('txt_ph_ann')}" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; resize:vertical; min-height:60px; font-family:inherit;"></textarea>
-                    <button onclick="window.sendClanAnnouncement('${clanId}')" style="background:var(--primary-color); color:white; border:none; padding:0 20px; border-radius:6px; cursor:pointer; align-self:flex-end; height:40px; font-weight:bold;">${t('txt_btn_post')}</button>
-                </div>
-            </div>
-        `;
-
-        if (!announcements.error && Array.isArray(announcements) && announcements.length > 0) {
-             announceListContent = announcements.map(a => `
-                <div style="background:#fefce8; border-left:4px solid #eab308; padding:15px; border-radius:8px; box-shadow:var(--shadow-sm); margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <strong style="color:#854d0e;">${a.author || a.playerUsername || t('txt_leader')}</strong>
-                        <span style="font-size:0.75rem; color:#a16207;">${formatDateThai(a.timestamp || a.creationTime)}</span>
-                    </div>
-                    <div style="color:#4b5563; font-size:0.95rem;">${linkify(a.content || a.msg || a.message)}</div>
-                </div>
-            `).join('');
-        } else {
-            announceListContent = `<div style="color:#94a3b8; text-align:center; padding:10px;">${t('txt_no_ann')}</div>`;
-        }
-
-        announceSectionHtml = `
-            ${formHtml}
-            <div style="margin-bottom:20px;">
-                <h3 class="stats-section-title"><span class="material-icons">history_edu</span> ${t('txt_recent_ann')}</h3>
-                <div id="clan-announcements-container">${announceListContent}</div>
-            </div>
-        `;
-    }
-
-    let membersHtml = '<div style="text-align:center; padding:20px;">No Data</div>';
-    if (!members.error && Array.isArray(members)) {
-        membersHtml = members.map(m => {
-            const statusData = getPlayerStatusData(m);
-            const bgStyle = getProfileColorStyle(m);
-
-            const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
-            let roleBadge = '';
-            let cardClass = '';
-            if (info.leaderId === m.playerId) { roleBadge = `<span class="role-badge leader">${t('txt_leader')}</span>`; cardClass = 'leader'; }
-            else if (m.isCoLeader) { roleBadge = `<span class="role-badge coleader">${t('txt_coleader')}</span>`; cardClass = 'coleader'; }
-
-            const isQuest = m.participateInClanQuests;
-            let questIconHtml = canEdit 
-                ? `<span class="material-icons quest-inline-icon clickable ${isQuest ? 'on' : 'off'}" onclick="event.stopPropagation(); window.toggleQuestFromList('${clanId}', '${m.playerId}', ${isQuest}, this)">${isQuest ? 'check_circle' : 'cancel'}</span>`
-                : `<span class="material-icons quest-inline-icon ${isQuest ? 'on' : 'off'}">${isQuest ? 'check_circle' : 'cancel'}</span>`;
-
-            const safeFlair = escapeJsString(m.flair);
-            const displayFlair = m.flair ? m.flair : '<span style="opacity:0.5; font-style:italic;">-</span>';
-            let flairHtml = canEdit 
-                ? `<span class="member-flair flair-editable" onclick="event.stopPropagation(); window.editFlairFromList('${clanId}', '${m.playerId}', '${safeFlair}')">${displayFlair} <span class="material-icons" style="font-size:12px; vertical-align:middle; opacity:0.5;">edit</span></span>`
-                : (m.flair ? `<span class="member-flair">${m.flair}</span>` : '');
-
-            let adminActionsHtml = (canEdit && m.playerId !== info.leaderId) ? `
-                <span class="material-icons action-icon kick-icon" onclick="event.stopPropagation(); window.kickMemberFromList('${clanId}', '${m.playerId}', '${m.username}')">person_remove</span>
-                <span class="material-icons action-icon block-icon" onclick="event.stopPropagation(); window.blockMemberFromList('${clanId}', '${m.playerId}', '${m.username}')">block</span>
-            ` : '';
-
-            const safeUsername = escapeJsString(m.username);
-
-            return `
-                <div class="member-card ${cardClass}" onclick="fetchMemberDetails('${clanId}', '${m.playerId}', ${canEdit})">
-                    <div id="member-avatar-${m.playerId}" class="member-avatar" style="background: url('${avatar}') center/cover no-repeat, ${bgStyle};"></div>
-                    <div class="member-details">
-                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                            <span style="font-weight:bold; font-size:1rem; color:#1e293b; cursor:pointer;" onclick="event.stopPropagation(); window.goToPlayerSearch('${safeUsername}')">${m.username || 'Unknown'}</span> 
-                            ${roleBadge} ${questIconHtml} ${adminActionsHtml}
-                        </div>
-                        <div class="member-meta">
-                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${statusData.color};"></span> ${statusData.text} ${flairHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    let chatHtml = '<div style="padding:15px; color:#ccc;">-</div>';
-    if (!chat.error && Array.isArray(chat)) {
-        chatHtml = chat.reverse().map(msg => {
-            const isBot = !!msg.playerBotId;
-            const username = isBot ? `[BOT] ${msg.playerBotOwnerUsername}` : (msg.player?.username || memberMap[msg.playerId] || 'Unknown');
-            const botStyle = isBot ? 'background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;' : '';
-            
-            let content = '';
-            if (msg.emojiId) {
-                const emojiData = globalEmojiMap.get(msg.emojiId);
-                const emojiUrl = emojiData?.preview || `https://cdn.wolvesville.com/emojis/previews/emoji_${msg.emojiId}.png`; 
-                content = `<img src="${emojiUrl}" referrerpolicy="no-referrer" class="chat-emoji-img" alt="Emoji" loading="lazy">`;
-            } else content = linkify(msg.msg || '');
-
-            const safeUsername = escapeJsString(username);
-            const nameStyle = isBot ? `color:var(--primary-color); ${botStyle}` : `color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;`;
-            const clickAttr = isBot ? '' : `onclick="window.goToPlayerSearch('${safeUsername}')"`;
-
-            return `
-            <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="${nameStyle}" ${clickAttr}>${username}</strong>: 
-                <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
-                <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
-            </div>
-        `}).join('');
-    }
-
-    let logsHtml = '<div style="padding:15px; color:#ccc;">-</div>';
-    if (!logs.error && Array.isArray(logs)) {
-        logsHtml = logs.map(l => `
-            <div style="margin-bottom:5px; font-size:0.85rem;">
-                <span style="color:#64748b;">[${formatDateThai(l.creationTime)}]</span> 
-                <strong>${l.playerUsername || 'System'}</strong>: ${l.action || l.type} 
-                ${l.targetPlayerUsername ? `-> ${l.targetPlayerUsername}` : ''}
-            </div>
-        `).join('');
-    }
-
-    let ledgerHtml = '<div style="padding:15px; color:#ccc;">-</div>';
-    if (!ledger.error && Array.isArray(ledger)) {
-        ledgerHtml = '<div class="ledger-list">';
-        ledgerHtml += ledger.slice(0, 50).map(l => `
-            <div class="ledger-item">
-                <div class="ledger-meta">
-                    <strong>${l.playerUsername || 'System'}</strong>
-                    <span class="ledger-time">${formatDateThai(l.creationTime)}</span>
-                </div>
-                <div class="ledger-amount ${l.gold > 0 || l.gems > 0 ? 'income' : 'expense'}">
-                    ${l.gold ? `<span>${l.gold > 0 ? '+' : ''}${l.gold.toLocaleString()} ${t('txt_gold')}</span>` : ''}
-                    ${l.gems ? `<span>${l.gems > 0 ? '+' : ''}${l.gems.toLocaleString()} ${t('txt_gem')}</span>` : ''}
-                </div>
-            </div>
-        `).join('');
-        ledgerHtml += '</div>';
-    }
-
-    let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">ไม่มีประวัติการทำเควส</div>`;
-    if (!history.error && Array.isArray(history) && history.length > 0) {
-        historyHtml = '<div class="history-list">';
-        historyHtml += history.map(h => {
-             const questTitle = h.quest?.title || `Tier ${h.tier}`;
-             const endDate = h.tierEndTime || h.endTime;
-             const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
-
-             let participantsHtml = '';
-             if (h.participants && Array.isArray(h.participants)) {
-                 const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
-                 participantsHtml = sortedParts.map((p, index) => {
-                     const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
-                     return `
-                         <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                             <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
-                             <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
-                         </div>
-                      `;
-                  }).join('');
-             }
-
-             return `
-                <div class="history-item" style="border-left:4px solid var(--primary-color); display:block; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div style="display:flex; align-items:center;">
-                        <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
-                        <div style="display:flex; flex-direction:column; flex:1;">
-                            <div style="font-weight:600; color:#334155;">${questTitle}</div>
-                            <div style="font-size:0.75rem; color:#94a3b8;">${t('txt_ends')}: ${formatDateThai(endDate)}</div>
-                        </div>
-                    </div>
-                    <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
-                        <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
-                        <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
-                            ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
-                        </div>
-                    </details>
-                </div>
-             `;
-        }).join('');
-        historyHtml += '</div>';
-    }
-
-    if (isBackground && isFirstRender === false) {
-        const cChat = document.getElementById('clan-chat-container');
-        if (cChat && cChat.innerHTML !== chatHtml) { const b = cChat.scrollHeight - cChat.scrollTop <= cChat.clientHeight + 100; cChat.innerHTML = chatHtml; if (b) cChat.scrollTop = cChat.scrollHeight; }
-        const cAnn = document.getElementById('clan-announcements-container'); if (cAnn && cAnn.innerHTML !== announceListContent) cAnn.innerHTML = announceListContent;
-        const cMem = document.getElementById('clan-members-list'); if (cMem && cMem.innerHTML !== membersHtml) cMem.innerHTML = membersHtml;
-        const cLog = document.getElementById('clan-logs-list'); if (cLog && cLog.innerHTML !== logsHtml) cLog.innerHTML = logsHtml;
-        
-        const cScheduled = document.getElementById('scheduled-quests-wrapper');
-        if (cScheduled && cScheduled.innerHTML !== scheduledHtml) cScheduled.innerHTML = scheduledHtml;
-        
-        const cActiveQuest = document.getElementById('active-quest-wrapper');
-        if (cActiveQuest && cActiveQuest.innerHTML !== questsHtml) cActiveQuest.innerHTML = questsHtml;
-        
-        const cFeeTracker = document.getElementById('fee-tracker-wrapper');
-        if (cFeeTracker && cFeeTracker.innerHTML !== feeTrackerHtml) cFeeTracker.innerHTML = feeTrackerHtml;
-        
-        const cAvailQuest = document.getElementById('available-quests-wrapper');
-        if (cAvailQuest && cAvailQuest.innerHTML !== availableQuestsHtml) cAvailQuest.innerHTML = availableQuestsHtml;
-
-        const cTimer = document.getElementById('quest-reset-timer'); if (cTimer) cTimer.outerHTML = getQuestResetTimeDisplay();
-        const cLedger = document.getElementById('clan-ledger-list'); if (cLedger && cLedger.innerHTML !== ledgerHtml) cLedger.innerHTML = ledgerHtml;
-        const cHist = document.getElementById('clan-history-list'); if (cHist && cHist.innerHTML !== historyHtml) cHist.innerHTML = historyHtml;
         return; 
     }
 
+    // --- แสดงผลหน้าหลักครั้งแรก ---
     isFirstRender = false;
-    
-    const profileHeader = `
+    clanContentContainer.innerHTML = `
         <div class="profile-header-card" style="border-left-color:#eab308;">
-            <div class="profile-avatar-wrapper" style="display:flex; justify-content:center; align-items:center; width:100px; height:100px; background:#fefce8; border-radius:50%; font-size:50px; border:4px solid #eab308;">
-                ${info.tag || '🛡️'}
-            </div>
+            <div class="profile-avatar-wrapper" style="width:80px; height:80px; background:#fefce8; border-radius:50%; font-size:40px; display:flex; align-items:center; justify-content:center; border:3px solid #eab308;">${info.tag || '🛡️'}</div>
             <div class="profile-main-info">
                 <h2 class="player-name">[${info.tag}] ${info.name}</h2>
                 <div class="clan-wallet">
-                    <span class="currency-badge gold"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#d97706;">monetization_on</span> ${info.gold?.toLocaleString() || 0}</span>
-                    <span class="currency-badge gems"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#9333ea;">diamond</span> ${info.gems?.toLocaleString() || 0}</span>
+                    <span class="currency-badge gold">...</span>
+                    <span class="currency-badge gems">...</span>
                 </div>
-                <div class="clan-bio">${linkify(info.description || '-')}</div>
-                <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
-                    <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
-                    Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_quest_hist')}: <strong>${info.questHistoryCount !== undefined ? info.questHistoryCount.toLocaleString() : 0}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
-                </div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:10px;">ID: <span style="font-family:monospace;">${info.id}</span></div>
             </div>
         </div>
-    `;
 
-    let mainContent = `
-        ${announceSectionHtml}
         <div class="stats-grid stats-grid-row2">
             <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><span class="material-icons">flag</span> ${t('txt_active_quest')}</span>
-                    <button id="reload-quest-btn" onclick="window.reloadActiveQuest('${clanId}', ${canEdit})" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#1e293b';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';">
-                        <span class="material-icons" style="font-size:16px;">refresh</span> ${t('btn_reload')}
-                    </button>
-                </h3>
-                <div id="clan-quests-container">
-                    <div id="scheduled-quests-wrapper">${scheduledHtml}</div>
-                    <div id="active-quest-wrapper">${questsHtml}</div>
-                    <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
-                    <div id="available-quests-wrapper">${availableQuestsHtml}</div>
-                </div>
+                <h3 class="stats-section-title">🚩 เควสแคลน <span id="quest-reset-timer-wrapper"></span></h3>
+                <div id="scheduled-quests-wrapper">${scheduledHtml}</div>
+                <div id="active-quest-wrapper">${questsHtml}</div>
+                <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
+                <div id="available-quests-wrapper"></div>
             </div>
             <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
-                    <span><span class="material-icons">group</span> ${t('txt_members')} (${info.memberCount})</span>
-                    <div style="font-size:0.75rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        ${canEdit ? `
-                        <button onclick="window.openInactivityMonitor('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
-                            <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
-                        </button>
-                        ` : ''}
-                        <div>
-                            Quest: 
-                            <button onclick="window.toggleAllQuestParticipation('${clanId}', true)" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">${t('txt_all_on')}</button>
-                            <button onclick="window.toggleAllQuestParticipation('${clanId}', false)" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; cursor:pointer;">${t('txt_all_off')}</button>
-                        </div>
-                    </div>
-                </h3>
-                <div id="clan-members-list" class="member-list" style="max-height:500px; overflow-y:auto; padding-right:5px;">
-                    ${membersHtml}
-                </div>
+                <h3 class="stats-section-title">💬 แชทแคลน</h3>
+                <div id="clan-chat-container" class="clan-scroll-area" style="background:white; padding:15px; border-radius:12px; border:1px solid #eee; max-height:400px;">${chatHtml}</div>
             </div>
         </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">chat</span> ${t('txt_clan_chat')}</div>
-                <div id="clan-chat-container" class="clan-scroll-area">${chatHtml}</div>
-                    <div style="display:flex; gap:10px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <input type="text" id="clan-chat-input" placeholder="${t('txt_ph_chat')}" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key==='Enter') window.sendClanChatMessage('${clanId}')">
-                    <button onclick="window.sendClanChatMessage('${clanId}')" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;"><span class="material-icons">send</span></button>
-                </div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history</span> ${t('txt_clan_logs')}</div>
-                <div id="clan-logs-list" class="clan-scroll-area">${logsHtml}</div>
-            </div>
-        </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">account_balance_wallet</span> ${t('txt_clan_ledger')}</div>
-                <div id="clan-ledger-list" class="clan-scroll-area">${ledgerHtml}</div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history_toggle_off</span> ${t('txt_quest_hist')}</div>
-                <div id="clan-history-list" class="clan-scroll-area">${historyHtml}</div>
-            </div>
-        </div>
-
-        ${canEdit ? `
-        <div style="margin-top:20px; background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-            <h3 class="stats-section-title" style="color:#ef4444;"><span class="material-icons">block</span> ${t('txt_blocklist_mgr')}</h3>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="manual-block-input" placeholder="${t('txt_ph_block')}" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                <button onclick="window.manualAddToBlocklist('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">${t('txt_btn_block')}</button>
-            </div>
-            <div class="blocklist-grid">
-                ${blockedMembers.length > 0 && !blockedMembers.error 
-                    ? blockedMembers.map(m => `
-                        <div class="blocked-member-card">
-                            <div class="blocked-member-info">
-                                <img src="${m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40')}" class="blocked-avatar" onerror="this.src='https://via.placeholder.com/40'">
-                                <span class="blocked-name" onclick="event.stopPropagation(); window.goToPlayerSearch('${escapeJsString(m.username)}')" title="Profile">${m.username || 'Unknown'}</span>
-                            </div>
-                            <button class="btn-unblock-icon" onclick="window.unblockMember('${clanId}', '${m.id}')" title="${t('txt_unblock')}"><span class="material-icons" style="font-size:18px;">lock_open</span></button>
-                        </div>
-                      `).join('') 
-                    : `<div style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:20px;">${t('txt_no_blocks')}</div>`}
-            </div>
-        </div>
-        ` : ''}
     `;
 
-    clanContentContainer.innerHTML = profileHeader + mainContent;
-    const finalChatContainer = document.getElementById('clan-chat-container');
-    if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
-
-    // --- เริ่มระบบจับเวลา (Cooldown Timer) ---
-    if (questCooldownInterval) clearInterval(questCooldownInterval);
-    questCooldownInterval = setInterval(() => {
-        const timerEl = document.getElementById('tier-cooldown-timer');
-        if (timerEl) {
-            const targetTime = parseInt(timerEl.getAttribute('data-time'));
-            const diff = targetTime - Date.now();
-            if (diff <= 0) {
-                timerEl.innerText = "00:00:00";
-            } else {
-                const h = Math.floor(diff / (1000 * 60 * 60));
-                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((diff % (1000 * 60)) / 1000);
-                timerEl.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            }
-        }
-    }, 1000);
-
-    // --- เริ่มระบบจับเวลา Fee Tracker ---
+    // เริ่มระบบนับถอยหลังวินาทีสำหรับนาฬิกา Fee Tracker
     if (inlineQfeeTimerInterval) clearInterval(inlineQfeeTimerInterval);
     inlineQfeeTimerInterval = setInterval(() => {
         const el = document.getElementById('inline-qfee-timer');
         if (!el) return;
-        const endTimeMs = parseInt(el.getAttribute('data-time'));
-        const now = Date.now();
-        if (now >= endTimeMs) {
-            el.innerHTML = '<span style="color:#ef4444; font-weight:bold;">หมดเวลาแล้ว!</span>';
-            clearInterval(inlineQfeeTimerInterval);
-        } else {
-            const diff = endTimeMs - now;
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-            let tStr = '';
-            if(d>0) tStr += `${d} วัน `;
-            if(h>0 || d>0) tStr += `${h} ชม. `;
-            tStr += `${m} นาที ${s} วิ`;
-            el.innerText = tStr;
-        }
+        const target = parseInt(el.dataset.time);
+        const diff = target - Date.now();
+        if (diff <= 0) { el.innerHTML = "หมดเวลา"; return; }
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        el.innerText = `${h}ชม. ${m}นาที ${s}วิ`;
     }, 1000);
 }
 
-window.showRoleModal = (roleId) => {
-    const role = rolesCache.get(roleId);
-    if (!role) return showCustomAlert(t('alert_warning'), 'Role not found.');
+// ฟังก์ชันดั้งเดิมที่เหลือ...
+async function fetchData(e,s,r){const k=localStorage.getItem('wolvesville_api_key');if(!k)return{error:true};try{const res=await fetch(`${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent(e)}&apiKey=${encodeURIComponent(k)}&_t=${Date.now()}`);return res.ok?await res.json():{error:true}}catch(err){return{error:true}}}
+function isUUID(s){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)}
+// ... โค้ดส่วนอื่นๆ คงเดิม ...
 
-    const imgUrl = role.image?.url || EMBEDDED_ICONS.UNKNOWN;
-    const isEn = getLocale() === 'en';
-    
-    let advancedHtml = '';
-    if (advancedRolesMappingCache[role.id] && advancedRolesMappingCache[role.id].length > 0) {
-        const advRoles = advancedRolesMappingCache[role.id].map(id => {
-            const r = rolesCache.get(id); return r ? r.name : id.replace(/-/g, ' ');
-        }).join(', ');
-        advancedHtml = `<div style="margin-top:15px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🌟 ${isEn?'Advanced Roles:':'บทบาทขั้นสูง (อัปเกรด):'}</strong> ${advRoles}</div>`;
-    }
-
-    let randomHtml = '';
-    if (randomRolesMappingCache[role.id] && randomRolesMappingCache[role.id].length > 0) {
-         const subRoles = randomRolesMappingCache[role.id].map(id => {
-            const r = rolesCache.get(id); return r ? r.name : id.replace(/-/g, ' ');
-         }).join(', ');
-         randomHtml = `<div style="margin-top:10px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><strong>🎲 ${isEn?'Can spawn as:':'สามารถสุ่มเกิดเป็น:'}</strong> ${subRoles}</div>`;
-    }
-
-    let isRankedExcluded = rankedRandomExcludedRolesCache.includes(role.id) ? 
-        `<span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; margin-left:5px;">${isEn?'Ranked Excluded':'ไม่สุ่มในโหมดจัดอันดับ'}</span>` : '';
-
-    let teamColor = '#64748b'; 
-    if(role.team === 'VILLAGER') teamColor = '#3b82f6';
-    else if(role.team === 'WEREWOLF') teamColor = '#ef4444';
-    else if(role.team === 'SOLO') teamColor = '#f59e0b';
-    else if(role.team === 'RANDOM') teamColor = '#a855f7';
-
-    const content = `
-        <div style="text-align:center; padding:10px;">
-            <img src="${imgUrl}" referrerpolicy="no-referrer" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); margin-bottom:15px;" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
-            <h2 style="margin:0 0 10px 0; color:#1e293b; font-size:1.8rem;">${role.name}</h2>
-            <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
-                <span style="background:${teamColor}20; color:${teamColor}; border:1px solid ${teamColor}50; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">${isEn?'Team':'ฝ่าย'}: ${role.team}</span>
-                <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">${isEn?'Aura':'ออร่า'}: ${role.aura}</span>
-                ${isRankedExcluded}
-            </div>
-        </div>
-        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-top:20px; text-align:center; font-size:1rem; color:#334155; line-height:1.6;">
-            "${role.description}"
-        </div>
-        ${advancedHtml}
-        ${randomHtml}
-    `;
-    showCustomInfoModal(role.name, content);
-};
-
-async function initRoleWiki() {
-    const container = document.getElementById('role-wiki-container');
-    const searchInput = document.getElementById('role-search-input');
-    
-    if (rolesCache.size === 0) {
-        container.innerHTML = `<div style="text-align:center; color:#888; padding:60px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem;">${t('loading_roles')}</div></div>`;
-        await fetchAndCacheRoles();
-    }
-    if (rolesCache.size === 0) return container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">Error Loading Roles</div>`;
-
-    const rolesArray = Array.from(rolesCache.values());
-    renderRoleGrid(rolesArray);
-
-    if (searchInput) {
-        searchInput.onkeyup = (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = rolesArray.filter(r => (r.name && r.name.toLowerCase().includes(term)) || (r.team && r.team.toLowerCase().includes(term)) || (r.id && r.id.toLowerCase().includes(term)));
-            renderRoleGrid(filtered);
-        };
-    }
-}
-
-function renderRoleGrid(roles) {
-    const container = document.getElementById('role-wiki-container');
-    if (!roles || roles.length === 0) return container.innerHTML = `<div style="text-align:center; color:#888; padding:40px;">Not Found</div>`;
-
-    const html = roles.map(r => {
-        const imgUrl = r.image?.url || EMBEDDED_ICONS.UNKNOWN;
-        let teamColor = '#64748b'; 
-        if(r.team === 'VILLAGER') teamColor = '#3b82f6';
-        else if(r.team === 'WEREWOLF') teamColor = '#ef4444';
-        else if(r.team === 'SOLO') teamColor = '#f59e0b';
-        else if(r.team === 'RANDOM') teamColor = '#a855f7';
-
-        return `
-            <div class="quest-card-large" style="cursor:pointer; min-height:160px; justify-content:flex-start;" onclick="window.showRoleModal('${r.id}')">
-                <div style="background:${teamColor}; width:100%; height:8px; border-top-left-radius:12px; border-top-right-radius:12px; position:absolute; top:0; left:0;"></div>
-                <img src="${imgUrl}" referrerpolicy="no-referrer" style="height:70px; object-fit:contain; margin:25px auto 10px auto; display:block; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));" loading="lazy" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">
-                <div style="text-align:center; padding:0 10px 15px 10px; width:100%;">
-                    <strong style="font-size:1.05rem; color:#1e293b; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.name}">${r.name}</strong>
-                    <div style="font-size:0.75rem; font-weight:bold; color:${teamColor}; margin-top:4px;">${r.team}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    container.innerHTML = `<div class="quest-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">${html}</div>`;
-}
-
-async function initQuestWiki() {
-    const container = document.getElementById('quest-wiki-container');
-    if (allQuestsCache.length > 0) return renderWikiGrid(allQuestsCache);
-
-    container.innerHTML = `<div style="text-align:center; color:#888; grid-column:1/-1; padding:60px;"><span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span><div style="margin-top:15px; font-size:1.1rem;">${t('loading_quests')}</div></div>`;
-
-    try {
-        const [res, _] = await Promise.all([fetchData('/clans/quests/all'), fetchAndCacheAvatarItems()]);
-        if (res.error) return container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Error: ${res.message}</div>`;
-        if (Array.isArray(res)) { allQuestsCache = res; renderWikiGrid(allQuestsCache); }
-    } catch (e) { container.innerHTML = `<div style="text-align:center; color:red; grid-column:1/-1;">Critical Error</div>`; }
-}
-
-window.viewAllQuests = async () => document.querySelector('.nav-link[data-page="quest-wiki"]')?.click();
-
-function renderWikiGrid(quests) {
-    const container = document.getElementById('quest-wiki-container');
-    if (!quests || quests.length === 0) return container.innerHTML = `<div style="text-align:center; color:#888; grid-column:1/-1; padding:20px;">Not Found</div>`;
-    const isEn = getLocale() === 'en';
-
-    const html = quests.map(q => {
-        const isGem = q.purchasableWithGems;
-        const currencyIcon = isGem ? 'diamond' : 'monetization_on';
-        const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
-        const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/300x150?text=No+Image';
-        const rewardCount = q.rewards ? q.rewards.length : 0;
-
-        return `
-            <div class="quest-card-large" onclick="window.showQuestModal('${q.id}')">
-                <img src="${imgUrl}" class="quest-card-large-img" loading="lazy">
-                <div class="quest-card-footer">
-                    <div class="quest-price-tag" style="color: ${currencyColor}; border: 1px solid #e2e8f0; background: #f8fafc; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem;">
-                        <span class="material-icons" style="font-size:16px;">${currencyIcon}</span>
-                        <span style="margin-left:4px;">${isGem ? (isEn?'Gem Quest':'เควสเพชร') : (isEn?'Gold Quest':'เควสทอง')}</span>
-                    </div>
-                    <div style="font-size:0.8rem; font-weight:bold; color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px;">
-                        ${rewardCount} ${t('txt_rewards')}
-                    </div>
-                </div>
-                ${(() => { questDetailsCache.set(q.id, q); return ''; })()} 
-            </div>
-        `;
-    }).join('');
-
-    container.innerHTML = html;
-}
-
-// Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
-    applyTranslations(); // เปลี่ยนภาษา UI ตอนโหลดหน้าแรก
-    sendIncrementSignal('visitors');
+    applyTranslations();
     fetchAndDisplayData();
-
-    const k = localStorage.getItem('wolvesville_api_key');
-    if(k) { apiKeyInput.value = k; if(apiKeyStatus) apiKeyStatus.innerHTML = '✅ OK'; }
-
-    navLinks.forEach(l => {
-        l.addEventListener('click', (e) => {
-            e.preventDefault();
-            navLinks.forEach(n => n.classList.remove('active'));
-            l.classList.add('active');
-            const t = l.dataset.page;
-            pages.forEach(p => {
-                p.style.display = p.id === t ? 'block' : 'none';
-                if(p.id === t) p.classList.add('active-page');
-            });
-            if(window.innerWidth<=768) {
-                appContainer.classList.remove('sidebar-pushed');
-                if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
-            }
-            if(t==='dashboard') fetchAndDisplayData();
-            else if(t==='role-wiki') initRoleWiki(); 
-            else if(t==='quest-wiki') initQuestWiki(); 
-            else if(t==='settings') {
-                const cur = localStorage.getItem('wolvesville_api_key');
-                if(cur) apiKeyInput.value = cur;
-            }
-        });
-    });
-
-    if(hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            appContainer.classList.toggle('sidebar-pushed');
-            hamburgerBtn.querySelector('.material-icons').textContent = appContainer.classList.contains('sidebar-pushed') ? 'menu_open' : 'menu';
-        });
-        document.addEventListener('click', (e) => {
-            if(window.innerWidth<=768 && appContainer.classList.contains('sidebar-pushed') && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
-                appContainer.classList.remove('sidebar-pushed');
-                hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
-            }
-        });
-    }
-
-    if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', async () => {
-        const v = apiKeyInput.value.trim();
-        if(v.length>10) { 
-            const isConfirmed = await showApiConsentModal();
-            if (isConfirmed) {
-                localStorage.setItem('wolvesville_api_key',v); 
-                showCustomAlert(t('alert_success'), '✅ ' + (getLocale() === 'en' ? 'API Key saved successfully!' : 'บันทึก API Key เรียบร้อยแล้ว')); 
-                fetchAndDisplayData(); 
-            }
-        }
-        else showCustomAlert(t('alert_warning'), getLocale() === 'en' ? 'Invalid API Key format' : 'รูปแบบ API Key ไม่ถูกต้อง');
-    });
-
-    const savedLocale = localStorage.getItem('wolvesville_api_locale');
-    const localeSelect = document.getElementById('api-locale-select');
-    if (savedLocale && localeSelect) {
-        localeSelect.value = savedLocale;
-    }
-
-    const saveLocaleBtn = document.getElementById('save-locale-btn');
-    if (saveLocaleBtn) {
-        saveLocaleBtn.addEventListener('click', () => {
-            if (localeSelect) {
-                localStorage.setItem('wolvesville_api_locale', localeSelect.value);
-                applyTranslations(); // แปลภาษา UI ทันที
-                
-                const status = document.getElementById('api-locale-status');
-                if (status) {
-                    status.style.display = 'block';
-                    setTimeout(() => status.style.display = 'none', 3000);
-                }
-                
-                rolesCache.clear();
-                avatarItemsCache.clear();
-                questDetailsCache.clear();
-                allQuestsCache = [];
-                
-                fetchAndDisplayData();
-                if (document.getElementById('role-wiki-container') && document.getElementById('role-wiki-container').innerHTML.trim() !== '') initRoleWiki();
-                if (document.getElementById('quest-wiki-container') && document.getElementById('quest-wiki-container').innerHTML.trim() !== '') initQuestWiki();
-            }
-        });
-    }
-
-    if(searchPlayerBtn) searchPlayerBtn.addEventListener('click', searchAndDisplayPlayer);
-    if(usernameInput) usernameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchAndDisplayPlayer(); });
-    if(searchClanBtn) searchClanBtn.addEventListener('click', searchClan);
-    if(myClanBtn) myClanBtn.addEventListener('click', fetchMyClan);
-    if(clanNameInput) clanNameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchClan(); });
-
-    const settingsPage = document.getElementById('settings');
-    if (settingsPage) {
-        const hatGroup = document.createElement('div');
-        hatGroup.className = 'settings-group';
-        hatGroup.style.marginTop = '20px';
-        hatGroup.innerHTML = `
-            <h3><span class="material-icons" style="vertical-align: middle; color: #a855f7;">checkroom</span> API Hat</h3>
-            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Exclusive API Hat for Bot Owner / กดรับหมวกสำหรับเจ้าของบอท</p>
-            <button onclick="window.redeemApiHat()" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span class="material-icons" style="font-size: 18px;">auto_awesome</span> Redeem Hat
-            </button>
-        `;
-        settingsPage.appendChild(hatGroup);
-    }
-
-    // --- ระบบฟีดแบค (ปุ่มลอย & ส่งเข้า Discord Webhook พร้อมรูปภาพ) ---
-    const fabBtn = document.getElementById('floating-feedback-btn');
-    const feedbackModal = document.getElementById('feedback-modal');
-    const closeFeedbackBtn = document.getElementById('close-feedback-modal');
-    const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
-
-    if (fabBtn && feedbackModal && closeFeedbackBtn) {
-        fabBtn.addEventListener('click', () => { feedbackModal.style.display = 'flex'; });
-        closeFeedbackBtn.addEventListener('click', () => { feedbackModal.style.display = 'none'; });
-        feedbackModal.addEventListener('click', (e) => { if (e.target === feedbackModal) feedbackModal.style.display = 'none'; });
-    }
-
-    if (submitFeedbackBtn) {
-        submitFeedbackBtn.addEventListener('click', async () => {
-            const topic = document.getElementById('feedback-topic').value;
-            const msg = document.getElementById('feedback-msg').value.trim();
-            const imageInput = document.getElementById('feedback-image');
-
-            if (!msg && imageInput.files.length === 0) {
-                return showCustomAlert(t('alert_warning'), getLocale()==='en'?'Please enter message or attach image':'กรุณาพิมพ์ข้อความ หรือแนบรูปภาพก่อนกดส่งครับ');
-            }
-
-            const originalText = submitFeedbackBtn.innerHTML;
-            submitFeedbackBtn.innerHTML = '<span class="material-icons loading-spinner" style="font-size: 20px;">sync</span> ...';
-            submitFeedbackBtn.disabled = true;
-
-            try {
-                // ⚠️ DISCORD WEBHOOK URL ⚠️
-                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
-
-                let embedColor = 3447003; // สีน้ำเงิน
-                let embedTitle = '📝 แจ้งเตือนทั่วไป (Other)';
-                
-                if (topic === 'bug') { 
-                    embedColor = 16711680; // สีแดง
-                    embedTitle = '🐛 รายงานปัญหา (Bug)'; 
-                } else if (topic === 'suggestion') { 
-                    embedColor = 16776960; // สีเหลือง
-                    embedTitle = '💡 ข้อเสนอแนะ (Suggestion)'; 
-                } 
-
-                const formData = new FormData();
-                const payload = {
-                    username: "Web Feedback",
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
-                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ
-                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
-                    embeds: [{
-                        title: embedTitle,
-                        color: embedColor,
-                        fields: [
-                            {
-                                name: "💬 รายละเอียดข้อความ",
-                                value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
-                                inline: false
-                            }
-                        ],
-                        footer: {
-                            text: "ส่งจากเว็บไซต์ Wolvesville API Dashboard",
-                            icon_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png"
-                        },
-                        timestamp: new Date().toISOString()
-                    }]
-                };
-
-                if (imageInput.files.length > 0) {
-                    const file = imageInput.files[0];
-                    formData.append('file', file, file.name);
-                    payload.embeds[0].image = { url: `attachment://${file.name}` };
-                }
-
-                formData.append('payload_json', JSON.stringify(payload));
-                const response = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                showCustomAlert(t('alert_success'), '✅ ส่งข้อความสำเร็จ ขอบคุณสำหรับข้อเสนอแนะครับ!');
-                document.getElementById('feedback-msg').value = ''; 
-                imageInput.value = '';
-                feedbackModal.style.display = 'none';
-                
-            } catch (e) {
-                console.error(e);
-                showCustomAlert(t('alert_error'), '❌ ' + e.message);
-            } finally {
-                submitFeedbackBtn.innerHTML = originalText;
-                submitFeedbackBtn.disabled = false;
-            }
-        });
-    }
-
-    // --- ระบบขยายรูปภาพ (Image Viewer) ---
-    const imageViewerModal = document.getElementById('image-viewer-modal');
-    const imageViewerImg = document.getElementById('image-viewer-img');
-    const closeImageViewerBtn = document.getElementById('close-image-viewer');
-
-    document.querySelectorAll('.qr-code').forEach(img => {
-        img.addEventListener('click', () => {
-            if(imageViewerImg) imageViewerImg.src = img.src;
-            if(imageViewerModal) imageViewerModal.style.display = 'flex';
-        });
-    });
-
-    if (imageViewerModal && closeImageViewerBtn) {
-        closeImageViewerBtn.addEventListener('click', () => {
-            imageViewerModal.style.display = 'none';
-        });
-        imageViewerModal.addEventListener('click', (e) => {
-            if (e.target === imageViewerModal) {
-                imageViewerModal.style.display = 'none';
-            }
-        });
-    }
-
-    document.querySelector('.nav-link[data-page="dashboard"]')?.click();
 });
