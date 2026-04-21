@@ -848,7 +848,7 @@ window.goToClanSearch = (clanId) => {
     }
 };
 
-window.openInactivityMonitor = () => {
+window.openInactivityMonitor = (clanId) => {
     if (!clanMembersDetailedMap || clanMembersDetailedMap.size === 0) return showCustomAlert(t('alert_warning'), 'กรุณาโหลดข้อมูลสมาชิกแคลนก่อน');
 
     const now = new Date();
@@ -900,8 +900,8 @@ window.openInactivityMonitor = () => {
                             | <span style="color:#64748b;">XP: ${p.xpWeek.toLocaleString()}</span>
                         </div>
                     </div>
-                    <button onclick="navigator.clipboard.writeText('${p.playerId}'); this.innerText='Done!'; setTimeout(() => this.innerText='${t('btn_copy_id')}', 1500);" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold;">
-                        ${t('btn_copy_id')}
+                    <button onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.kickMemberFromList('${clanId}', '${p.playerId}', '${escapeJsString(p.username)}')" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                        <span class="material-icons" style="font-size:14px;">person_remove</span> ${getLocale() === 'en' ? 'Kick' : 'เตะออก'}
                     </button>
                 </div>
             `;
@@ -3086,7 +3086,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <span><span class="material-icons">group</span> ${t('txt_members')} (${info.memberCount})</span>
                     <div style="font-size:0.75rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         ${canEdit ? `
-                        <button onclick="window.openInactivityMonitor()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
+                        <button onclick="window.openInactivityMonitor('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
                             <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
                         </button>
                         ` : ''}
