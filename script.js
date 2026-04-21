@@ -934,17 +934,14 @@ window.openFeeTracker = (clanId) => {
     let targetGold = parseInt(localStorage.getItem(`wolvesville_fee_gold_${clanId}`)) || 0;
     let targetGems = parseInt(localStorage.getItem(`wolvesville_fee_gems_${clanId}`)) || 0;
 
-    // คำนวณยอดการบริจาค (DONATE) ของแต่ละคนจากข้อมูล Ledger ปัจจุบัน
+    // คำนวณยอดการบริจาค (DONATE) ของแต่ละคนจากข้อมูล allTime ของสมาชิก
     const donations = {};
-    if (Array.isArray(currentClanLedger)) {
-        currentClanLedger.forEach(entry => {
-            if (entry.type === 'DONATE') {
-                if (!donations[entry.playerId]) donations[entry.playerId] = { gold: 0, gems: 0 };
-                if (entry.gold) donations[entry.playerId].gold += entry.gold;
-                if (entry.gems) donations[entry.playerId].gems += entry.gems;
-            }
-        });
-    }
+    clanMembersDetailedMap.forEach(m => {
+        donations[m.playerId] = {
+            gold: m.donated?.gold?.allTime || 0,
+            gems: m.donated?.gems?.allTime || 0
+        };
+    });
 
     const renderTracker = () => {
         let membersArr = [];
@@ -985,7 +982,7 @@ window.openFeeTracker = (clanId) => {
                         <div>
                             <strong style="color:#1e293b; font-size:0.95rem;">${p.username}</strong>
                             <div style="font-size:0.75rem; color:#64748b;">
-                                จ่ายมาแล้ว: <strong style="color:#d97706;">${don.gold.toLocaleString()} ทอง</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} เพชร</strong>
+                                ยอดรวม: <strong style="color:#d97706;">${don.gold.toLocaleString()} ทอง</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} เพชร</strong>
                             </div>
                             ${missingText.length > 0 ? `<div style="font-size:0.7rem; color:#dc2626;">${missingText.join(' และ ')}</div>` : ''}
                         </div>
@@ -1001,7 +998,7 @@ window.openFeeTracker = (clanId) => {
         
         let contentHtml = `
             <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">settings</span> ตั้งค่าราคาเป้าหมาย</h4>
+                <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">settings</span> ตั้งค่าราคาเป้าหมายสะสม</h4>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <div style="flex:1; min-width:120px;">
                         <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง (Gold)</label>
@@ -1013,11 +1010,11 @@ window.openFeeTracker = (clanId) => {
                     </div>
                     <button id="fee-save-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; align-self:flex-end;">บันทึก</button>
                 </div>
-                <div style="font-size:0.75rem; color:#ef4444; margin-top:8px;">* ระบบจะนับจากประวัติบัญชีแคลน (Ledger) ของเกมเท่านั้น ซึ่งระบบเกมมักจะเก็บย้อนหลังแค่รายการล่าสุดๆ</div>
+                <div style="font-size:0.75rem; color:#ef4444; margin-top:8px;">* ระบบจะนับจากยอดบริจาคสะสมทั้งหมด (All Time) ของสมาชิกแต่ละคน ซึ่งแม่นยำกว่าการนับจากบัญชีแคลน (Ledger)</div>
             </div>
             
             <div id="fee-summary-text" style="font-size:1.1rem; color:#334155; font-weight:normal; margin-bottom:15px; text-align:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px dashed #cbd5e1;">
-                จ่ายครบตามเป้าหมายแล้ว: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${total}</strong> คน
+                ยอดถึงเป้าหมายแล้ว: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${total}</strong> คน
             </div>
             <div style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
                 ${listHtml}
