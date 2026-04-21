@@ -185,13 +185,6 @@ const langDict = {
         txt_monitor_desc: "สมาชิกที่ไม่ออนไลน์เกิน 3 วัน หรือ XP สัปดาห์นี้เป็น 0",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "ไม่ออนไลน์มาแล้ว",
-
-        // Fee Tracker
-        txt_fee_tracker_title: "เช็คสถานะจ่ายค่าแคลน",
-        txt_fee_tracker_desc: "ข้อมูลการติ๊กจ่ายจะถูกบันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น",
-        btn_reset_fees: "รีเซ็ตทั้งหมด",
-        txt_paid: "จ่ายแล้ว",
-        txt_unpaid: "ยังไม่จ่าย",
         
         // API Consent
         api_consent_title: "🛡️ ข้อตกลงการใช้งาน API Key",
@@ -400,13 +393,6 @@ const langDict = {
         btn_copy_id: "Copy ID",
         txt_inactive_days: "Offline for",
 
-        // Fee Tracker
-        txt_fee_tracker_title: "Fee Tracker",
-        txt_fee_tracker_desc: "Data is saved locally in your browser.",
-        btn_reset_fees: "Reset All",
-        txt_paid: "Paid",
-        txt_unpaid: "Unpaid",
-
         // API Consent
         api_consent_title: "🛡️ API Key Usage Consent",
         api_consent_desc: "This website requires your API Key to fetch and display data from Wolvesville.",
@@ -486,8 +472,9 @@ let isCurrentViewMyClan = false;
 let isFirstRender = true; 
 let currentParticipatingCount = 0; 
 let questCooldownInterval = null;
+let inlineQfeeTimerInterval = null;
 
-let currentClanLedger = []; // เพิ่มตัวแปรนี้สำหรับเก็บ Ledger ปัจจุบันมาใช้กับ Fee Tracker
+let currentClanLedger = []; 
 
 // 🌟 ตัวแปรเก็บ Request ID เพื่อป้องกัน API วิ่งชนกัน (Race Condition) 🌟
 let currentClanRequestId = 0; 
@@ -928,134 +915,84 @@ window.openInactivityMonitor = (clanId) => {
     showCustomInfoModal(t('txt_monitor_title'), contentHtml);
 };
 
-window.openFeeTracker = (clanId) => {
-    if (!clanMembersDetailedMap || clanMembersDetailedMap.size === 0) return showCustomAlert(t('alert_warning'), 'กรุณาโหลดข้อมูลสมาชิกแคลนก่อน');
+window.openQuestFeeSettings = (clanId) => {
+    let targetGold = parseInt(localStorage.getItem(`wolvesville_qfee_gold_${clanId}`)) || 0;
+    let targetGems = parseInt(localStorage.getItem(`wolvesville_qfee_gems_${clanId}`)) || 0;
+    let targetXp = parseInt(localStorage.getItem(`wolvesville_qfee_xp_${clanId}`)) || 0;
+    let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
 
-    let targetGold = parseInt(localStorage.getItem(`wolvesville_fee_gold_${clanId}`)) || 0;
-    let targetGems = parseInt(localStorage.getItem(`wolvesville_fee_gems_${clanId}`)) || 0;
-
-    // คำนวณยอดการบริจาค (DONATE) ของแต่ละคนจากข้อมูล allTime ของสมาชิก
-    const donations = {};
-    clanMembersDetailedMap.forEach(m => {
-        donations[m.playerId] = {
-            gold: m.donated?.gold?.allTime || 0,
-            gems: m.donated?.gems?.allTime || 0
-        };
-    });
-
-    const renderTracker = () => {
-        let membersArr = [];
-        clanMembersDetailedMap.forEach(m => membersArr.push(m));
-        membersArr.sort((a, b) => a.username.localeCompare(b.username));
-
-        let paidCount = 0;
-        let listHtml = '';
-        
-        membersArr.forEach(p => {
-            const don = donations[p.playerId] || { gold: 0, gems: 0 };
-            const isGoldMet = targetGold === 0 || don.gold >= targetGold;
-            const isGemsMet = targetGems === 0 || don.gems >= targetGems;
-            
-            const noFeeSet = targetGold === 0 && targetGems === 0;
-            const isPaid = !noFeeSet && isGoldMet && isGemsMet;
-
-            if (isPaid) paidCount++;
-
-            const btnStyle = isPaid 
-                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
-                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
-            
-            const btnText = isPaid 
-                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ${t('txt_paid')}` 
-                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> ยังไม่ตั้งราคา` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ${t('txt_unpaid')}`);
-            
-            let missingText = [];
-            if (!noFeeSet) {
-                if (!isGoldMet) missingText.push(`ขาด ${(targetGold - don.gold).toLocaleString()} ทอง`);
-                if (!isGemsMet) missingText.push(`ขาด ${(targetGems - don.gems).toLocaleString()} เพชร`);
-            }
-
-            listHtml += `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid #f1f5f9; background:white;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${p.equippedAvatar?.url || (p.profileIconId ? `https://cdn-avatars.wolvesville.com/${p.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:30px; height:30px; border-radius:8px; object-fit:contain; background:#f8fafc;">
-                        <div>
-                            <strong style="color:#1e293b; font-size:0.95rem;">${p.username}</strong>
-                            <div style="font-size:0.75rem; color:#64748b;">
-                                ยอดรวม: <strong style="color:#d97706;">${don.gold.toLocaleString()} ทอง</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} เพชร</strong>
-                            </div>
-                            ${missingText.length > 0 ? `<div style="font-size:0.7rem; color:#dc2626;">${missingText.join(' และ ')}</div>` : ''}
-                        </div>
-                    </div>
-                    <div style="${btnStyle} padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:bold; display:flex; align-items:center;">
-                        ${btnText}
-                    </div>
+    let contentHtml = `
+        <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง</label>
+                    <input type="number" id="qfee-target-gold-set" value="${targetGold}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
                 </div>
-            `;
-        });
-
-        const total = membersArr.length;
-        
-        let contentHtml = `
-            <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">settings</span> ตั้งค่าราคาเป้าหมายสะสม</h4>
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:1; min-width:120px;">
-                        <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง (Gold)</label>
-                        <input type="number" id="fee-target-gold" value="${targetGold}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
-                    </div>
-                    <div style="flex:1; min-width:120px;">
-                        <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย เพชร (Gems)</label>
-                        <input type="number" id="fee-target-gems" value="${targetGems}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
-                    </div>
-                    <button id="fee-save-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; align-self:flex-end;">บันทึก</button>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย เพชร</label>
+                    <input type="number" id="qfee-target-gems-set" value="${targetGems}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
                 </div>
-                <div style="font-size:0.75rem; color:#ef4444; margin-top:8px;">* ระบบจะนับจากยอดบริจาคสะสมทั้งหมด (All Time) ของสมาชิกแต่ละคน ซึ่งแม่นยำกว่าการนับจากบัญชีแคลน (Ledger)</div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย XP (สัปดาห์)</label>
+                    <input type="number" id="qfee-target-xp-set" value="${targetXp}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เวลา (วัน)</label>
+                    <input type="number" id="qfee-duration-set" value="${durationDays}" step="0.5" min="0" placeholder="0=ไม่จำกัด" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
             </div>
-            
-            <div id="fee-summary-text" style="font-size:1.1rem; color:#334155; font-weight:normal; margin-bottom:15px; text-align:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px dashed #cbd5e1;">
-                ยอดถึงเป้าหมายแล้ว: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${total}</strong> คน
-            </div>
-            <div style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
-                ${listHtml}
-            </div>
-        `;
-
-        return contentHtml;
-    };
+            <div style="font-size:0.7rem; color:#ef4444; margin-top:8px;">* ใส่เวลาเป็นวัน (เช่น 1.5, 2, 0=ไม่จำกัด)</div>
+        </div>
+        <button id="qfee-save-settings-btn" style="width:100%; background:var(--primary-color); color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">บันทึกการตั้งค่า</button>
+    `;
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    
-    const updateModalContent = () => {
-        overlay.innerHTML = `
-            <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 700px;">
-                <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="material-icons" style="color:var(--primary-color);">price_check</span> ${t('txt_fee_tracker_title')}
-                </h3>
-                <div id="fee-tracker-container">
-                    ${renderTracker()}
-                </div>
-                <div class="custom-modal-buttons">
-                    <button class="btn-modal btn-confirm">${t('btn_close')}</button>
-                </div>
+    overlay.innerHTML = `
+        <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 500px;">
+            <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <span class="material-icons" style="color:var(--primary-color);">settings</span> ตั้งค่าเงื่อนไขค่าเควส
+            </h3>
+            ${contentHtml}
+            <div class="custom-modal-buttons">
+                <button class="btn-modal btn-confirm">${t('btn_close')}</button>
             </div>
-        `;
+        </div>
+    `;
 
-        overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
-        overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    overlay.querySelector('#qfee-save-settings-btn').onclick = () => {
+        targetGold = parseInt(overlay.querySelector('#qfee-target-gold-set').value) || 0;
+        targetGems = parseInt(overlay.querySelector('#qfee-target-gems-set').value) || 0;
+        targetXp = parseInt(overlay.querySelector('#qfee-target-xp-set').value) || 0;
+        durationDays = parseFloat(overlay.querySelector('#qfee-duration-set').value) || 0;
         
-        overlay.querySelector('#fee-save-btn').onclick = () => {
-            targetGold = parseInt(overlay.querySelector('#fee-target-gold').value) || 0;
-            targetGems = parseInt(overlay.querySelector('#fee-target-gems').value) || 0;
-            localStorage.setItem(`wolvesville_fee_gold_${clanId}`, targetGold);
-            localStorage.setItem(`wolvesville_fee_gems_${clanId}`, targetGems);
-            updateModalContent(); // Re-render เพื่อแสดงผลใหม่ทันที
-        };
+        localStorage.setItem(`wolvesville_qfee_gold_${clanId}`, targetGold);
+        localStorage.setItem(`wolvesville_qfee_gems_${clanId}`, targetGems);
+        localStorage.setItem(`wolvesville_qfee_xp_${clanId}`, targetXp);
+        localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
+        
+        overlay.remove();
+        window.fetchClanData(clanId, true, true); // reload data
     };
-
-    updateModalContent();
     document.body.appendChild(overlay);
+};
+
+window.resetQuestFeeRound = (clanId) => {
+    showCustomConfirm(t('alert_warning'), 'ต้องการเริ่มรอบนับยอดใหม่หรือไม่?<br><br><span style="font-size:0.85rem; color:#64748b;">ระบบจะรีเซ็ตยอดทอง/เพชรเป็น 0 และเริ่มนับใหม่จากรายการบริจาค (Ledger) ตั้งแต่เวลานี้เป็นต้นไป พร้อมเริ่มจับเวลาใหม่</span>', true).then(confirmed => {
+        if (confirmed) {
+            localStorage.setItem(`wolvesville_qfee_reset_${clanId}`, Date.now().toString());
+            window.fetchClanData(clanId, true, true);
+        }
+    });
+};
+
+window.cancelScheduledQuest = (clanId, index) => {
+    let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
+    scheduled.splice(index, 1);
+    localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
+    window.fetchClanData(clanId, true, true);
 };
 
 // --- ฟังก์ชันกลางสำหรับคำนวณสถานะผู้เล่น ---
@@ -1660,7 +1597,18 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
                 ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
                 : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
             
+            // Save to localStorage for UI
+            let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
+            scheduled.push({
+                questId: questId,
+                questTitle: questTitle,
+                targetTime: targetTimeMs,
+                scheduledAt: Date.now()
+            });
+            localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
+
             showCustomAlert(t('alert_success'), `✅ ${t('txt_auto_buy_success')}<br><br><span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span>`);
+            window.fetchClanData(clanId, true, true);
         } else {
             const text = await res.text();
             try {
@@ -1678,219 +1626,14 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
 
 window.reloadActiveQuest = async (clanId, canEdit) => {
     const btn = document.getElementById('reload-quest-btn');
-    const wrapper = document.getElementById('active-quest-wrapper');
-    if (!wrapper) return;
-    
     if (btn) {
         btn.innerHTML = `<span class="material-icons loading-spinner" style="font-size:16px;">refresh</span>...`;
         btn.disabled = true;
     }
-
-    try {
-        const quests = await fetchData(`/clans/${clanId}/quests/active`);
-        const activeParticipants = currentParticipatingCount; 
-
-        let questsHtml = `<div style="text-align:center; color:#ccc; padding:20px;">${t('txt_no_active_quest')}</div>`;
-        
-        if (!quests.error && (quests.quest || (quests.id && (quests.promoImageUrl || quests.rewards)))) {
-            const qData = quests.quest ? quests : { quest: quests, ...quests }; 
-            const qInfo = qData.quest || qData; 
-
-            const isGemQuest = qInfo.purchasableWithGems === true;
-            const targetXp = isGemQuest ? (1125 + (175 * activeParticipants)) : (2000 + (500 * activeParticipants));
-
-            const currentTierIndex = (qData.tier !== undefined ? qData.tier : (qInfo.tier || 0));
-            const displayTier = currentTierIndex + 1;
-            let totalXp = qData.xp !== undefined ? qData.xp : (qInfo.xp || 0);
-            let currentXpInTier = totalXp - (currentTierIndex * targetXp);
-            if (currentXpInTier < 0) currentXpInTier = 0;
-            if (currentXpInTier > targetXp) currentXpInTier = targetXp;
-            const actionCost = 300 + (30 * activeParticipants);
-
-            let rewardsTrackHtml = '';
-            if (qInfo.rewards && Array.isArray(qInfo.rewards)) {
-                const totalSegments = Math.max(1, qInfo.rewards.length - 1);
-                let relativeProgress = currentTierIndex + (currentXpInTier / targetXp);
-                if (relativeProgress > totalSegments) relativeProgress = totalSegments;
-                const trackWidthPercent = Math.min(100, (relativeProgress / totalSegments) * 100);
-
-                rewardsTrackHtml = `
-                    <div class="battle-pass-hub">
-                        <div style="position: relative; min-width: max-content; padding: 0 10px;">
-                            <div class="xp-progress-wrapper" style="left: 50px; right: 50px;">
-                                <div class="xp-progress-fill" style="width:${trackWidthPercent}%;"></div>
-                            </div>
-                            <div class="battle-pass-track">
-                `;
-                
-                qInfo.rewards.forEach((r, idx) => {
-                    let imgUrl = 'https://via.placeholder.com/60?text=?';
-                    if(r.type === 'AVATAR_ITEM') {
-                        const item = avatarItemsCache.get(r.avatarItemId);
-                        if (item && item.imageUrl) imgUrl = item.imageUrl;
-                        else imgUrl = `https://cdn.wolvesville.com/avatarItems/png/256x/${r.avatarItemId}.png`;
-                    }
-                    else if(r.type === 'GOLD') imgUrl = EMBEDDED_ICONS.GOLD;
-                    else if(r.type === 'GEM' || r.type === 'GEMS') imgUrl = EMBEDDED_ICONS.GEM;
-                    else if(r.type === 'ROSE' || r.type === 'ROSES' || r.type === 'ROSE_PACKAGE') imgUrl = EMBEDDED_ICONS.ROSE;
-                    
-                    let statusClass = '';
-                    if (idx < currentTierIndex) statusClass = 'completed-tier';
-                    else if (idx === currentTierIndex) statusClass = 'active-tier';
-
-                    rewardsTrackHtml += `
-                        <div class="reward-step ${statusClass}">
-                            <div class="reward-icon-box">
-                                ${idx === currentTierIndex ? `<div class="xp-label-floating">${currentXpInTier.toLocaleString()} / ${targetXp.toLocaleString()} XP</div>` : ''}
-                                <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'" style="background:#f1f5f9; border-radius:10px;">
-                                ${r.amount > 1 ? `<span class="reward-badge">x${r.amount}</span>` : ''}
-                            </div>
-                            <div class="tier-label">${t('txt_tier')} ${idx + 1}</div>
-                        </div>
-                    `;
-                });
-                rewardsTrackHtml += '</div></div></div>';
-            }
-
-            const nowMs = Date.now();
-            const rawTierEnd = qData.tierEndTime || qInfo.tierEndTime;
-            const tierEndMs = rawTierEnd ? new Date(rawTierEnd).getTime() : 0;
-            
-            const isTimeRemaining = tierEndMs > nowMs;
-            const isTierFinished = qData.tierFinished || (currentXpInTier >= targetXp);
-
-            let countdownHtml = '';
-            let shouldShowSkip = false;
-            let shouldShowAddTime = false;
-
-            if (!isTierFinished) {
-                shouldShowAddTime = true;
-                shouldShowSkip = false;
-                
-                if (isTimeRemaining) {
-                    countdownHtml = `
-                        <div style="background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #1d4ed8; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                            <span class="material-icons" style="font-size: 20px;">timer</span>
-                            ${getLocale() === 'en' ? 'Time remaining for this tier:' : 'เวลาที่เหลือสำหรับด่านนี้:'} 
-                            <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
-                        </div>
-                    `;
-                } else {
-                    countdownHtml = `
-                        <div style="background: #fef2f2; border: 1px dashed #ef4444; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #b91c1c; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span class="material-icons" style="font-size: 20px;">error_outline</span>
-                            ${getLocale() === 'en' ? 'Time is up! Please add time or cancel.' : 'หมดเวลาทำเควสด่านนี้แล้ว กรุณาเพิ่มเวลาหรือยกเลิก'}
-                        </div>
-                    `;
-                }
-            } else {
-                shouldShowAddTime = false;
-                
-                if (isTimeRemaining) {
-                    shouldShowSkip = true; 
-                    countdownHtml = `
-                        <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                            <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
-                            ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
-                            <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
-                        </div>
-                    `;
-                } else {
-                    shouldShowSkip = false;
-                    countdownHtml = `
-                        <div style="background: #f0fdf4; border: 1px dashed #22c55e; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #16a34a; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span class="material-icons" style="font-size: 20px;">check_circle</span>
-                            ${getLocale() === 'en' ? 'Tier completed! Preparing next tier...' : 'เคลียร์ด่านนี้สำเร็จ กำลังเตรียมด่านต่อไป...'}
-                        </div>
-                    `;
-                }
-            }
-
-            let actionsHtml = '';
-            if (canEdit) {
-                actionsHtml = `
-                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px; flex-wrap:wrap;">
-                        ${shouldShowAddTime ? `
-                        <button onclick="window.claimQuestExtraTime('${clanId}')" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                            <span class="material-icons" style="font-size:18px;">alarm_add</span> ${t('txt_add_time')} (<span class="dynamic-action-price">${actionCost}</span>)
-                        </button>
-                        ` : ''}
-                        ${shouldShowSkip ? `
-                        <button onclick="window.skipQuestWaitingTime('${clanId}')" style="background:#8b5cf6; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);">
-                            <span class="material-icons" style="font-size:18px;">fast_forward</span> ${t('txt_skip_wait')} (<span class="dynamic-action-price">${actionCost}</span>)
-                        </button>
-                        ` : ''}
-                        <button onclick="window.cancelActiveQuest('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                            <span class="material-icons" style="font-size:18px;">cancel</span> ${t('txt_cancel_quest')}
-                        </button>
-                    </div>
-                `;
-            }
-
-            let participantsHtml = '';
-            if (qData.participants && Array.isArray(qData.participants) && qData.participants.length > 0) {
-                const sortedParts = [...qData.participants].sort((a, b) => b.xp - a.xp);
-                const listHtml = sortedParts.map((p, index) => {
-                    const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
-                    const safeUsername = escapeJsString(p.username || 'Unknown');
-                    return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-size:0.9rem;">
-                            <div>
-                                <span style="display:inline-block; width:24px; text-align:center; font-size:1.1rem;">${medal}</span>
-                                <strong style="cursor:pointer; color:var(--primary-color); margin-left:5px;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong>
-                            </div>
-                            <span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:2px 8px; border-radius:12px; font-size:0.8rem;">
-                                ${(p.xp || 0).toLocaleString()} XP
-                            </span>
-                        </div>
-                    `;
-                }).join('');
-                
-                participantsHtml = `
-                    <div style="margin-top:25px; border-top:1px dashed #e2e8f0; padding-top:15px;">
-                        <h5 style="margin:0 0 10px 0; color:#475569; display:flex; align-items:center; font-size:1rem;">
-                            <span class="material-icons" style="font-size:20px; margin-right:5px; color:#3b82f6;">leaderboard</span> ${t('txt_top_parts')}
-                        </h5>
-                        <div style="max-height:200px; overflow-y:auto; padding-right:5px; border:1px solid #f1f5f9; border-radius:8px; padding:10px; background:#f8fafc;" class="clan-scroll-area">
-                            ${listHtml}
-                        </div>
-                    </div>
-                `;
-            }
-
-            questsHtml = `
-                <div class="active-quest-container">
-                    <div class="active-quest-banner" style="background-image: url('${qInfo.promoImageUrl || 'https://via.placeholder.com/800x300'}')">
-                        <div class="active-quest-overlay">
-                            <h2 class="active-quest-title-lg" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${qInfo.title || 'Quest'} (${t('txt_tier')} ${displayTier})</h2>
-                            <div class="active-quest-meta-lg">
-                                <span class="material-icons" style="font-size:16px;">schedule</span> ${t('txt_ends')}: ${formatDateThai(qData.tierEndTime || qInfo.tierEndTime)}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="active-quest-body">
-                        <h4 style="margin:0; color:#475569; font-size:0.9rem; display:flex; align-items:center;">
-                            <span class="material-icons" style="font-size:18px; margin-right:5px; color:#f59e0b;">emoji_events</span> ${t('txt_quest_prog')}
-                        </h4>
-                        ${rewardsTrackHtml}
-                        ${countdownHtml}
-                        ${actionsHtml}
-                        ${participantsHtml}
-                    </div>
-                </div>
-            `;
-        }
-
-        wrapper.innerHTML = questsHtml;
-
-    } catch (e) {
-        console.error(e);
-        showCustomAlert(t('alert_error'), '❌ ' + e.message);
-    } finally {
-        if (btn) {
-            btn.innerHTML = `<span class="material-icons" style="font-size:16px;">refresh</span> ${t('btn_reload')}`;
-            btn.disabled = false;
-        }
+    await window.fetchClanData(clanId, canEdit, true);
+    if (btn) {
+        btn.innerHTML = `<span class="material-icons" style="font-size:16px;">refresh</span> ${t('btn_reload')}`;
+        btn.disabled = false;
     }
 };
 
@@ -2542,6 +2285,10 @@ function stopClanPolling() {
         clearInterval(clanPollingInterval);
         clanPollingInterval = null;
     }
+    if (inlineQfeeTimerInterval) {
+        clearInterval(inlineQfeeTimerInterval);
+        inlineQfeeTimerInterval = null;
+    }
     currentViewingClanId = null;
     isFirstRender = true;
 }
@@ -2702,6 +2449,29 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
 function renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, canEdit = false, isBackground = false, participatingMemberCount = 0) { 
     const memberMap = {};
     if (!members.error && Array.isArray(members)) members.forEach(m => memberMap[m.playerId] = m.username);
+
+    let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
+    let scheduledHtml = '';
+    if (scheduled.length > 0) {
+        scheduledHtml = `
+            <div style="background:#f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color:#334155; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:#8b5cf6;">schedule</span> เควสที่ตั้งเวลาไว้ (คิวอัตโนมัติ)</h4>
+                ${scheduled.map((sq, idx) => {
+                    const timeStr = sq.targetTime > 0 ? new Date(sq.targetTime).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') : 'ทันทีที่แคลนว่าง';
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px; background:white; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:5px;">
+                            <div>
+                                <strong style="color:var(--primary-color);">${sq.questTitle}</strong>
+                                <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
+                            </div>
+                            <button onclick="window.cancelScheduledQuest('${clanId}', ${idx})" style="background:#fee2e2; color:#dc2626; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">ยกเลิกรายการ (UI)</button>
+                        </div>
+                    `;
+                }).join('')}
+                <div style="font-size:0.7rem; color:#ef4444; margin-top:5px;">* การยกเลิกใน UI จะลบการแสดงผลออกเท่านั้น หากคำสั่งไปถึง Vercel แล้ว อาจจะยังคงทำงานอยู่</div>
+            </div>
+        `;
+    }
 
     let questsHtml = `<div style="text-align:center; color:#ccc; padding:20px;">${t('txt_no_active_quest')}</div>`;
     let hasActiveQuest = false;
@@ -2896,6 +2666,123 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             </div>
         `;
     } 
+
+    let feeTrackerHtml = '';
+    if (canEdit) {
+        let targetGold = parseInt(localStorage.getItem(`wolvesville_qfee_gold_${clanId}`)) || 0;
+        let targetGems = parseInt(localStorage.getItem(`wolvesville_qfee_gems_${clanId}`)) || 0;
+        let targetXp = parseInt(localStorage.getItem(`wolvesville_qfee_xp_${clanId}`)) || 0;
+        let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
+        let resetTime = parseInt(localStorage.getItem(`wolvesville_qfee_reset_${clanId}`)) || 0;
+
+        const endTimeMs = durationDays > 0 && resetTime > 0 ? resetTime + (durationDays * 24 * 60 * 60 * 1000) : 0;
+        const nowMsFee = Date.now();
+
+        const donations = {};
+        let participatingMembers = [];
+        if (Array.isArray(members)) {
+            participatingMembers = members.filter(m => m.participateInClanQuests);
+            participatingMembers.forEach(m => {
+                donations[m.playerId] = { gold: 0, gems: 0, xp: m.xpDurations?.week || 0 };
+            });
+        }
+
+        if (Array.isArray(currentClanLedger)) {
+            currentClanLedger.forEach(entry => {
+                const entryTime = new Date(entry.creationTime || entry.date).getTime();
+                if (entry.type === 'DONATE' && entryTime >= resetTime) {
+                    if (endTimeMs === 0 || entryTime <= endTimeMs) {
+                        if (donations[entry.playerId]) {
+                            if (entry.gold) donations[entry.playerId].gold += entry.gold;
+                            if (entry.gems) donations[entry.playerId].gems += entry.gems;
+                        }
+                    }
+                }
+            });
+        }
+
+        let paidCount = 0;
+        let listHtml = '';
+        
+        participatingMembers.sort((a, b) => a.username.localeCompare(b.username)).forEach(p => {
+            const don = donations[p.playerId];
+            const isGoldMet = targetGold === 0 || don.gold >= targetGold;
+            const isGemsMet = targetGems === 0 || don.gems >= targetGems;
+            const isXpMet = targetXp === 0 || don.xp >= targetXp;
+            
+            const noFeeSet = targetGold === 0 && targetGems === 0 && targetXp === 0;
+            const isPaid = !noFeeSet && isGoldMet && isGemsMet && isXpMet;
+
+            if (isPaid) paidCount++;
+
+            const btnStyle = isPaid 
+                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
+                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
+            
+            const btnText = isPaid 
+                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ผ่านเกณฑ์` 
+                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> ยังไม่ตั้งค่า` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ไม่ผ่าน`);
+            
+            let missingText = [];
+            if (!noFeeSet) {
+                if (!isGoldMet) missingText.push(`ขาด ${(targetGold - don.gold).toLocaleString()} ทอง`);
+                if (!isGemsMet) missingText.push(`ขาด ${(targetGems - don.gems).toLocaleString()} เพชร`);
+                if (!isXpMet) missingText.push(`ขาด ${(targetXp - don.xp).toLocaleString()} XP`);
+            }
+
+            listHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; background:white;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${p.equippedAvatar?.url || (p.profileIconId ? `https://cdn-avatars.wolvesville.com/${p.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:24px; height:24px; border-radius:6px; object-fit:contain; background:#f8fafc;">
+                        <div>
+                            <strong style="color:#1e293b; font-size:0.9rem; cursor:pointer;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username}</strong>
+                            <div style="font-size:0.7rem; color:#64748b;">
+                                <strong style="color:#d97706;">${don.gold.toLocaleString()} 💰</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} 💎</strong> | <strong style="color:#16a34a;">${don.xp.toLocaleString()} XP</strong>
+                            </div>
+                            ${missingText.length > 0 ? `<div style="font-size:0.65rem; color:#dc2626;">${missingText.join(' / ')}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="${btnStyle} padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; min-width: max-content;">
+                        ${btnText}
+                    </div>
+                </div>
+            `;
+        });
+
+        const resetDateStr = resetTime > 0 ? formatDateThai(resetTime) : 'ยังไม่เคยรีเซ็ต';
+        let timerHtml = '';
+        if (resetTime > 0 && durationDays > 0) {
+            if (nowMsFee >= endTimeMs) {
+                timerHtml = `<div style="font-size:0.75rem; color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</div>`;
+            } else {
+                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">คำนวณ...</span></div>`;
+            }
+        }
+
+        feeTrackerHtml = `
+            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                    <h4 style="margin:0; color:#334155; font-size:1.05rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:var(--primary-color);">price_check</span> สถานะการจ่ายค่าเควส (เฉพาะคนที่เข้าร่วม)</h4>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="window.openQuestFeeSettings('${clanId}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
+                            <span class="material-icons" style="font-size:16px;">settings</span> ตั้งค่า
+                        </button>
+                        <button onclick="window.resetQuestFeeRound('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
+                            <span class="material-icons" style="font-size:16px;">refresh</span> เริ่มรอบใหม่
+                        </button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center;">
+                    <div>เริ่มรอบ: <strong>${resetDateStr}</strong></div>
+                    ${timerHtml}
+                    <div>ผ่านเกณฑ์: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${participatingMembers.length}</strong></div>
+                </div>
+                <div style="max-height:250px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
+                    ${listHtml || '<div style="padding:15px; text-align:center; color:#94a3b8;">ไม่มีสมาชิกที่เปิดเข้าร่วมเควส</div>'}
+                </div>
+            </div>
+        `;
+    }
 
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
@@ -3224,7 +3111,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </button>
                 </h3>
                 <div id="clan-quests-container">
+                    ${scheduledHtml}
                     <div id="active-quest-wrapper">${questsHtml}</div>
+                    ${feeTrackerHtml}
                     <div id="available-quests-wrapper">${availableQuestsHtml}</div>
                 </div>
             </div>
@@ -3235,9 +3124,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         ${canEdit ? `
                         <button onclick="window.openInactivityMonitor('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
                             <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
-                        </button>
-                        <button onclick="window.openFeeTracker('${clanId}')" style="background:#10b981; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(16, 185, 129, 0.2);">
-                            <span class="material-icons" style="font-size:14px; margin-right:4px;">price_check</span> ${t('txt_fee_tracker_title')}
                         </button>
                         ` : ''}
                         <div>
@@ -3322,6 +3208,30 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 const s = Math.floor((diff % (1000 * 60)) / 1000);
                 timerEl.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
+        }
+    }, 1000);
+
+    // --- เริ่มระบบจับเวลา Fee Tracker ---
+    if (inlineQfeeTimerInterval) clearInterval(inlineQfeeTimerInterval);
+    inlineQfeeTimerInterval = setInterval(() => {
+        const el = document.getElementById('inline-qfee-timer');
+        if (!el) return;
+        const endTimeMs = parseInt(el.getAttribute('data-time'));
+        const now = Date.now();
+        if (now >= endTimeMs) {
+            el.innerHTML = '<span style="color:#ef4444; font-weight:bold;">หมดเวลาแล้ว!</span>';
+            clearInterval(inlineQfeeTimerInterval);
+        } else {
+            const diff = endTimeMs - now;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            let tStr = '';
+            if(d>0) tStr += `${d} วัน `;
+            if(h>0 || d>0) tStr += `${h} ชม. `;
+            tStr += `${m} นาที ${s} วิ`;
+            el.innerText = tStr;
         }
     }, 1000);
 }
