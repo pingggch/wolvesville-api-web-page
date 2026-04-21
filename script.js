@@ -185,6 +185,16 @@ const langDict = {
         txt_monitor_desc: "สมาชิกที่ไม่ออนไลน์เกิน 3 วัน หรือ XP สัปดาห์นี้เป็น 0",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "ไม่ออนไลน์มาแล้ว",
+
+        // Fee Tracker
+        txt_fee_tracker_title: "เช็คสถานะจ่ายค่าแคลน",
+        txt_fee_tracker_desc: "ข้อมูลการติ๊กจ่ายจะถูกบันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น",
+        btn_reset_fees: "รีเซ็ตทั้งหมด",
+        txt_paid: "จ่ายแล้ว",
+        txt_unpaid: "ยังไม่จ่าย",
+
+        // Quest Fee Tracker
+        txt_quest_fee_title: "เช็คค่าเควส (รายสัปดาห์)",
         
         // API Consent
         api_consent_title: "🛡️ ข้อตกลงการใช้งาน API Key",
@@ -392,6 +402,16 @@ const langDict = {
         txt_monitor_desc: "Offline for 3+ days or 0 XP this week",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "Offline for",
+
+        // Fee Tracker
+        txt_fee_tracker_title: "Fee Tracker",
+        txt_fee_tracker_desc: "Data is saved locally in your browser.",
+        btn_reset_fees: "Reset All",
+        txt_paid: "Paid",
+        txt_unpaid: "Unpaid",
+
+        // Quest Fee Tracker
+        txt_quest_fee_title: "Quest Fees (Weekly)",
 
         // API Consent
         api_consent_title: "🛡️ API Key Usage Consent",
@@ -1413,6 +1433,7 @@ window.toggleQuestFromList = async (clanId, playerId, currentStatus, btnElement)
         currentParticipatingCount += change;
         if(currentParticipatingCount < 0) currentParticipatingCount = 0;
         updatePricesClientSide();
+        window.fetchClanData(clanId, true, true);
     }
 };
 
@@ -3067,8 +3088,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const cMem = document.getElementById('clan-members-list'); if (cMem && cMem.innerHTML !== membersHtml) cMem.innerHTML = membersHtml;
         const cLog = document.getElementById('clan-logs-list'); if (cLog && cLog.innerHTML !== logsHtml) cLog.innerHTML = logsHtml;
         
+        const cScheduled = document.getElementById('scheduled-quests-wrapper');
+        if (cScheduled && cScheduled.innerHTML !== scheduledHtml) cScheduled.innerHTML = scheduledHtml;
+        
         const cActiveQuest = document.getElementById('active-quest-wrapper');
         if (cActiveQuest && cActiveQuest.innerHTML !== questsHtml) cActiveQuest.innerHTML = questsHtml;
+        
+        const cFeeTracker = document.getElementById('fee-tracker-wrapper');
+        if (cFeeTracker && cFeeTracker.innerHTML !== feeTrackerHtml) cFeeTracker.innerHTML = feeTrackerHtml;
+        
         const cAvailQuest = document.getElementById('available-quests-wrapper');
         if (cAvailQuest && cAvailQuest.innerHTML !== availableQuestsHtml) cAvailQuest.innerHTML = availableQuestsHtml;
 
@@ -3111,9 +3139,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     </button>
                 </h3>
                 <div id="clan-quests-container">
-                    ${scheduledHtml}
+                    <div id="scheduled-quests-wrapper">${scheduledHtml}</div>
                     <div id="active-quest-wrapper">${questsHtml}</div>
-                    ${feeTrackerHtml}
+                    <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
                     <div id="available-quests-wrapper">${availableQuestsHtml}</div>
                 </div>
             </div>
