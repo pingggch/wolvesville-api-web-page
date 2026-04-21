@@ -1039,8 +1039,8 @@ function showMemberModal(data) {
              </div>
         </div>
 
-        <div style="margin-top:15px; font-size:0.75rem; color:#94a3b8; text-align:center;">
-            ${t('txt_p_id')}: <span style="font-family:monospace;">${data.playerId || data.id}</span>
+        <div style="margin-top:15px; font-size:0.85rem; color:#64748b; text-align:center;">
+            <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.playerId || data.id}</span>
         </div>
     `;
     
@@ -2167,8 +2167,8 @@ function renderPlayerProfile(data) {
                 </div>
 
                 <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
-                <div style="font-size:0.8rem; color:#94a3b8; margin-top:10px;">
-                    ID: ${data.id} <br>
+                <div style="font-size:0.85rem; color:#64748b; margin-top:10px;">
+                    <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.id}</span> <br>
                     ${t('txt_joined')}: ${formatDateThai(data.creationTime)} | ${t('txt_last_online')}: ${formatDateThai(data.lastOnline)}
                 </div>
             </div>
@@ -2992,7 +2992,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 <div class="clan-bio">${linkify(info.description || '-')}</div>
                 <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
-                    <strong>ID แคลน:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
+                    <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
                     Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
                 </div>
             </div>
