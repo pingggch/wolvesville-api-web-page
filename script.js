@@ -153,7 +153,7 @@ const langDict = {
         txt_shuffle_votes: "รายชื่อคนโหวตสุ่ม",
         txt_buy_quest: "ซื้อเควส",
         
-        // Auto Quest System - แก้ไขข้อความแจ้งเตือนให้สบายใจขึ้น
+        // Auto Quest System
         txt_auto_buy: "🤖 ตั้งเวลาซื้ออัตโนมัติ",
         txt_auto_buy_confirm: "ระบบจะซื้อเควสนี้ให้อัตโนมัติทันทีที่แคลนว่างและมีเงินเพียงพอ<br><br><span style='color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:8px; display:inline-block; border:1px solid #fecaca; line-height: 1.5; text-align: left;'>⚠️ <b>ข้อชี้แจง:</b> เพื่อให้ระบบทำงานแทนคุณได้ตอนปิดเว็บ API Key ของคุณจะถูกบันทึกไว้ในเซิร์ฟเวอร์ชั่วคราว<br>🛡️ <i>เราขอให้คำมั่นสัญญาว่าจะไม่มีการแอบดู หรือนำ API ของคุณไปใช้ทำอย่างอื่นโดยเด็ดขาดครับ</i></span><br><br>ยืนยันการตั้งเวลาสำหรับเควส:",
         txt_auto_buy_success: "✅ บันทึกการตั้งเวลาสำเร็จ (ระบบจะตรวจสอบและซื้อให้อัตโนมัติ)",
@@ -169,7 +169,7 @@ const langDict = {
         txt_clan_logs: "บันทึกกิจกรรมแคลน",
         txt_clan_ledger: "บัญชีรายรับ-รายจ่ายแคลน",
         txt_quest_hist: "ประวัติการทำเควส",
-        txt_no_unclaim: "ไม่มีเควสที่ค้างรับรางวัล",
+        txt_no_unclaim: "ไม่มีประวัติการทำเควส",
         txt_parts_list: "รายชื่อผู้เข้าร่วม",
         txt_no_parts: "ไม่มีข้อมูลผู้เข้าร่วม",
         txt_blocklist_mgr: "จัดการแบล็คลิสต์ (บัญชีดำ)",
@@ -370,7 +370,7 @@ const langDict = {
         txt_clan_logs: "Clan Logs",
         txt_clan_ledger: "Clan Ledger",
         txt_quest_hist: "Quest History",
-        txt_no_unclaim: "No unclaimed quests",
+        txt_no_unclaim: "No quest history available",
         txt_parts_list: "Participants List",
         txt_no_parts: "No participants data",
         txt_blocklist_mgr: "Blocklist Manager",
@@ -2909,50 +2909,54 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         ledgerHtml += '</div>';
     }
 
-    let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">${t('txt_no_unclaim')}</div>`;
+    let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">ไม่มีประวัติการทำเควส</div>`;
     if (!history.error && Array.isArray(history) && history.length > 0) {
-        const unclaimedQuests = history.filter(h => !h.claimedTime);
-        if (unclaimedQuests.length > 0) { 
-            historyHtml = '<div class="history-list">';
-            historyHtml += unclaimedQuests.map(h => {
-                 const questTitle = h.quest?.title || `Tier ${h.tier}`;
-                 const endDate = h.tierEndTime || h.endTime;
-                 const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
+        historyHtml = '<div class="history-list">';
+        // นำ history มาวนลูปทั้งหมด โดยไม่ต้อง filter claimedTime ทิ้ง
+        historyHtml += history.map(h => {
+             const questTitle = h.quest?.title || `Tier ${h.tier}`;
+             const endDate = h.tierEndTime || h.endTime;
+             const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
 
-                 let participantsHtml = '';
-                 if (h.participants && Array.isArray(h.participants)) {
-                     const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
-                     participantsHtml = sortedParts.map((p, index) => {
-                         const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
-                         return `
-                             <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                                 <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
-                                 <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
-                             </div>
-                          `;
-                      }).join('');
-                 }
+             // เช็คสถานะว่ารับรางวัลไปหรือยัง (ถ้ามี claimedTime แสดงว่ารับแล้ว)
+             const statusBadge = h.claimedTime
+                 ? `<span style="color:#16a34a; font-size:0.75rem; font-weight:bold;"><span class="material-icons" style="font-size:12px; vertical-align:middle;">check_circle</span> รับรางวัลแล้ว</span>`
+                 : `<span style="color:#ef4444; font-size:0.75rem; font-weight:bold;"><span class="material-icons" style="font-size:12px; vertical-align:middle;">hourglass_empty</span> ยังไม่ได้รับรางวัล</span>`;
 
-                 return `
-                    <div class="history-item" style="border-left:4px solid var(--warning); display:block;">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
-                            <div style="display:flex; flex-direction:column; flex:1;">
-                                <div style="font-weight:600; color:#334155;">${questTitle}</div>
-                                <div style="font-size:0.75rem; color:#94a3b8;">${t('txt_ends')}: ${formatDateThai(endDate)}</div>
-                            </div>
+             let participantsHtml = '';
+             if (h.participants && Array.isArray(h.participants)) {
+                 const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
+                 participantsHtml = sortedParts.map((p, index) => {
+                     const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
+                     return `
+                         <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
+                             <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
+                             <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
+                         </div>
+                      `;
+                  }).join('');
+             }
+
+             return `
+                <div class="history-item" style="border-left:4px solid ${h.claimedTime ? '#22c55e' : 'var(--warning)'}; display:block; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display:flex; align-items:center;">
+                        <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
+                        <div style="display:flex; flex-direction:column; flex:1;">
+                            <div style="font-weight:600; color:#334155;">${questTitle}</div>
+                            <div style="font-size:0.75rem; color:#94a3b8;">${t('txt_ends')}: ${formatDateThai(endDate)}</div>
+                            <div style="margin-top: 4px;">${statusBadge}</div>
                         </div>
-                        <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
-                            <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
-                            <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
-                                ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
-                            </div>
-                        </details>
                     </div>
-                 `;
-            }).join('');
-            historyHtml += '</div>';
-        }
+                    <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
+                        <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
+                        <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
+                            ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
+                        </div>
+                    </details>
+                </div>
+             `;
+        }).join('');
+        historyHtml += '</div>';
     }
 
     if (isBackground && isFirstRender === false) {
@@ -2988,6 +2992,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
                 <div class="clan-bio">${linkify(info.description || '-')}</div>
                 <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
+                    <strong>ID แคลน:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
                     Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
                 </div>
             </div>
