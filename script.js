@@ -60,7 +60,7 @@ const langDict = {
 
         // Feedback Modal
         feedback_title: "<span class=\"material-icons\">rate_review</span> ส่งคำติชม / รายงานปัญหา",
-        feedback_desc: "หากพบเจอบัคหรือมีไอเดียใหม่ๆ สามารถพิมพ์แจ้งเราได้เลยครับ (แนบรูปภาพได้ด้วยนะ)",
+        feedback_desc: "หากพบเจอบัคหรือมีไอเดียใหม่ๆ สามารถพิมพ์แจ้งเราได้เลยครับ",
         feedback_topic: "หัวข้อ",
         feedback_opt_bug: "🐛 รายงานปัญหา (Bug)",
         feedback_opt_sug: "💡 ข้อเสนอแนะ (Suggestion)",
