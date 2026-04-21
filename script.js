@@ -185,6 +185,13 @@ const langDict = {
         txt_monitor_desc: "สมาชิกที่ไม่ออนไลน์เกิน 3 วัน หรือ XP สัปดาห์นี้เป็น 0",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "ไม่ออนไลน์มาแล้ว",
+
+        // Fee Tracker
+        txt_fee_tracker_title: "เช็คสถานะจ่ายค่าแคลน",
+        txt_fee_tracker_desc: "ข้อมูลการติ๊กจ่ายจะถูกบันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น",
+        btn_reset_fees: "รีเซ็ตทั้งหมด",
+        txt_paid: "จ่ายแล้ว",
+        txt_unpaid: "ยังไม่จ่าย",
         
         // API Consent
         api_consent_title: "🛡️ ข้อตกลงการใช้งาน API Key",
@@ -393,6 +400,13 @@ const langDict = {
         btn_copy_id: "Copy ID",
         txt_inactive_days: "Offline for",
 
+        // Fee Tracker
+        txt_fee_tracker_title: "Fee Tracker",
+        txt_fee_tracker_desc: "Data is saved locally in your browser.",
+        btn_reset_fees: "Reset All",
+        txt_paid: "Paid",
+        txt_unpaid: "Unpaid",
+
         // API Consent
         api_consent_title: "🛡️ API Key Usage Consent",
         api_consent_desc: "This website requires your API Key to fetch and display data from Wolvesville.",
@@ -472,6 +486,8 @@ let isCurrentViewMyClan = false;
 let isFirstRender = true; 
 let currentParticipatingCount = 0; 
 let questCooldownInterval = null;
+
+let currentClanLedger = []; // เพิ่มตัวแปรนี้สำหรับเก็บ Ledger ปัจจุบันมาใช้กับ Fee Tracker
 
 // 🌟 ตัวแปรเก็บ Request ID เพื่อป้องกัน API วิ่งชนกัน (Race Condition) 🌟
 let currentClanRequestId = 0; 
@@ -910,6 +926,139 @@ window.openInactivityMonitor = (clanId) => {
 
     contentHtml += `</div>`;
     showCustomInfoModal(t('txt_monitor_title'), contentHtml);
+};
+
+window.openFeeTracker = (clanId) => {
+    if (!clanMembersDetailedMap || clanMembersDetailedMap.size === 0) return showCustomAlert(t('alert_warning'), 'กรุณาโหลดข้อมูลสมาชิกแคลนก่อน');
+
+    let targetGold = parseInt(localStorage.getItem(`wolvesville_fee_gold_${clanId}`)) || 0;
+    let targetGems = parseInt(localStorage.getItem(`wolvesville_fee_gems_${clanId}`)) || 0;
+
+    // คำนวณยอดการบริจาค (DONATE) ของแต่ละคนจากข้อมูล Ledger ปัจจุบัน
+    const donations = {};
+    if (Array.isArray(currentClanLedger)) {
+        currentClanLedger.forEach(entry => {
+            if (entry.type === 'DONATE') {
+                if (!donations[entry.playerId]) donations[entry.playerId] = { gold: 0, gems: 0 };
+                if (entry.gold) donations[entry.playerId].gold += entry.gold;
+                if (entry.gems) donations[entry.playerId].gems += entry.gems;
+            }
+        });
+    }
+
+    const renderTracker = () => {
+        let membersArr = [];
+        clanMembersDetailedMap.forEach(m => membersArr.push(m));
+        membersArr.sort((a, b) => a.username.localeCompare(b.username));
+
+        let paidCount = 0;
+        let listHtml = '';
+        
+        membersArr.forEach(p => {
+            const don = donations[p.playerId] || { gold: 0, gems: 0 };
+            const isGoldMet = targetGold === 0 || don.gold >= targetGold;
+            const isGemsMet = targetGems === 0 || don.gems >= targetGems;
+            
+            const noFeeSet = targetGold === 0 && targetGems === 0;
+            const isPaid = !noFeeSet && isGoldMet && isGemsMet;
+
+            if (isPaid) paidCount++;
+
+            const btnStyle = isPaid 
+                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
+                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
+            
+            const btnText = isPaid 
+                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ${t('txt_paid')}` 
+                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> ยังไม่ตั้งราคา` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ${t('txt_unpaid')}`);
+            
+            let missingText = [];
+            if (!noFeeSet) {
+                if (!isGoldMet) missingText.push(`ขาด ${(targetGold - don.gold).toLocaleString()} ทอง`);
+                if (!isGemsMet) missingText.push(`ขาด ${(targetGems - don.gems).toLocaleString()} เพชร`);
+            }
+
+            listHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid #f1f5f9; background:white;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${p.equippedAvatar?.url || (p.profileIconId ? `https://cdn-avatars.wolvesville.com/${p.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:30px; height:30px; border-radius:8px; object-fit:contain; background:#f8fafc;">
+                        <div>
+                            <strong style="color:#1e293b; font-size:0.95rem;">${p.username}</strong>
+                            <div style="font-size:0.75rem; color:#64748b;">
+                                จ่ายมาแล้ว: <strong style="color:#d97706;">${don.gold.toLocaleString()} ทอง</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} เพชร</strong>
+                            </div>
+                            ${missingText.length > 0 ? `<div style="font-size:0.7rem; color:#dc2626;">${missingText.join(' และ ')}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="${btnStyle} padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:bold; display:flex; align-items:center;">
+                        ${btnText}
+                    </div>
+                </div>
+            `;
+        });
+
+        const total = membersArr.length;
+        
+        let contentHtml = `
+            <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">settings</span> ตั้งค่าราคาเป้าหมาย</h4>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:120px;">
+                        <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง (Gold)</label>
+                        <input type="number" id="fee-target-gold" value="${targetGold}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย เพชร (Gems)</label>
+                        <input type="number" id="fee-target-gems" value="${targetGems}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <button id="fee-save-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; align-self:flex-end;">บันทึก</button>
+                </div>
+                <div style="font-size:0.75rem; color:#ef4444; margin-top:8px;">* ระบบจะนับจากประวัติบัญชีแคลน (Ledger) ของเกมเท่านั้น ซึ่งระบบเกมมักจะเก็บย้อนหลังแค่รายการล่าสุดๆ</div>
+            </div>
+            
+            <div id="fee-summary-text" style="font-size:1.1rem; color:#334155; font-weight:normal; margin-bottom:15px; text-align:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px dashed #cbd5e1;">
+                จ่ายครบตามเป้าหมายแล้ว: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${total}</strong> คน
+            </div>
+            <div style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
+                ${listHtml}
+            </div>
+        `;
+
+        return contentHtml;
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    
+    const updateModalContent = () => {
+        overlay.innerHTML = `
+            <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 700px;">
+                <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span class="material-icons" style="color:var(--primary-color);">price_check</span> ${t('txt_fee_tracker_title')}
+                </h3>
+                <div id="fee-tracker-container">
+                    ${renderTracker()}
+                </div>
+                <div class="custom-modal-buttons">
+                    <button class="btn-modal btn-confirm">${t('btn_close')}</button>
+                </div>
+            </div>
+        `;
+
+        overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
+        overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+        
+        overlay.querySelector('#fee-save-btn').onclick = () => {
+            targetGold = parseInt(overlay.querySelector('#fee-target-gold').value) || 0;
+            targetGems = parseInt(overlay.querySelector('#fee-target-gems').value) || 0;
+            localStorage.setItem(`wolvesville_fee_gold_${clanId}`, targetGold);
+            localStorage.setItem(`wolvesville_fee_gems_${clanId}`, targetGems);
+            updateModalContent(); // Re-render เพื่อแสดงผลใหม่ทันที
+        };
+    };
+
+    updateModalContent();
+    document.body.appendChild(overlay);
 };
 
 // --- ฟังก์ชันกลางสำหรับคำนวณสถานะผู้เล่น ---
@@ -2470,6 +2619,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     updateProgress('load_ledger');
     const ledger = await fetchData(`/clans/${clanId}/ledger`);
     if (reqId !== currentClanRequestId) return;
+    currentClanLedger = Array.isArray(ledger) && !ledger.error ? ledger : []; // เซฟค่า Ledger ไว้ใช้กับ Fee Tracker
 
     updateProgress('load_history');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
@@ -3088,6 +3238,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         ${canEdit ? `
                         <button onclick="window.openInactivityMonitor('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
                             <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
+                        </button>
+                        <button onclick="window.openFeeTracker('${clanId}')" style="background:#10b981; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(16, 185, 129, 0.2);">
+                            <span class="material-icons" style="font-size:14px; margin-right:4px;">price_check</span> ${t('txt_fee_tracker_title')}
                         </button>
                         ` : ''}
                         <div>
