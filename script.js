@@ -133,7 +133,7 @@ const langDict = {
         txt_search_clan: "กำลังค้นหาแคลน...",
         txt_not_in_clan: "❌ บัญชีนี้ยังไม่ได้เข้าร่วมแคลนใดๆ",
         txt_clan_not_found: "❌ ไม่พบแคลนที่คุณค้นหา",
-        txt_auto_update: "[ระบบอัปเดตอัตโนมัติ] เปิดใช้งานแล้ว (รีเฟรชทุก 60 วินาที)",
+        txt_auto_update: "[ระบบอัปเดตอัตโนมัติ] เปิดใช้งานแล้ว (รีเฟรชทุก 1 วินาที)",
         txt_loading_clan: "กำลังโหลดข้อมูลแคลน...",
         txt_members: "สมาชิก",
         txt_clan_xp: "XP แคลน",
@@ -350,7 +350,7 @@ const langDict = {
         txt_search_clan: "Searching Clan...",
         txt_not_in_clan: "❌ You are not in any clan",
         txt_clan_not_found: "❌ Clan not found",
-        txt_auto_update: "[Auto-Update] Enabled (60s interval)",
+        txt_auto_update: "[Auto-Update] Enabled (1s interval)",
         txt_loading_clan: "Loading Clan Data...",
         txt_members: "Members",
         txt_clan_xp: "Clan XP",
@@ -923,7 +923,7 @@ window.openInactivityMonitor = (clanId) => {
                             | <span style="color:#64748b;">XP: ${p.xpWeek.toLocaleString()}</span>
                         </div>
                     </div>
-                    <button onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.kickMemberFromList('${clanId}', '${p.playerId}', '${escapeJsString(p.username)}')" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                    <button onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.kickMemberFromList('${clanId}', '${p.playerId}', '${escapeJsString(p.username)}')" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
                         <span class="material-icons" style="font-size:14px;">person_remove</span> ${getLocale() === 'en' ? 'Kick' : 'เตะออก'}
                     </button>
                 </div>
@@ -1268,7 +1268,7 @@ window.showQuestModal = (questId) => {
     let votesHtml = '<p style="color:#64748b; font-style:italic;">0</p>';
     if (clanVotesCache && clanVotesCache.votes && clanVotesCache.votes[questId]) {
         const voterIds = clanVotesCache.votes[questId];
-        if (voterIds.length > 0) {
+        if ( voterIds.length > 0) {
             const voterNames = voterIds.map(vid => clanMembersCache[vid] || 'Unknown').join(', ');
             votesHtml = `<div style="margin-top:5px; font-size:0.9rem; color:#475569; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">${voterNames}</div>`;
         }
@@ -2111,7 +2111,7 @@ function renderPlayerProfile(data) {
         
         let roleIconHtml = `<span class="material-icons" style="color:rgba(255,255,255,0.8);">style</span>`;
         if (roleData.image && roleData.image.url) {
-            roleIconHtml = `<img src="${roleData.image.url}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));">`;
+            roleIconHtml = `<img src="${roleData.image.url}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));">`;
         }
 
         const advancedList = (c.roleIdsAdvanced || [])
@@ -2292,13 +2292,13 @@ function startClanPolling(clanId, isMyClan) {
     isFirstRender = true;
     console.log(t('txt_auto_update'));
     
+    // ปรับความถี่จาก 60,000 เป็น 1,000 (1 วินาที)
     clanPollingInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
-            // เมื่อ Polling ทำงาน ก็ส่งคิวใหม่ให้ไปเลย จะได้ไม่ขัดกัน
             currentClanRequestId++;
             fetchClanData(clanId, isMyClan, true, currentClanRequestId); 
         }
-    }, 60000); 
+    }, 1000); 
 }
 
 function stopClanPolling() {
@@ -2318,14 +2318,13 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
 
-    // ถ้าไม่มี reqId ส่งมา (แสดงว่าถูกเรียกจากจุดอื่นที่ไม่ใช่ Search) ให้เจนคิวใหม่
     if (reqId === null) {
         currentClanRequestId++;
         reqId = currentClanRequestId;
     }
 
     const updateProgress = (textKey, extraText = '') => {
-        if (reqId !== currentClanRequestId) return; // ยกเลิกถ้ามีคิวใหม่มาแทรก
+        if (reqId !== currentClanRequestId) return; 
         if(!isBackground) {
             currentStep++;
             const percent = Math.min(100, Math.round((currentStep / totalSteps) * 100));
@@ -2346,7 +2345,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     if(!isBackground) { isFirstRender = true; updateProgress('load_init'); }
     
     await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
-    if (reqId !== currentClanRequestId) return; // ยกเลิกถ้าโดนเรียกทับ
+    if (reqId !== currentClanRequestId) return; 
     
     updateProgress('load_info');
     const info = await fetchData(`/clans/${clanId}/info`);
@@ -2384,7 +2383,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     updateProgress('load_ledger');
     const ledger = await fetchData(`/clans/${clanId}/ledger`);
     if (reqId !== currentClanRequestId) return;
-    currentClanLedger = Array.isArray(ledger) && !ledger.error ? ledger : []; // เซฟค่า Ledger ไว้ใช้กับ Fee Tracker
+    currentClanLedger = Array.isArray(ledger) && !ledger.error ? ledger : []; 
 
     updateProgress('load_history');
     const history = await fetchData(`/clans/${clanId}/quests/history`);
@@ -2408,7 +2407,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
             const playersData = [];
             updateProgress('load_blocked_p');
             for (const item of blocklistRes.slice(0, 50)) {
-                if (reqId !== currentClanRequestId) return; // เช็คถี่ๆ ตอนวนลูป
+                if (reqId !== currentClanRequestId) return; 
                 const pid = extractId(item);
                 if (pid) playersData.push(await fetchData(`/players/${pid}`));
                 else playersData.push({ error: true });
@@ -2442,7 +2441,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
         updateProgress('load_avatars', ` (${membersRaw.length} คน)...`);
         const membersList = [];
         for (const m of membersRaw) {
-            if (reqId !== currentClanRequestId) return; // เช็คถี่ๆ ตอนวนลูป
+            if (reqId !== currentClanRequestId) return; 
             if (playerAvatarCache.has(m.playerId)) membersList.push({ ...m, ...playerAvatarCache.get(m.playerId) });
             else {
                 const detail = await fetchData(`/players/${m.playerId}`);
@@ -2462,7 +2461,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
 
     updateProgress('load_dash');
     setTimeout(() => {
-        if (reqId !== currentClanRequestId) return; // เช็คครั้งสุดท้ายก่อนวาด UI
+        if (reqId !== currentClanRequestId) return; 
         renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
     }, 500); 
 }
