@@ -60,7 +60,7 @@ const langDict = {
 
         // Feedback Modal
         feedback_title: "<span class=\"material-icons\">rate_review</span> ส่งคำติชม / รายงานปัญหา",
-        feedback_desc: "หากพบเจอบัคหรือมีไอเดียใหม่ๆ สามารถพิมพ์แจ้งเราได้เลยครับ",
+        feedback_desc: "หากพบเจอบัคหรือมีไอเดียใหม่ๆ สามารถพิมพ์แจ้งเราได้เลยครับ (แนบรูปภาพได้ด้วยนะ)",
         feedback_topic: "หัวข้อ",
         feedback_opt_bug: "🐛 รายงานปัญหา (Bug)",
         feedback_opt_sug: "💡 ข้อเสนอแนะ (Suggestion)",
@@ -107,7 +107,7 @@ const langDict = {
         txt_g_quests: "ทำเควสทอง",
         txt_d_quests: "ทำเควสเพชร",
         txt_times: "ครั้ง",
-        txt_p_id: "ID ผู้เล่น",
+        txt_p_id: "ID",
         
         // Stats UI
         txt_overview: "ภาพรวม",
@@ -179,6 +179,12 @@ const langDict = {
         txt_no_blocks: "ไม่มีรายชื่อผู้เล่นที่ถูกบล็อค",
         txt_all_on: "เปิดทุกคน",
         txt_all_off: "ปิดทุกคน",
+
+        // Inactivity Monitor
+        txt_monitor_title: "ตรวจสอบคนอู้งาน",
+        txt_monitor_desc: "สมาชิกที่ไม่ออนไลน์เกิน 3 วัน หรือ XP สัปดาห์นี้เป็น 0",
+        btn_copy_id: "Copy ID",
+        txt_inactive_days: "ไม่ออนไลน์มาแล้ว",
         
         // API Consent
         api_consent_title: "🛡️ ข้อตกลงการใช้งาน API Key",
@@ -308,7 +314,7 @@ const langDict = {
         txt_g_quests: "Gold Quests",
         txt_d_quests: "Gem Quests",
         txt_times: "times",
-        txt_p_id: "Player ID",
+        txt_p_id: "ID",
 
         // Stats UI
         txt_overview: "Overview",
@@ -380,6 +386,12 @@ const langDict = {
         txt_no_blocks: "No blocked members found.",
         txt_all_on: "All ON",
         txt_all_off: "All OFF",
+
+        // Inactivity Monitor
+        txt_monitor_title: "Inactivity Monitor",
+        txt_monitor_desc: "Offline for 3+ days or 0 XP this week",
+        btn_copy_id: "Copy ID",
+        txt_inactive_days: "Offline for",
 
         // API Consent
         api_consent_title: "🛡️ API Key Usage Consent",
@@ -834,6 +846,70 @@ window.goToClanSearch = (clanId) => {
             }
         }
     }
+};
+
+window.openInactivityMonitor = () => {
+    if (!clanMembersDetailedMap || clanMembersDetailedMap.size === 0) return showCustomAlert(t('alert_warning'), 'กรุณาโหลดข้อมูลสมาชิกแคลนก่อน');
+
+    const now = new Date();
+    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    let inactiveList = [];
+
+    clanMembersDetailedMap.forEach((m) => {
+        let diffDays = 0;
+        let diffMs = 0;
+        if (m.lastOnline) {
+            const lastOnline = new Date(m.lastOnline);
+            diffMs = now - lastOnline;
+            diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        } else {
+            diffDays = 999; // Unknown
+            diffMs = Infinity;
+        }
+        
+        const xpWeek = m.xpDurations?.week || 0;
+
+        if (diffMs > threeDaysInMs || xpWeek === 0) {
+            inactiveList.push({
+                ...m,
+                diffDays: diffDays,
+                xpWeek: xpWeek
+            });
+        }
+    });
+
+    inactiveList.sort((a, b) => b.diffDays - a.diffDays);
+
+    let contentHtml = `
+        <p style="color:#64748b; margin-bottom:15px; font-size:0.9rem;">${t('txt_monitor_desc')}</p>
+        <div style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
+    `;
+
+    if (inactiveList.length === 0) {
+        contentHtml += `<div style="padding:20px; text-align:center; color:#16a34a;">✅ สมาชิกทุกคนขยันขันแข็งดีมาก!</div>`;
+    } else {
+        inactiveList.forEach(p => {
+            const statusColor = p.diffDays >= 7 ? '#ef4444' : (p.diffDays >= 3 ? '#f59e0b' : '#64748b');
+            const daysText = p.diffDays === 999 ? 'ไม่ทราบ' : `${p.diffDays} วัน`;
+            contentHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9; background:white;">
+                    <div>
+                        <strong style="color:#1e293b; cursor:pointer; text-decoration:underline;" onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username}</strong>
+                        <div style="font-size:0.75rem; color:${statusColor};">
+                            <span class="material-icons" style="font-size:12px; vertical-align:middle;">schedule</span> ${t('txt_inactive_days')} ${daysText} 
+                            | <span style="color:#64748b;">XP: ${p.xpWeek.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <button onclick="navigator.clipboard.writeText('${p.playerId}'); this.innerText='Done!'; setTimeout(() => this.innerText='${t('btn_copy_id')}', 1500);" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold;">
+                        ${t('btn_copy_id')}
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    contentHtml += `</div>`;
+    showCustomInfoModal(t('txt_monitor_title'), contentHtml);
 };
 
 // --- ฟังก์ชันกลางสำหรับคำนวณสถานะผู้เล่น ---
@@ -2807,9 +2883,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     let membersHtml = '<div style="text-align:center; padding:20px;">No Data</div>';
     if (!members.error && Array.isArray(members)) {
         membersHtml = members.map(m => {
-            // ดึงสถานะจากฟังก์ชันกลาง
             const statusData = getPlayerStatusData(m);
-            // ดึงสไตล์สีโปรไฟล์
             const bgStyle = getProfileColorStyle(m);
 
             const avatar = m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40');
@@ -2912,16 +2986,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">ไม่มีประวัติการทำเควส</div>`;
     if (!history.error && Array.isArray(history) && history.length > 0) {
         historyHtml = '<div class="history-list">';
-        // นำ history มาวนลูปทั้งหมด โดยไม่ต้อง filter claimedTime ทิ้ง
         historyHtml += history.map(h => {
              const questTitle = h.quest?.title || `Tier ${h.tier}`;
              const endDate = h.tierEndTime || h.endTime;
              const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
-
-             // เช็คสถานะว่ารับรางวัลไปหรือยัง (ถ้ามี claimedTime แสดงว่ารับแล้ว)
-             const statusBadge = h.claimedTime
-                 ? `<span style="color:#16a34a; font-size:0.75rem; font-weight:bold;"><span class="material-icons" style="font-size:12px; vertical-align:middle;">check_circle</span> รับรางวัลแล้ว</span>`
-                 : `<span style="color:#ef4444; font-size:0.75rem; font-weight:bold;"><span class="material-icons" style="font-size:12px; vertical-align:middle;">hourglass_empty</span> ยังไม่ได้รับรางวัล</span>`;
 
              let participantsHtml = '';
              if (h.participants && Array.isArray(h.participants)) {
@@ -2938,13 +3006,12 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
              }
 
              return `
-                <div class="history-item" style="border-left:4px solid ${h.claimedTime ? '#22c55e' : 'var(--warning)'}; display:block; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div class="history-item" style="border-left:4px solid var(--primary-color); display:block; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     <div style="display:flex; align-items:center;">
                         <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
                         <div style="display:flex; flex-direction:column; flex:1;">
                             <div style="font-weight:600; color:#334155;">${questTitle}</div>
                             <div style="font-size:0.75rem; color:#94a3b8;">${t('txt_ends')}: ${formatDateThai(endDate)}</div>
-                            <div style="margin-top: 4px;">${statusBadge}</div>
                         </div>
                     </div>
                     <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
@@ -3015,12 +3082,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 </div>
             </div>
             <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
                     <span><span class="material-icons">group</span> ${t('txt_members')} (${info.memberCount})</span>
-                    <div style="font-size:0.75rem;">
-                        Quest: 
-                        <button onclick="window.toggleAllQuestParticipation('${clanId}', true)" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">${t('txt_all_on')}</button>
-                        <button onclick="window.toggleAllQuestParticipation('${clanId}', false)" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; cursor:pointer;">${t('txt_all_off')}</button>
+                    <div style="font-size:0.75rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        ${canEdit ? `
+                        <button onclick="window.openInactivityMonitor()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
+                            <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
+                        </button>
+                        ` : ''}
+                        <div>
+                            Quest: 
+                            <button onclick="window.toggleAllQuestParticipation('${clanId}', true)" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">${t('txt_all_on')}</button>
+                            <button onclick="window.toggleAllQuestParticipation('${clanId}', false)" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; cursor:pointer;">${t('txt_all_off')}</button>
+                        </div>
                     </div>
                 </h3>
                 <div id="clan-members-list" class="member-list" style="max-height:500px; overflow-y:auto; padding-right:5px;">
