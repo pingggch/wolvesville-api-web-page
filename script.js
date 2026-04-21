@@ -2993,7 +2993,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <div class="clan-bio">${linkify(info.description || '-')}</div>
                 <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
                     <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
-                    Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
+                    Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_quest_hist')}: <strong>${info.questHistoryCount !== undefined ? info.questHistoryCount.toLocaleString() : 0}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
                 </div>
             </div>
         </div>
