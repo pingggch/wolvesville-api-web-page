@@ -943,11 +943,9 @@ window.openInactivityMonitor = (clanId) => {
 window.openQuestFeeSettings = (clanId) => {
     let targetGoldGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gold_grind_${clanId}`)) || 0;
     let targetGemsGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gems_grind_${clanId}`)) || 0;
-    let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
 
     let targetGoldLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gold_leech_${clanId}`)) || 0;
     let targetGemsLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gems_leech_${clanId}`)) || 0;
-    let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
 
     let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
 
@@ -965,10 +963,6 @@ window.openQuestFeeSettings = (clanId) => {
                             <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-grind" value="${targetGemsGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">XP (ต่อเควส):</label>
-                            <input type="number" id="qfee-target-xp-grind" value="${targetXpGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
-                        </div>
                     </div>
                 </div>
                 <div style="flex:1; min-width:200px; background:#fffbeb; padding:12px; border-radius:8px; border:1px solid #fde68a;">
@@ -981,10 +975,6 @@ window.openQuestFeeSettings = (clanId) => {
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-leech" value="${targetGemsLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">XP (ต่อเควส):</label>
-                            <input type="number" id="qfee-target-xp-leech" value="${targetXpLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
                         </div>
                     </div>
                 </div>
@@ -1017,23 +1007,73 @@ window.openQuestFeeSettings = (clanId) => {
     overlay.querySelector('#qfee-save-settings-btn').onclick = () => {
         targetGoldGrind = parseInt(overlay.querySelector('#qfee-target-gold-grind').value) || 0;
         targetGemsGrind = parseInt(overlay.querySelector('#qfee-target-gems-grind').value) || 0;
-        targetXpGrind = parseInt(overlay.querySelector('#qfee-target-xp-grind').value) || 0;
 
         targetGoldLeech = parseInt(overlay.querySelector('#qfee-target-gold-leech').value) || 0;
         targetGemsLeech = parseInt(overlay.querySelector('#qfee-target-gems-leech').value) || 0;
-        targetXpLeech = parseInt(overlay.querySelector('#qfee-target-xp-leech').value) || 0;
 
         durationDays = parseFloat(overlay.querySelector('#qfee-duration-set').value) || 0;
         
         localStorage.setItem(`wolvesville_qfee_gold_grind_${clanId}`, targetGoldGrind);
         localStorage.setItem(`wolvesville_qfee_gems_grind_${clanId}`, targetGemsGrind);
-        localStorage.setItem(`wolvesville_qfee_xp_grind_${clanId}`, targetXpGrind);
 
         localStorage.setItem(`wolvesville_qfee_gold_leech_${clanId}`, targetGoldLeech);
         localStorage.setItem(`wolvesville_qfee_gems_leech_${clanId}`, targetGemsLeech);
-        localStorage.setItem(`wolvesville_qfee_xp_leech_${clanId}`, targetXpLeech);
 
         localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
+        
+        overlay.remove();
+        window.fetchClanData(clanId, true, true); // reload data
+    };
+    document.body.appendChild(overlay);
+};
+
+// 🌟 ฟังก์ชันใหม่สำหรับตั้งค่า XP แยกต่างหาก 🌟
+window.openQuestXpSettings = (clanId) => {
+    let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
+    let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
+
+    let contentHtml = `
+        <div style="margin-bottom:15px;">
+            <div style="background:#eff6ff; padding:12px; border-radius:8px; border:1px solid #bfdbfe; margin-bottom:10px;">
+                <h4 style="margin:0 0 10px 0; color:#1d4ed8; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">bolt</span> เป้าหมาย XP: สายปั่น</h4>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-size:0.8rem; color:#1e40af; font-weight:bold;">XP ที่ต้องทำ (ต่อเควส):</label>
+                    <input type="number" id="qxp-target-grind" value="${targetXpGrind}" style="width:100px; padding:6px 8px; border:1px solid #93c5fd; border-radius:6px; font-family:inherit;">
+                </div>
+            </div>
+            <div style="background:#fffbeb; padding:12px; border-radius:8px; border:1px solid #fde68a;">
+                <h4 style="margin:0 0 10px 0; color:#b45309; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">monetization_on</span> เป้าหมาย XP: สายเกาะ</h4>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-size:0.8rem; color:#92400e; font-weight:bold;">XP ที่ต้องทำ (ต่อเควส):</label>
+                    <input type="number" id="qxp-target-leech" value="${targetXpLeech}" style="width:100px; padding:6px 8px; border:1px solid #fcd34d; border-radius:6px; font-family:inherit;">
+                </div>
+            </div>
+        </div>
+        <button id="qxp-save-settings-btn" style="width:100%; background:#8b5cf6; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">บันทึกเป้าหมาย XP</button>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 400px;">
+            <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; color:#6d28d9;">
+                <span class="material-icons" style="color:#8b5cf6;">stars</span> ตั้งค่าเป้าหมาย XP เควส
+            </h3>
+            ${contentHtml}
+            <div class="custom-modal-buttons">
+                <button class="btn-modal btn-confirm">${t('btn_close')}</button>
+            </div>
+        </div>
+    `;
+
+    overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    overlay.querySelector('#qxp-save-settings-btn').onclick = () => {
+        targetXpGrind = parseInt(overlay.querySelector('#qxp-target-grind').value) || 0;
+        targetXpLeech = parseInt(overlay.querySelector('#qxp-target-leech').value) || 0;
+        
+        localStorage.setItem(`wolvesville_qfee_xp_grind_${clanId}`, targetXpGrind);
+        localStorage.setItem(`wolvesville_qfee_xp_leech_${clanId}`, targetXpLeech);
         
         overlay.remove();
         window.fetchClanData(clanId, true, true); // reload data
@@ -2927,7 +2967,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                                 ${toggleTypeBtnHtml}
                             </div>
                             <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">
-                                <strong style="color:#d97706;">${don.gold.toLocaleString()} 💰</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} 💎</strong> | <strong style="color:#16a34a;">${don.xp.toLocaleString()} XP</strong>
+                                <strong style="color:#d97706;">${don.gold.toLocaleString()} 💰</strong> | <strong style="color:#9333ea;">${don.gems.toLocaleString()} 💎</strong>
                             </div>
                             ${missingText.length > 0 ? `<div style="font-size:0.65rem; color:#dc2626;">${missingText.join(' / ')}</div>` : ''}
                         </div>
@@ -2993,6 +3033,92 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div>เริ่มรอบ: <strong>${resetDateStr}</strong></div>
                     ${timerHtml}
                     <div>ผ่านเกณฑ์: <strong style="color:#16a34a;">${paidCount}</strong> / <strong>${participatingMembers.length}</strong></div>
+                </div>
+                <div style="max-height:250px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
+                    ${listHtml || '<div style="padding:15px; text-align:center; color:#94a3b8;">ไม่มีสมาชิกที่เปิดเข้าร่วมเควส</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    let xpTrackerHtml = '';
+    if (canEdit && !history.error && Array.isArray(history) && history.length > 0) {
+        let latestQuest = history[0];
+        let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
+        let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
+
+        let questName = latestQuest.quest?.title || `Tier ${latestQuest.tier + 1}`;
+        let passCount = 0;
+        let listHtml = '';
+
+        let participatingMembers = [];
+        if (Array.isArray(members)) {
+            participatingMembers = members.filter(m => m.participateInClanQuests);
+        }
+
+        participatingMembers.sort((a, b) => a.username.localeCompare(b.username)).forEach(p => {
+            let memType = localStorage.getItem(`wolvesville_member_type_${clanId}_${p.playerId}`) || 'GRIND';
+            let targetXp = memType === 'GRIND' ? targetXpGrind : targetXpLeech;
+
+            // ค้นหา XP จากเควสล่าสุด
+            let participantData = latestQuest.participants?.find(x => x.playerId === p.playerId);
+            let earnedXp = participantData ? participantData.xp : 0;
+
+            const noFeeSet = targetXp === 0;
+            const isPaid = !noFeeSet && earnedXp >= targetXp;
+
+            if (isPaid) passCount++;
+
+            const btnStyle = isPaid 
+                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
+                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
+            
+            const btnText = isPaid 
+                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ผ่าน` 
+                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> -` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ขาด ${(targetXp - earnedXp).toLocaleString()}`);
+
+            const toggleTypeBtnHtml = `
+                <button onclick="window.toggleMemberClassType('${clanId}', '${p.playerId}', '${memType}')" 
+                        style="background:${memType === 'GRIND' ? '#eff6ff' : '#fffbeb'}; color:${memType === 'GRIND' ? '#3b82f6' : '#d97706'}; border:1px solid ${memType === 'GRIND' ? '#bfdbfe' : '#fde68a'}; font-size:0.65rem; padding:2px 6px; border-radius:12px; cursor:pointer; font-weight:bold; margin-left:6px; display:inline-flex; align-items:center; gap:2px; vertical-align:middle; transition:0.2s;"
+                        title="คลิกเพื่อสลับสถานะ ปั่น/เกาะ">
+                    ${memType === 'GRIND' ? '<span class="material-icons" style="font-size:12px;">bolt</span> ปั่น' : '<span class="material-icons" style="font-size:12px;">monetization_on</span> เกาะ'}
+                </button>
+            `;
+
+            listHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; background:white;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${p.equippedAvatar?.url || (p.profileIconId ? `https://cdn-avatars.wolvesville.com/${p.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:24px; height:24px; border-radius:6px; object-fit:contain; background:#f8fafc;">
+                        <div>
+                            <div style="display:flex; align-items:center;">
+                                <strong style="color:#1e293b; font-size:0.9rem; cursor:pointer;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username}</strong>
+                                ${toggleTypeBtnHtml}
+                            </div>
+                            <div style="font-size:0.75rem; color:#16a34a; margin-top:2px; font-weight:bold;">
+                                ${earnedXp.toLocaleString()} XP
+                            </div>
+                        </div>
+                    </div>
+                    <div style="${btnStyle} padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; min-width: max-content;">
+                        ${btnText}
+                    </div>
+                </div>
+            `;
+        });
+
+        xpTrackerHtml = `
+            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                    <h4 style="margin:0; color:#334155; font-size:1.05rem; display:flex; align-items:center; gap:5px;">
+                        <span class="material-icons" style="color:#8b5cf6;">stars</span> สถานะยอด XP (เควสล่าสุด)
+                    </h4>
+                    <button onclick="window.openQuestXpSettings('${clanId}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
+                        <span class="material-icons" style="font-size:16px;">settings</span> ตั้งค่า XP
+                    </button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center;">
+                    <div>เควส: <strong style="color:var(--primary-color);">${questName}</strong></div>
+                    <div>ผ่านเกณฑ์: <strong style="color:#16a34a;">${passCount}</strong> / <strong>${participatingMembers.length}</strong></div>
                 </div>
                 <div style="max-height:250px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
                     ${listHtml || '<div style="padding:15px; text-align:center; color:#94a3b8;">ไม่มีสมาชิกที่เปิดเข้าร่วมเควส</div>'}
@@ -3236,11 +3362,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">ไม่มีประวัติการทำเควส</div>`;
     if (!history.error && Array.isArray(history) && history.length > 0) {
-        
-        // ดึงเป้าหมาย XP ของแคลนมาใช้
-        let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
-        let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
-
         historyHtml = '<div class="history-list">';
         historyHtml += history.map(h => {
              const questTitle = h.quest?.title || `Tier ${h.tier}`;
@@ -3254,24 +3375,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                      const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
                      const safeUsername = escapeJsString(p.username || 'Unknown');
                      
-                     // --- เช็ค XP ว่าทำผ่านเป้าที่ตั้งไว้หรือไม่ ---
-                     let memType = localStorage.getItem(`wolvesville_member_type_${clanId}_${p.playerId}`) || 'GRIND';
-                     let targetXp = memType === 'GRIND' ? targetXpGrind : targetXpLeech;
-                     let isPass = targetXp === 0 || p.xp >= targetXp;
-                     
-                     let xpStatusHtml = '';
-                     if (targetXp > 0) {
-                         if (isPass) {
-                             xpStatusHtml = `<span style="font-size:0.7rem; color:#16a34a; background:#dcfce7; padding:2px 6px; border-radius:12px; margin-left:5px;" title="ผ่านเกณฑ์"><span class="material-icons" style="font-size:12px; vertical-align:text-bottom;">check_circle</span> ผ่าน</span>`;
-                         } else {
-                             xpStatusHtml = `<span style="font-size:0.7rem; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:12px; margin-left:5px;" title="ไม่ผ่าน (ขาด ${(targetXp - p.xp).toLocaleString()})"><span class="material-icons" style="font-size:12px; vertical-align:text-bottom;">cancel</span> ขาด ${(targetXp - p.xp).toLocaleString()}</span>`;
-                         }
-                     }
-
                      return `
                          <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
                              <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
-                             <span style="color:${isPass ? 'var(--primary-color)' : '#dc2626'};">${p.xp.toLocaleString()} XP ${xpStatusHtml}</span>
+                             <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
                          </div>
                       `;
                   }).join('');
@@ -3290,7 +3397,6 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
                         <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
                             ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
-                            <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:5px;">* ผู้ที่ไม่ได้ทำ XP เลย จะไม่ปรากฏชื่อในรายการนี้</div>
                         </div>
                     </details>
                 </div>
@@ -3316,6 +3422,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const cFeeTracker = document.getElementById('fee-tracker-wrapper');
         if (cFeeTracker && cFeeTracker.innerHTML !== feeTrackerHtml) cFeeTracker.innerHTML = feeTrackerHtml;
         
+        const cXpTracker = document.getElementById('xp-tracker-wrapper');
+        if (cXpTracker && cXpTracker.innerHTML !== xpTrackerHtml) cXpTracker.innerHTML = xpTrackerHtml;
+
         const cAvailQuest = document.getElementById('available-quests-wrapper');
         if (cAvailQuest && cAvailQuest.innerHTML !== availableQuestsHtml) cAvailQuest.innerHTML = availableQuestsHtml;
 
@@ -3362,6 +3471,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="scheduled-quests-wrapper">${scheduledHtml}</div>
                     <div id="active-quest-wrapper">${questsHtml}</div>
                     <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
+                    <div id="xp-tracker-wrapper">${xpTrackerHtml}</div>
                     <div id="available-quests-wrapper">${availableQuestsHtml}</div>
                 </div>
             </div>
@@ -3787,81 +3897,4 @@ document.addEventListener('DOMContentLoaded', () => {
                     embedTitle = '🐛 รายงานปัญหา (Bug)'; 
                 } else if (topic === 'suggestion') { 
                     embedColor = 16776960; // สีเหลือง
-                    embedTitle = '💡 ข้อเสนอแนะ (Suggestion)'; 
-                } 
-
-                const formData = new FormData();
-                const payload = {
-                    username: "Web Feedback",
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
-                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ
-                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
-                    embeds: [{
-                        title: embedTitle,
-                        color: embedColor,
-                        fields: [
-                            {
-                                name: "💬 รายละเอียดข้อความ",
-                                value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
-                                inline: false
-                            }
-                        ],
-                        footer: {
-                            text: "ส่งจากเว็บไซต์ Wolvesville API Dashboard",
-                            icon_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png"
-                        },
-                        timestamp: new Date().toISOString()
-                    }]
-                };
-
-                if (imageInput.files.length > 0) {
-                    const file = imageInput.files[0];
-                    formData.append('file', file, file.name);
-                    payload.embeds[0].image = { url: `attachment://${file.name}` };
-                }
-
-                formData.append('payload_json', JSON.stringify(payload));
-                const response = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                showCustomAlert(t('alert_success'), '✅ ส่งข้อความสำเร็จ ขอบคุณสำหรับข้อเสนอแนะครับ!');
-                document.getElementById('feedback-msg').value = ''; 
-                imageInput.value = '';
-                feedbackModal.style.display = 'none';
-                
-            } catch (e) {
-                console.error(e);
-                showCustomAlert(t('alert_error'), '❌ ' + e.message);
-            } finally {
-                submitFeedbackBtn.innerHTML = originalText;
-                submitFeedbackBtn.disabled = false;
-            }
-        });
-    }
-
-    // --- ระบบขยายรูปภาพ (Image Viewer) ---
-    const imageViewerModal = document.getElementById('image-viewer-modal');
-    const imageViewerImg = document.getElementById('image-viewer-img');
-    const closeImageViewerBtn = document.getElementById('close-image-viewer');
-
-    document.querySelectorAll('.qr-code').forEach(img => {
-        img.addEventListener('click', () => {
-            if(imageViewerImg) imageViewerImg.src = img.src;
-            if(imageViewerModal) imageViewerModal.style.display = 'flex';
-        });
-    });
-
-    if (imageViewerModal && closeImageViewerBtn) {
-        closeImageViewerBtn.addEventListener('click', () => {
-            imageViewerModal.style.display = 'none';
-        });
-        imageViewerModal.addEventListener('click', (e) => {
-            if (e.target === imageViewerModal) {
-                imageViewerModal.style.display = 'none';
-            }
-        });
-    }
-
-    document.querySelector('.nav-link[data-page="dashboard"]')?.click();
-});
+                    embedTitle = '💡 ข้อเสนอแนะ
