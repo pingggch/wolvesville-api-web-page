@@ -3427,6 +3427,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     // 🌟 ระบบ Update หน้าต่างเฉพาะส่วนที่เปลี่ยนแปลงเพื่อลดการกระตุก (Background Update)
     if (isBackground && isFirstRender === false) {
+        // อัปเดตยอดเงินทองและเพชรของแคลนแบบ Real-time
+        const cWalletGold = document.getElementById('clan-wallet-gold');
+        if (cWalletGold && info && info.gold !== undefined) cWalletGold.innerText = info.gold.toLocaleString();
+        
+        const cWalletGems = document.getElementById('clan-wallet-gems');
+        if (cWalletGems && info && info.gems !== undefined) cWalletGems.innerText = info.gems.toLocaleString();
+
         const cChat = document.getElementById('clan-chat-container');
         if (cChat && cChat.innerHTML !== chatHtml) { const b = cChat.scrollHeight - cChat.scrollTop <= cChat.clientHeight + 100; cChat.innerHTML = chatHtml; if (b) cChat.scrollTop = cChat.scrollHeight; }
         const cAnn = document.getElementById('clan-announcements-container'); if (cAnn && cAnn.innerHTML !== announceListContent) cAnn.innerHTML = announceListContent;
