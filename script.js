@@ -3790,3 +3790,208 @@ document.addEventListener('DOMContentLoaded', () => {
                 appContainer.classList.remove('sidebar-pushed');
                 if(hamburgerBtn) hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
             }
+            if(t==='dashboard') fetchAndDisplayData();
+            else if(t==='role-wiki') initRoleWiki(); 
+            else if(t==='quest-wiki') initQuestWiki(); 
+            else if(t==='settings') {
+                const cur = localStorage.getItem('wolvesville_api_key');
+                if(cur) apiKeyInput.value = cur;
+            }
+        });
+    });
+
+    if(hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            appContainer.classList.toggle('sidebar-pushed');
+            hamburgerBtn.querySelector('.material-icons').textContent = appContainer.classList.contains('sidebar-pushed') ? 'menu_open' : 'menu';
+        });
+        document.addEventListener('click', (e) => {
+            if(window.innerWidth<=768 && appContainer.classList.contains('sidebar-pushed') && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
+                appContainer.classList.remove('sidebar-pushed');
+                hamburgerBtn.querySelector('.material-icons').textContent = 'menu';
+            }
+        });
+    }
+
+    if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', async () => {
+        const v = apiKeyInput.value.trim();
+        if(v.length>10) { 
+            const isConfirmed = await showApiConsentModal();
+            if (isConfirmed) {
+                localStorage.setItem('wolvesville_api_key',v); 
+                showCustomAlert(t('alert_success'), '✅ ' + (getLocale() === 'en' ? 'API Key saved successfully!' : 'บันทึก API Key เรียบร้อยแล้ว')); 
+                fetchAndDisplayData(); 
+            }
+        }
+        else showCustomAlert(t('alert_warning'), getLocale() === 'en' ? 'Invalid API Key format' : 'รูปแบบ API Key ไม่ถูกต้อง');
+    });
+
+    const savedLocale = localStorage.getItem('wolvesville_api_locale');
+    const localeSelect = document.getElementById('api-locale-select');
+    if (savedLocale && localeSelect) {
+        localeSelect.value = savedLocale;
+    }
+
+    const saveLocaleBtn = document.getElementById('save-locale-btn');
+    if (saveLocaleBtn) {
+        saveLocaleBtn.addEventListener('click', () => {
+            if (localeSelect) {
+                localStorage.setItem('wolvesville_api_locale', localeSelect.value);
+                applyTranslations(); // แปลภาษา UI ทันที
+                
+                const status = document.getElementById('api-locale-status');
+                if (status) {
+                    status.style.display = 'block';
+                    setTimeout(() => status.style.display = 'none', 3000);
+                }
+                
+                rolesCache.clear();
+                avatarItemsCache.clear();
+                questDetailsCache.clear();
+                allQuestsCache = [];
+                
+                fetchAndDisplayData();
+                if (document.getElementById('role-wiki-container') && document.getElementById('role-wiki-container').innerHTML.trim() !== '') initRoleWiki();
+                if (document.getElementById('quest-wiki-container') && document.getElementById('quest-wiki-container').innerHTML.trim() !== '') initQuestWiki();
+            }
+        });
+    }
+
+    if(searchPlayerBtn) searchPlayerBtn.addEventListener('click', searchAndDisplayPlayer);
+    if(usernameInput) usernameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchAndDisplayPlayer(); });
+    if(searchClanBtn) searchClanBtn.addEventListener('click', searchClan);
+    if(myClanBtn) myClanBtn.addEventListener('click', fetchMyClan);
+    if(clanNameInput) clanNameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchClan(); });
+
+    const settingsPage = document.getElementById('settings');
+    if (settingsPage) {
+        const hatGroup = document.createElement('div');
+        hatGroup.className = 'settings-group';
+        hatGroup.style.marginTop = '20px';
+        hatGroup.innerHTML = `
+            <h3><span class="material-icons" style="vertical-align: middle; color: #a855f7;">checkroom</span> API Hat</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Exclusive API Hat for Bot Owner / กดรับหมวกสำหรับเจ้าของบอท</p>
+            <button onclick="window.redeemApiHat()" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <span class="material-icons" style="font-size: 18px;">auto_awesome</span> Redeem Hat
+            </button>
+        `;
+        settingsPage.appendChild(hatGroup);
+    }
+
+    // --- ระบบฟีดแบค (ปุ่มลอย & ส่งเข้า Discord Webhook พร้อมรูปภาพ) ---
+    const fabBtn = document.getElementById('floating-feedback-btn');
+    const feedbackModal = document.getElementById('feedback-modal');
+    const closeFeedbackBtn = document.getElementById('close-feedback-modal');
+    const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+
+    if (fabBtn && feedbackModal && closeFeedbackBtn) {
+        fabBtn.addEventListener('click', () => { feedbackModal.style.display = 'flex'; });
+        closeFeedbackBtn.addEventListener('click', () => { feedbackModal.style.display = 'none'; });
+        feedbackModal.addEventListener('click', (e) => { if (e.target === feedbackModal) feedbackModal.style.display = 'none'; });
+    }
+
+    if (submitFeedbackBtn) {
+        submitFeedbackBtn.addEventListener('click', async () => {
+            const topic = document.getElementById('feedback-topic').value;
+            const msg = document.getElementById('feedback-msg').value.trim();
+            const imageInput = document.getElementById('feedback-image');
+
+            if (!msg && imageInput.files.length === 0) {
+                return showCustomAlert(t('alert_warning'), getLocale()==='en'?'Please enter message or attach image':'กรุณาพิมพ์ข้อความ หรือแนบรูปภาพก่อนกดส่งครับ');
+            }
+
+            const originalText = submitFeedbackBtn.innerHTML;
+            submitFeedbackBtn.innerHTML = '<span class="material-icons loading-spinner" style="font-size: 20px;">sync</span> ...';
+            submitFeedbackBtn.disabled = true;
+
+            try {
+                // ⚠️ DISCORD WEBHOOK URL ⚠️
+                const WEBHOOK_URL = 'https://discord.com/api/webhooks/1474347018989080702/rUWUi5RJ41LvhcezeInrYbg-7mqP1OuH0dFu6ROB_E8FzHSZaRBnb5p8ka-dydMuyxwk'; 
+
+                let embedColor = 3447003; // สีน้ำเงิน
+                let embedTitle = '📝 แจ้งเตือนทั่วไป (Other)';
+                
+                if (topic === 'bug') { 
+                    embedColor = 16711680; // สีแดง
+                    embedTitle = '🐛 รายงานปัญหา (Bug)'; 
+                } else if (topic === 'suggestion') { 
+                    embedColor = 16776960; // สีเหลือง
+                    embedTitle = '💡 ข้อเสนอแนะ (Suggestion)'; 
+                } 
+
+                const formData = new FormData();
+                const payload = {
+                    username: "Web Feedback",
+                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
+                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ
+                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
+                    embeds: [{
+                        title: embedTitle,
+                        color: embedColor,
+                        fields: [
+                            {
+                                name: "💬 รายละเอียดข้อความ",
+                                value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
+                                inline: false
+                            }
+                        ],
+                        footer: {
+                            text: "ส่งจากเว็บไซต์ Wolvesville API Dashboard",
+                            icon_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png"
+                        },
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+
+                if (imageInput.files.length > 0) {
+                    const file = imageInput.files[0];
+                    formData.append('file', file, file.name);
+                    payload.embeds[0].image = { url: `attachment://${file.name}` };
+                }
+
+                formData.append('payload_json', JSON.stringify(payload));
+                const response = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                showCustomAlert(t('alert_success'), '✅ ส่งข้อความสำเร็จ ขอบคุณสำหรับข้อเสนอแนะครับ!');
+                document.getElementById('feedback-msg').value = ''; 
+                imageInput.value = '';
+                feedbackModal.style.display = 'none';
+                
+            } catch (e) {
+                console.error(e);
+                showCustomAlert(t('alert_error'), '❌ ' + e.message);
+            } finally {
+                submitFeedbackBtn.innerHTML = originalText;
+                submitFeedbackBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- ระบบขยายรูปภาพ (Image Viewer) ---
+    const imageViewerModal = document.getElementById('image-viewer-modal');
+    const imageViewerImg = document.getElementById('image-viewer-img');
+    const closeImageViewerBtn = document.getElementById('close-image-viewer');
+
+    document.querySelectorAll('.qr-code').forEach(img => {
+        img.addEventListener('click', () => {
+            if(imageViewerImg) imageViewerImg.src = img.src;
+            if(imageViewerModal) imageViewerModal.style.display = 'flex';
+        });
+    });
+
+    if (imageViewerModal && closeImageViewerBtn) {
+        closeImageViewerBtn.addEventListener('click', () => {
+            imageViewerModal.style.display = 'none';
+        });
+        imageViewerModal.addEventListener('click', (e) => {
+            if (e.target === imageViewerModal) {
+                imageViewerModal.style.display = 'none';
+            }
+        });
+    }
+
+    document.querySelector('.nav-link[data-page="dashboard"]')?.click();
+});
