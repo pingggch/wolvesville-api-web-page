@@ -943,11 +943,9 @@ window.openInactivityMonitor = (clanId) => {
 window.openQuestFeeSettings = (clanId) => {
     let targetGoldGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gold_grind_${clanId}`)) || 0;
     let targetGemsGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gems_grind_${clanId}`)) || 0;
-    let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
 
     let targetGoldLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gold_leech_${clanId}`)) || 0;
     let targetGemsLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gems_leech_${clanId}`)) || 0;
-    let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
 
     let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
 
@@ -955,7 +953,7 @@ window.openQuestFeeSettings = (clanId) => {
         <div style="margin-bottom:15px;">
             <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:200px; background:#eff6ff; padding:12px; border-radius:8px; border:1px solid #bfdbfe;">
-                    <h4 style="margin:0 0 10px 0; color:#1d4ed8; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">swords</span> เป้าหมาย: สายปั่น</h4>
+                    <h4 style="margin:0 0 10px 0; color:#1d4ed8; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="font-size:18px;">bolt</span> เป้าหมาย: สายปั่น</h4>
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">ทอง:</label>
@@ -964,10 +962,6 @@ window.openQuestFeeSettings = (clanId) => {
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-grind" value="${targetGemsGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">XP:</label>
-                            <input type="number" id="qfee-target-xp-grind" value="${targetXpGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
                         </div>
                     </div>
                 </div>
@@ -981,10 +975,6 @@ window.openQuestFeeSettings = (clanId) => {
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-leech" value="${targetGemsLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">XP:</label>
-                            <input type="number" id="qfee-target-xp-leech" value="${targetXpLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
                         </div>
                     </div>
                 </div>
@@ -1017,21 +1007,17 @@ window.openQuestFeeSettings = (clanId) => {
     overlay.querySelector('#qfee-save-settings-btn').onclick = () => {
         targetGoldGrind = parseInt(overlay.querySelector('#qfee-target-gold-grind').value) || 0;
         targetGemsGrind = parseInt(overlay.querySelector('#qfee-target-gems-grind').value) || 0;
-        targetXpGrind = parseInt(overlay.querySelector('#qfee-target-xp-grind').value) || 0;
 
         targetGoldLeech = parseInt(overlay.querySelector('#qfee-target-gold-leech').value) || 0;
         targetGemsLeech = parseInt(overlay.querySelector('#qfee-target-gems-leech').value) || 0;
-        targetXpLeech = parseInt(overlay.querySelector('#qfee-target-xp-leech').value) || 0;
 
         durationDays = parseFloat(overlay.querySelector('#qfee-duration-set').value) || 0;
         
         localStorage.setItem(`wolvesville_qfee_gold_grind_${clanId}`, targetGoldGrind);
         localStorage.setItem(`wolvesville_qfee_gems_grind_${clanId}`, targetGemsGrind);
-        localStorage.setItem(`wolvesville_qfee_xp_grind_${clanId}`, targetXpGrind);
 
         localStorage.setItem(`wolvesville_qfee_gold_leech_${clanId}`, targetGoldLeech);
         localStorage.setItem(`wolvesville_qfee_gems_leech_${clanId}`, targetGemsLeech);
-        localStorage.setItem(`wolvesville_qfee_xp_leech_${clanId}`, targetXpLeech);
 
         localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
         
@@ -2831,11 +2817,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     if (canEdit) {
         let targetGoldGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gold_grind_${clanId}`)) || 0;
         let targetGemsGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gems_grind_${clanId}`)) || 0;
-        let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
 
         let targetGoldLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gold_leech_${clanId}`)) || 0;
         let targetGemsLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gems_leech_${clanId}`)) || 0;
-        let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
 
         let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
         let resetTime = parseInt(localStorage.getItem(`wolvesville_qfee_reset_${clanId}`)) || 0;
@@ -2888,14 +2872,12 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             
             let targetGold = memType === 'GRIND' ? targetGoldGrind : targetGoldLeech;
             let targetGems = memType === 'GRIND' ? targetGemsGrind : targetGemsLeech;
-            let targetXp = memType === 'GRIND' ? targetXpGrind : targetXpLeech;
 
             const isGoldMet = targetGold === 0 || don.gold >= targetGold;
             const isGemsMet = targetGems === 0 || don.gems >= targetGems;
-            const isXpMet = targetXp === 0 || don.xp >= targetXp;
             
-            const noFeeSet = targetGold === 0 && targetGems === 0 && targetXp === 0;
-            const isPaid = !noFeeSet && isGoldMet && isGemsMet && isXpMet;
+            const noFeeSet = targetGold === 0 && targetGems === 0;
+            const isPaid = !noFeeSet && isGoldMet && isGemsMet;
 
             if (isPaid) paidCount++;
 
@@ -2911,14 +2893,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (!noFeeSet) {
                 if (!isGoldMet) missingText.push(`ขาด ${(targetGold - don.gold).toLocaleString()} ทอง`);
                 if (!isGemsMet) missingText.push(`ขาด ${(targetGems - don.gems).toLocaleString()} เพชร`);
-                if (!isXpMet) missingText.push(`ขาด ${(targetXp - don.xp).toLocaleString()} XP`);
             }
 
             const toggleTypeBtnHtml = `
                 <button onclick="window.toggleMemberClassType('${clanId}', '${p.playerId}', '${memType}')" 
                         style="background:${memType === 'GRIND' ? '#eff6ff' : '#fffbeb'}; color:${memType === 'GRIND' ? '#3b82f6' : '#d97706'}; border:1px solid ${memType === 'GRIND' ? '#bfdbfe' : '#fde68a'}; font-size:0.65rem; padding:2px 6px; border-radius:12px; cursor:pointer; font-weight:bold; margin-left:6px; display:inline-flex; align-items:center; gap:2px; vertical-align:middle; transition:0.2s;"
                         title="คลิกเพื่อสลับสถานะ ปั่น/เกาะ">
-                    ${memType === 'GRIND' ? '<span class="material-icons" style="font-size:12px;">swords</span> ปั่น' : '<span class="material-icons" style="font-size:12px;">monetization_on</span> เกาะ'}
+                    ${memType === 'GRIND' ? '<span class="material-icons" style="font-size:12px;">bolt</span> ปั่น' : '<span class="material-icons" style="font-size:12px;">monetization_on</span> เกาะ'}
                 </button>
             `;
 
