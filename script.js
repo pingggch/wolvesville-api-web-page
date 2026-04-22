@@ -181,8 +181,8 @@ const langDict = {
         txt_all_off: "ปิดทุกคน",
 
         // Inactivity Monitor
-        txt_monitor_title: "ตรวจสอบคนออฟไลน์ / อู้งาน",
-        txt_monitor_desc: "รายชื่อสมาชิกที่ออฟไลน์เกิน 3 วัน หรือ XP สัปดาห์นี้เป็น 0",
+        txt_monitor_title: "ตรวจสอบคนออฟไลน์",
+        txt_monitor_desc: "รายชื่อสมาชิกที่ออฟไลน์เกิน 3 วัน",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "ไม่ออนไลน์มาแล้ว",
 
@@ -398,8 +398,8 @@ const langDict = {
         txt_all_off: "All OFF",
 
         // Inactivity Monitor
-        txt_monitor_title: "Inactivity Monitor",
-        txt_monitor_desc: "Offline for 3+ days or 0 XP this week",
+        txt_monitor_title: "Offline Monitor",
+        txt_monitor_desc: "Offline for 3+ days",
         btn_copy_id: "Copy ID",
         txt_inactive_days: "Offline for",
 
@@ -899,13 +899,10 @@ window.openInactivityMonitor = (clanId) => {
             diffMs = Infinity;
         }
         
-        const xpWeek = m.xpDurations?.week || 0;
-
-        if (diffMs > threeDaysInMs || xpWeek === 0) {
+        if (diffMs > threeDaysInMs) {
             inactiveList.push({
                 ...m,
-                diffDays: diffDays,
-                xpWeek: xpWeek
+                diffDays: diffDays
             });
         }
     });
@@ -929,7 +926,6 @@ window.openInactivityMonitor = (clanId) => {
                         <strong style="color:#1e293b; cursor:pointer; text-decoration:underline;" onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username}</strong>
                         <div style="font-size:0.75rem; color:${statusColor};">
                             <span class="material-icons" style="font-size:12px; vertical-align:middle;">schedule</span> ${t('txt_inactive_days')} ${daysText} 
-                            | <span style="color:#64748b;">XP: ${p.xpWeek.toLocaleString()}</span>
                         </div>
                     </div>
                     <button onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.kickMemberFromList('${clanId}', '${p.playerId}', '${escapeJsString(p.username)}')" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
@@ -2662,6 +2658,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         let shouldShowSkip = false;
         let shouldShowAddTime = false;
 
+        // 🌟 ดึงข้อความเก่ามาใส่แทนการ Hardcode เป็น --:--:-- เพื่อป้องกันการ Flash กระพริบ
+        let currentTierTimerText = '--:--:--';
+        if (isBackground) {
+            const existingTierTimer = document.getElementById('tier-cooldown-timer');
+            if (existingTierTimer) currentTierTimerText = existingTierTimer.innerText;
+        }
+
         if (!isTierFinished) {
             shouldShowAddTime = true;
             shouldShowSkip = false;
@@ -2671,7 +2674,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div style="background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #1d4ed8; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                         <span class="material-icons" style="font-size: 20px;">timer</span>
                         ${getLocale() === 'en' ? 'Time remaining for this tier:' : 'เวลาที่เหลือสำหรับด่านนี้:'} 
-                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
+                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">${currentTierTimerText}</span>
                     </div>
                 `;
             } else {
@@ -2691,7 +2694,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px; border-radius: 8px; margin-top: 20px; text-align: center; color: #d97706; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                         <span class="material-icons" style="font-size: 20px;">hourglass_top</span>
                         ${getLocale() === 'en' ? 'Next tier starts in:' : 'ด่านต่อไปจะเริ่มในอีก:'} 
-                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">--:--:--</span>
+                        <span id="tier-cooldown-timer" data-time="${tierEndMs}" style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">${currentTierTimerText}</span>
                     </div>
                 `;
             } else {
@@ -2868,7 +2871,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             if (nowMsFee >= endTimeMs) {
                 timerHtml = `<div style="font-size:0.75rem; color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</div>`;
             } else {
-                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">คำนวณ...</span></div>`;
+                // 🌟 ดึงข้อความเก่ามาใส่แทนการ Hardcode เป็นคำนวณ... เพื่อป้องกันการ Flash กระพริบ
+                let currentFeeTimerText = 'คำนวณ...';
+                if (isBackground) {
+                    const existingFeeTimer = document.getElementById('inline-qfee-timer');
+                    if (existingFeeTimer) currentFeeTimerText = existingFeeTimer.innerText;
+                }
+                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">${currentFeeTimerText}</span></div>`;
             }
         }
 
@@ -3352,7 +3361,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             let tStr = '';
             if(d>0) tStr += `${d} วัน `;
             if(h>0 || d>0) tStr += `${h} ชม. `;
-            tStr += `${m} นาที ${s} วิ`;
+            if(m>0 || h>0 || d>0) tStr += `${m} นาที `;
+            tStr += `${s} วิ`;
             el.innerText = tStr;
         }
     }, 1000);
