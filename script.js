@@ -943,9 +943,11 @@ window.openInactivityMonitor = (clanId) => {
 window.openQuestFeeSettings = (clanId) => {
     let targetGoldGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gold_grind_${clanId}`)) || 0;
     let targetGemsGrind = parseInt(localStorage.getItem(`wolvesville_qfee_gems_grind_${clanId}`)) || 0;
+    let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
 
     let targetGoldLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gold_leech_${clanId}`)) || 0;
     let targetGemsLeech = parseInt(localStorage.getItem(`wolvesville_qfee_gems_leech_${clanId}`)) || 0;
+    let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
 
     let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
 
@@ -963,6 +965,10 @@ window.openQuestFeeSettings = (clanId) => {
                             <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-grind" value="${targetGemsGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
                         </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label style="font-size:0.75rem; color:#1e40af; font-weight:bold;">XP (ต่อเควส):</label>
+                            <input type="number" id="qfee-target-xp-grind" value="${targetXpGrind}" style="width:80px; padding:4px 8px; border:1px solid #93c5fd; border-radius:4px;">
+                        </div>
                     </div>
                 </div>
                 <div style="flex:1; min-width:200px; background:#fffbeb; padding:12px; border-radius:8px; border:1px solid #fde68a;">
@@ -975,6 +981,10 @@ window.openQuestFeeSettings = (clanId) => {
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">เพชร:</label>
                             <input type="number" id="qfee-target-gems-leech" value="${targetGemsLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label style="font-size:0.75rem; color:#92400e; font-weight:bold;">XP (ต่อเควส):</label>
+                            <input type="number" id="qfee-target-xp-leech" value="${targetXpLeech}" style="width:80px; padding:4px 8px; border:1px solid #fcd34d; border-radius:4px;">
                         </div>
                     </div>
                 </div>
@@ -1007,17 +1017,21 @@ window.openQuestFeeSettings = (clanId) => {
     overlay.querySelector('#qfee-save-settings-btn').onclick = () => {
         targetGoldGrind = parseInt(overlay.querySelector('#qfee-target-gold-grind').value) || 0;
         targetGemsGrind = parseInt(overlay.querySelector('#qfee-target-gems-grind').value) || 0;
+        targetXpGrind = parseInt(overlay.querySelector('#qfee-target-xp-grind').value) || 0;
 
         targetGoldLeech = parseInt(overlay.querySelector('#qfee-target-gold-leech').value) || 0;
         targetGemsLeech = parseInt(overlay.querySelector('#qfee-target-gems-leech').value) || 0;
+        targetXpLeech = parseInt(overlay.querySelector('#qfee-target-xp-leech').value) || 0;
 
         durationDays = parseFloat(overlay.querySelector('#qfee-duration-set').value) || 0;
         
         localStorage.setItem(`wolvesville_qfee_gold_grind_${clanId}`, targetGoldGrind);
         localStorage.setItem(`wolvesville_qfee_gems_grind_${clanId}`, targetGemsGrind);
+        localStorage.setItem(`wolvesville_qfee_xp_grind_${clanId}`, targetXpGrind);
 
         localStorage.setItem(`wolvesville_qfee_gold_leech_${clanId}`, targetGoldLeech);
         localStorage.setItem(`wolvesville_qfee_gems_leech_${clanId}`, targetGemsLeech);
+        localStorage.setItem(`wolvesville_qfee_xp_leech_${clanId}`, targetXpLeech);
 
         localStorage.setItem(`wolvesville_qfee_duration_${clanId}`, durationDays);
         
@@ -3222,6 +3236,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     let historyHtml = `<div style="padding:15px; color:#ccc; text-align:center;">ไม่มีประวัติการทำเควส</div>`;
     if (!history.error && Array.isArray(history) && history.length > 0) {
+        
+        // ดึงเป้าหมาย XP ของแคลนมาใช้
+        let targetXpGrind = parseInt(localStorage.getItem(`wolvesville_qfee_xp_grind_${clanId}`)) || 0;
+        let targetXpLeech = parseInt(localStorage.getItem(`wolvesville_qfee_xp_leech_${clanId}`)) || 0;
+
         historyHtml = '<div class="history-list">';
         historyHtml += history.map(h => {
              const questTitle = h.quest?.title || `Tier ${h.tier}`;
@@ -3233,10 +3252,26 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                  const sortedParts = [...h.participants].sort((a, b) => b.xp - a.xp);
                  participantsHtml = sortedParts.map((p, index) => {
                      const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `<span style="color:#64748b; font-weight:bold;">${index + 1}.</span>`));
+                     const safeUsername = escapeJsString(p.username || 'Unknown');
+                     
+                     // --- เช็ค XP ว่าทำผ่านเป้าที่ตั้งไว้หรือไม่ ---
+                     let memType = localStorage.getItem(`wolvesville_member_type_${clanId}_${p.playerId}`) || 'GRIND';
+                     let targetXp = memType === 'GRIND' ? targetXpGrind : targetXpLeech;
+                     let isPass = targetXp === 0 || p.xp >= targetXp;
+                     
+                     let xpStatusHtml = '';
+                     if (targetXp > 0) {
+                         if (isPass) {
+                             xpStatusHtml = `<span style="font-size:0.7rem; color:#16a34a; background:#dcfce7; padding:2px 6px; border-radius:12px; margin-left:5px;" title="ผ่านเกณฑ์"><span class="material-icons" style="font-size:12px; vertical-align:text-bottom;">check_circle</span> ผ่าน</span>`;
+                         } else {
+                             xpStatusHtml = `<span style="font-size:0.7rem; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:12px; margin-left:5px;" title="ไม่ผ่าน (ขาด ${(targetXp - p.xp).toLocaleString()})"><span class="material-icons" style="font-size:12px; vertical-align:text-bottom;">cancel</span> ขาด ${(targetXp - p.xp).toLocaleString()}</span>`;
+                         }
+                     }
+
                      return `
                          <div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; border-bottom:1px dashed #eee;">
-                             <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${escapeJsString(p.username)}')">${p.username || 'Unknown'}</strong></span>
-                             <span style="color:var(--primary-color);">${p.xp.toLocaleString()} XP</span>
+                             <span><span style="display:inline-block; width:20px; text-align:center;">${medal}</span> <strong style="cursor:pointer; text-decoration:underline;" onclick="window.goToPlayerSearch('${safeUsername}')">${p.username || 'Unknown'}</strong></span>
+                             <span style="color:${isPass ? 'var(--primary-color)' : '#dc2626'};">${p.xp.toLocaleString()} XP ${xpStatusHtml}</span>
                          </div>
                       `;
                   }).join('');
@@ -3255,6 +3290,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                         <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
                         <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
                             ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
+                            <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:5px;">* ผู้ที่ไม่ได้ทำ XP เลย จะไม่ปรากฏชื่อในรายการนี้</div>
                         </div>
                     </details>
                 </div>
