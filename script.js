@@ -2791,6 +2791,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         let durationDays = parseFloat(localStorage.getItem(`wolvesville_qfee_duration_${clanId}`)) || 0;
         let resetTime = parseInt(localStorage.getItem(`wolvesville_qfee_reset_${clanId}`)) || 0;
 
+        // --- เพิ่มระบบดึงเวลาจากคิวเควสอัตโนมัติมาเป็นเวลาเริ่มต้น ---
+        let isUsingScheduleTime = false;
+        if (scheduled && scheduled.length > 0) {
+            const sq = scheduled[0];
+            if (sq.targetTime > 0) {
+                resetTime = sq.targetTime;
+                isUsingScheduleTime = true;
+            } else if (sq.scheduledAt > 0) {
+                resetTime = sq.scheduledAt;
+                isUsingScheduleTime = true;
+            }
+        }
+
         const endTimeMs = durationDays > 0 && resetTime > 0 ? resetTime + (durationDays * 24 * 60 * 60 * 1000) : 0;
         const nowMsFee = Date.now();
 
@@ -2865,20 +2878,41 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             `;
         });
 
-        const resetDateStr = resetTime > 0 ? formatDateThai(resetTime) : 'ยังไม่เคยรีเซ็ต';
+        let resetDateStr = resetTime > 0 ? formatDateThai(resetTime) : 'ยังไม่เคยรีเซ็ต';
+        if (isUsingScheduleTime) {
+            resetDateStr += ' <span style="font-size:0.75rem; color:#8b5cf6; font-weight:bold;">(อิงตามคิวอัตโนมัติ)</span>';
+        }
+
         let timerHtml = '';
         if (resetTime > 0 && durationDays > 0) {
-            if (nowMsFee >= endTimeMs) {
-                timerHtml = `<div style="font-size:0.75rem; color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</div>`;
-            } else {
-                // 🌟 ดึงข้อความเก่ามาใส่แทนการ Hardcode เป็นคำนวณ... เพื่อป้องกันการ Flash กระพริบ
+            if (nowMsFee < resetTime) {
+                // กรณียังไม่ถึงเวลาเริ่มรอบ (อนาคต)
                 let currentFeeTimerText = 'คำนวณ...';
                 if (isBackground) {
                     const existingFeeTimer = document.getElementById('inline-qfee-timer');
                     if (existingFeeTimer) currentFeeTimerText = existingFeeTimer.innerText;
                 }
-                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}">${currentFeeTimerText}</span></div>`;
+                timerHtml = `<div style="font-size:0.75rem; color:#3b82f6; font-weight:bold;">เริ่มรอบใน <span id="inline-qfee-timer" data-time="${resetTime}" data-type="start">${currentFeeTimerText}</span></div>`;
+            } else if (nowMsFee >= endTimeMs) {
+                // กรณีหมดเวลา
+                timerHtml = `<div style="font-size:0.75rem; color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</div>`;
+            } else {
+                // กรณีกำลังนับเวลา
+                let currentFeeTimerText = 'คำนวณ...';
+                if (isBackground) {
+                    const existingFeeTimer = document.getElementById('inline-qfee-timer');
+                    if (existingFeeTimer) currentFeeTimerText = existingFeeTimer.innerText;
+                }
+                timerHtml = `<div style="font-size:0.75rem; color:#f59e0b; font-weight:bold;">หมดเวลาใน <span id="inline-qfee-timer" data-time="${endTimeMs}" data-type="end">${currentFeeTimerText}</span></div>`;
             }
+        } else if (resetTime > 0 && nowMsFee < resetTime) {
+            // กรณีมีเวลาเริ่ม แต่ไม่ได้ตั้งจำกัดระยะเวลาด่าน
+            let currentFeeTimerText = 'คำนวณ...';
+            if (isBackground) {
+                const existingFeeTimer = document.getElementById('inline-qfee-timer');
+                if (existingFeeTimer) currentFeeTimerText = existingFeeTimer.innerText;
+            }
+            timerHtml = `<div style="font-size:0.75rem; color:#3b82f6; font-weight:bold;">เริ่มรอบใน <span id="inline-qfee-timer" data-time="${resetTime}" data-type="start">${currentFeeTimerText}</span></div>`;
         }
 
         feeTrackerHtml = `
@@ -3347,13 +3381,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     inlineQfeeTimerInterval = setInterval(() => {
         const el = document.getElementById('inline-qfee-timer');
         if (!el) return;
-        const endTimeMs = parseInt(el.getAttribute('data-time'));
+        const targetMs = parseInt(el.getAttribute('data-time'));
+        const type = el.getAttribute('data-type');
         const now = Date.now();
-        if (now >= endTimeMs) {
-            el.innerHTML = '<span style="color:#ef4444; font-weight:bold;">หมดเวลาแล้ว!</span>';
+        
+        if (now >= targetMs) {
+            if (type === 'end') {
+                el.parentElement.innerHTML = '<span style="color:#ef4444; font-weight:bold;">หมดเวลาแล้ว! (ยอดใหม่จะไม่นำมานับ)</span>';
+            } else {
+                el.parentElement.innerHTML = '<span style="color:#16a34a; font-weight:bold;">เริ่มรอบแล้ว! (รีเฟรชเพื่ออัปเดต)</span>';
+            }
             clearInterval(inlineQfeeTimerInterval);
         } else {
-            const diff = endTimeMs - now;
+            const diff = targetMs - now;
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
             const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
