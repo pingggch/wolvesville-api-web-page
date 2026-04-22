@@ -1678,7 +1678,7 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 };
 
 // --- ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
-window.scheduleQuest = async (clanId, questId, questTitle) => {
+window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
     
     // เรียกหน้าต่างเลือกเวลา
@@ -1711,6 +1711,7 @@ window.scheduleQuest = async (clanId, questId, questTitle) => {
             scheduled.push({
                 questId: questId,
                 questTitle: questTitle,
+                questImageUrl: questImageUrl || 'https://via.placeholder.com/40',
                 targetTime: targetTimeMs,
                 scheduledAt: Date.now()
             });
@@ -2650,11 +2651,15 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                 <h4 style="margin: 0 0 10px 0; color:#334155; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:#8b5cf6;">schedule</span> เควสที่ตั้งเวลาไว้ (คิวอัตโนมัติ)</h4>
                 ${scheduled.map((sq, idx) => {
                     const timeStr = sq.targetTime > 0 ? new Date(sq.targetTime).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') : 'ทันทีที่แคลนว่าง';
+                    const imgUrl = sq.questImageUrl || 'https://via.placeholder.com/40';
                     return `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px; background:white; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:5px;">
-                            <div>
-                                <strong style="color:var(--primary-color);">${sq.questTitle}</strong>
-                                <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${imgUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" referrerpolicy="no-referrer">
+                                <div>
+                                    <strong style="color:var(--primary-color);">${sq.questTitle}</strong>
+                                    <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
+                                </div>
                             </div>
                             <button onclick="window.cancelScheduledQuest('${clanId}', ${idx})" style="background:#fee2e2; color:#dc2626; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">ยกเลิกรายการ (UI)</button>
                         </div>
@@ -3189,7 +3194,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             }
 
             autoBuyBtn = `
-                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}')" 
+                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}', '${q.promoImageUrl}')" 
                         style="background:#8b5cf6; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2);">
                     <span class="material-icons" style="font-size:16px; margin-right:4px;">schedule</span> ${t('txt_auto_buy')}
                 </button>
