@@ -3897,4 +3897,81 @@ document.addEventListener('DOMContentLoaded', () => {
                     embedTitle = '🐛 รายงานปัญหา (Bug)'; 
                 } else if (topic === 'suggestion') { 
                     embedColor = 16776960; // สีเหลือง
-                    embedTitle = '💡 ข้อเสนอแนะ
+                    embedTitle = '💡 ข้อเสนอแนะ (Suggestion)'; 
+                } 
+
+                const formData = new FormData();
+                const payload = {
+                    username: "Web Feedback",
+                    avatar_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png",
+                    // ⬇️ ตรงนี้คือส่วนที่ใช้แท็กคุณ
+                    content: "🔔 **ก๊อกๆ มีฟีดแบคใหม่เข้ามาครับ!** <@757200592673308673>", 
+                    embeds: [{
+                        title: embedTitle,
+                        color: embedColor,
+                        fields: [
+                            {
+                                name: "💬 รายละเอียดข้อความ",
+                                value: msg ? `>>> ${msg}` : "*ไม่มีข้อความ (แนบมาแค่รูปภาพ)*",
+                                inline: false
+                            }
+                        ],
+                        footer: {
+                            text: "ส่งจากเว็บไซต์ Wolvesville API Dashboard",
+                            icon_url: "https://cdn-icons-png.flaticon.com/512/3592/3592869.png"
+                        },
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+
+                if (imageInput.files.length > 0) {
+                    const file = imageInput.files[0];
+                    formData.append('file', file, file.name);
+                    payload.embeds[0].image = { url: `attachment://${file.name}` };
+                }
+
+                formData.append('payload_json', JSON.stringify(payload));
+                const response = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                showCustomAlert(t('alert_success'), '✅ ส่งข้อความสำเร็จ ขอบคุณสำหรับข้อเสนอแนะครับ!');
+                document.getElementById('feedback-msg').value = ''; 
+                imageInput.value = '';
+                feedbackModal.style.display = 'none';
+                
+            } catch (e) {
+                console.error(e);
+                showCustomAlert(t('alert_error'), '❌ ' + e.message);
+            } finally {
+                submitFeedbackBtn.innerHTML = originalText;
+                submitFeedbackBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- ระบบขยายรูปภาพ (Image Viewer) ---
+    const imageViewerModal = document.getElementById('image-viewer-modal');
+    const imageViewerImg = document.getElementById('image-viewer-img');
+    const closeImageViewerBtn = document.getElementById('close-image-viewer');
+
+    document.querySelectorAll('.qr-code').forEach(img => {
+        img.addEventListener('click', () => {
+            if(imageViewerImg) imageViewerImg.src = img.src;
+            if(imageViewerModal) imageViewerModal.style.display = 'flex';
+        });
+    });
+
+    if (imageViewerModal && closeImageViewerBtn) {
+        closeImageViewerBtn.addEventListener('click', () => {
+            imageViewerModal.style.display = 'none';
+        });
+        imageViewerModal.addEventListener('click', (e) => {
+            if (e.target === imageViewerModal) {
+                imageViewerModal.style.display = 'none';
+            }
+        });
+    }
+
+    document.querySelector('.nav-link[data-page="dashboard"]')?.click();
+});
