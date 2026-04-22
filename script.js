@@ -3385,8 +3385,13 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         historyHtml = '<div class="history-list">';
         historyHtml += history.map(h => {
              const questTitle = h.quest?.title || `Tier ${h.tier}`;
-             const endDate = h.tierEndTime || h.endTime;
              const questImage = h.quest?.promoImageUrl || 'https://via.placeholder.com/40';
+             
+             // ดึงค่าใหม่ที่ต้องการ
+             const totalXp = h.xp || 0;
+             const xpPerReward = h.xpPerReward || 0;
+             const startTime = h.tierStartTime ? formatDateThai(h.tierStartTime) : '-';
+             const endTime = h.tierEndTime || h.endTime ? formatDateThai(h.tierEndTime || h.endTime) : '-';
 
              let participantsHtml = '';
              if (h.participants && Array.isArray(h.participants)) {
@@ -3406,17 +3411,30 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
              return `
                 <div class="history-item" style="border-left:4px solid var(--primary-color); display:block; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div style="display:flex; align-items:center;">
-                        <img src="${questImage}" style="width:40px; height:40px; border-radius:4px; margin-right:10px; object-fit:cover;">
+                    <div style="display:flex; align-items:flex-start;">
+                        <img src="${questImage}" style="width:48px; height:48px; border-radius:6px; margin-right:12px; object-fit:cover; border: 1px solid #e2e8f0;">
                         <div style="display:flex; flex-direction:column; flex:1;">
-                            <div style="font-weight:600; color:#334155;">${questTitle}</div>
-                            <div style="font-size:0.75rem; color:#94a3b8;">${t('txt_ends')}: ${formatDateThai(endDate)}</div>
+                            <div style="font-weight:bold; color:#1e293b; font-size:1rem; margin-bottom:4px;">${questTitle}</div>
+                            
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:0.75rem; color:#64748b; margin-bottom:6px;">
+                                <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; border:1px solid #e2e8f0;">
+                                    <strong style="color:var(--primary-color);">XP รวม:</strong> ${totalXp.toLocaleString()}
+                                </span>
+                                <span style="background:#fffbeb; padding:2px 6px; border-radius:4px; border:1px solid #fef08a;">
+                                    <strong style="color:#d97706;">XP / รางวัล:</strong> ${xpPerReward.toLocaleString()}
+                                </span>
+                            </div>
+                            
+                            <div style="font-size:0.7rem; color:#94a3b8; background:#f8fafc; padding:4px 8px; border-radius:4px;">
+                                <div style="margin-bottom:2px;"><span class="material-icons" style="font-size:12px; vertical-align:middle; color:#22c55e;">play_arrow</span> <strong style="color:#64748b;">เริ่ม:</strong> ${startTime}</div>
+                                <div><span class="material-icons" style="font-size:12px; vertical-align:middle; color:#ef4444;">stop</span> <strong style="color:#64748b;">สิ้นสุด:</strong> ${endTime}</div>
+                            </div>
                         </div>
                     </div>
-                    <details style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
-                        <summary style="cursor:pointer; font-size:0.8rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')}</summary>
-                        <div style="max-height:200px; overflow-y:auto; padding-right:5px;">
-                            ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem;">${t('txt_no_parts')}</div>`}
+                    <details style="margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px;">
+                        <summary style="cursor:pointer; font-size:0.85rem; color:var(--primary-color); font-weight:600; margin-bottom:5px;">${t('txt_parts_list')} (${h.participants?.length || 0})</summary>
+                        <div style="max-height:200px; overflow-y:auto; padding-right:5px;" class="clan-scroll-area">
+                            ${participantsHtml || `<div style="color:#ccc; font-size:0.8rem; text-align:center;">${t('txt_no_parts')}</div>`}
                         </div>
                     </details>
                 </div>
