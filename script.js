@@ -1090,6 +1090,56 @@ window.resetQuestFeeRound = (clanId) => {
     });
 };
 
+window.openMonthlyFeeSettings = (clanId) => {
+    let targetGold = parseInt(localStorage.getItem(`wolvesville_mfee_gold_${clanId}`)) || 0;
+    let targetGems = parseInt(localStorage.getItem(`wolvesville_mfee_gems_${clanId}`)) || 0;
+
+    let contentHtml = `
+        <div style="margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย ทอง (ต่อเดือน)</label>
+                    <input type="number" id="mfee-target-gold" value="${targetGold}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label style="font-size:0.75rem; color:#64748b; font-weight:bold;">เป้าหมาย เพชร (ต่อเดือน)</label>
+                    <input type="number" id="mfee-target-gems" value="${targetGems}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit;">
+                </div>
+            </div>
+            <div style="font-size:0.7rem; color:#ef4444; margin-top:8px;">* ระบบจะเช็คจากยอดบริจาคสะสม "เดือนนี้" ของผู้เล่นโดยอัตโนมัติ (ไม่ต้องกดรีเซ็ต)</div>
+        </div>
+        <button id="mfee-save-settings-btn" style="width:100%; background:#10b981; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">บันทึกการตั้งค่า</button>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="text-align:left; min-width: 80%; max-width: 400px;">
+            <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; color:#047857;">
+                <span class="material-icons" style="color:#10b981;">account_balance</span> ตั้งค่าค่าบำรุง / ค่าเข้า
+            </h3>
+            ${contentHtml}
+            <div class="custom-modal-buttons">
+                <button class="btn-modal btn-confirm">${t('btn_close')}</button>
+            </div>
+        </div>
+    `;
+
+    overlay.querySelector('.btn-confirm').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    overlay.querySelector('#mfee-save-settings-btn').onclick = () => {
+        targetGold = parseInt(overlay.querySelector('#mfee-target-gold').value) || 0;
+        targetGems = parseInt(overlay.querySelector('#mfee-target-gems').value) || 0;
+        
+        localStorage.setItem(`wolvesville_mfee_gold_${clanId}`, targetGold);
+        localStorage.setItem(`wolvesville_mfee_gems_${clanId}`, targetGems);
+        
+        overlay.remove();
+        window.fetchClanData(clanId, true, true);
+    };
+    document.body.appendChild(overlay);
+};
+
 window.cancelScheduledQuest = (clanId, index) => {
     let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
     scheduled.splice(index, 1);
@@ -3147,6 +3197,81 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         `;
     }
 
+    let monthlyFeeTrackerHtml = '';
+    if (canEdit) {
+        let targetMonthlyGold = parseInt(localStorage.getItem(`wolvesville_mfee_gold_${clanId}`)) || 0;
+        let targetMonthlyGems = parseInt(localStorage.getItem(`wolvesville_mfee_gems_${clanId}`)) || 0;
+
+        let paidMembersCount = 0;
+        let monthlyFeeListHtml = '';
+        
+        const sortedAllMembers = [...members].sort((a, b) => a.username.localeCompare(b.username));
+        
+        sortedAllMembers.forEach(m => {
+            const donMonthGold = m.donated?.gold?.month || 0;
+            const donMonthGems = m.donated?.gems?.month || 0;
+
+            const noFeeSet = targetMonthlyGold === 0 && targetMonthlyGems === 0;
+            const isGoldMet = targetMonthlyGold === 0 || donMonthGold >= targetMonthlyGold;
+            const isGemsMet = targetMonthlyGems === 0 || donMonthGems >= targetMonthlyGems;
+            const isPaid = !noFeeSet && isGoldMet && isGemsMet;
+
+            if (isPaid) paidMembersCount++;
+            
+            const btnStyle = isPaid 
+                ? `background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0;` 
+                : (noFeeSet ? `background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;` : `background:#fee2e2; color:#dc2626; border:1px solid #fecaca;`);
+                
+            let missingText = [];
+            if (!noFeeSet) {
+                if (!isGoldMet) missingText.push(`ขาด ${(targetMonthlyGold - donMonthGold).toLocaleString()} ทอง`);
+                if (!isGemsMet) missingText.push(`ขาด ${(targetMonthlyGems - donMonthGems).toLocaleString()} เพชร`);
+            }
+
+            const btnText = isPaid 
+                ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">check_circle</span> ผ่านเกณฑ์` 
+                : (noFeeSet ? `<span class="material-icons" style="font-size:14px; margin-right:4px;">help_outline</span> ยังไม่ตั้งค่า` : `<span class="material-icons" style="font-size:14px; margin-right:4px;">cancel</span> ไม่ผ่าน`);
+                
+            monthlyFeeListHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; background:white;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/30')}" style="width:24px; height:24px; border-radius:6px; object-fit:contain; background:#f8fafc;">
+                        <div>
+                            <strong style="color:#1e293b; font-size:0.9rem; cursor:pointer;" onclick="window.goToPlayerSearch('${escapeJsString(m.username)}')">${m.username}</strong>
+                            <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">
+                                <strong style="color:#d97706;">${donMonthGold.toLocaleString()} 💰</strong> | <strong style="color:#9333ea;">${donMonthGems.toLocaleString()} 💎</strong>
+                            </div>
+                            ${missingText.length > 0 ? `<div style="font-size:0.65rem; color:#dc2626;">${missingText.join(' / ')}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="${btnStyle} padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; min-width: max-content;">
+                        ${btnText}
+                    </div>
+                </div>
+            `;
+        });
+
+        monthlyFeeTrackerHtml = `
+            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                    <h4 style="margin:0; color:#334155; font-size:1.05rem; display:flex; align-items:center; gap:5px;">
+                        <span class="material-icons" style="color:#10b981;">account_balance</span> ค่าบำรุงแคลน / ค่าเข้า (รายเดือน)
+                    </h4>
+                    <button onclick="window.openMonthlyFeeSettings('${clanId}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px;">
+                        <span class="material-icons" style="font-size:16px;">settings</span> ตั้งค่าเป้าหมาย
+                    </button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center;">
+                    <div>ระบบอิงจาก <strong>ยอดบริจาครายเดือน</strong> (ออโต้รีเซ็ตทุกเดือน)</div>
+                    <div>ผ่านเกณฑ์: <strong style="color:#16a34a;">${paidMembersCount}</strong> / <strong>${sortedAllMembers.length}</strong></div>
+                </div>
+                <div style="max-height:250px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;" class="clan-scroll-area">
+                    ${monthlyFeeListHtml || '<div style="padding:15px; text-align:center; color:#94a3b8;">ไม่มีข้อมูลสมาชิก</div>'}
+                </div>
+            </div>
+        `;
+    }
+
     let availableQuestsHtml = '';
     if (canEdit && !availableQuests.error && Array.isArray(availableQuests) && availableQuests.length > 0) {
         let shuffleVotesHtml = '';
@@ -3470,6 +3595,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const cXpTracker = document.getElementById('xp-tracker-wrapper');
         if (cXpTracker && cXpTracker.innerHTML !== xpTrackerHtml) cXpTracker.innerHTML = xpTrackerHtml;
 
+        const cMonthlyFee = document.getElementById('monthly-fee-wrapper');
+        if (cMonthlyFee && cMonthlyFee.innerHTML !== monthlyFeeTrackerHtml) cMonthlyFee.innerHTML = monthlyFeeTrackerHtml;
+
         const cAvailQuest = document.getElementById('available-quests-wrapper');
         if (cAvailQuest && cAvailQuest.innerHTML !== availableQuestsHtml) cAvailQuest.innerHTML = availableQuestsHtml;
 
@@ -3517,6 +3645,7 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
                     <div id="active-quest-wrapper">${questsHtml}</div>
                     <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
                     <div id="xp-tracker-wrapper">${xpTrackerHtml}</div>
+                    <div id="monthly-fee-wrapper">${monthlyFeeTrackerHtml}</div>
                     <div id="available-quests-wrapper">${availableQuestsHtml}</div>
                 </div>
             </div>
