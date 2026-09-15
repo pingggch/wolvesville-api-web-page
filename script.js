@@ -4090,21 +4090,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(myClanBtn) myClanBtn.addEventListener('click', fetchMyClan);
     if(clanNameInput) clanNameInput.addEventListener('keydown', (e) => { if(e.key==='Enter') searchClan(); });
 
-    const settingsPage = document.getElementById('settings');
-    if (settingsPage) {
-        const hatGroup = document.createElement('div');
-        hatGroup.className = 'settings-group';
-        hatGroup.style.marginTop = '20px';
-        hatGroup.innerHTML = `
-            <h3><span class="material-icons" style="vertical-align: middle; color: #a855f7;">checkroom</span> API Hat</h3>
-            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Exclusive API Hat for Bot Owner / กดรับหมวกสำหรับเจ้าของบอท</p>
-            <button onclick="window.redeemApiHat()" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <span class="material-icons" style="font-size: 18px;">auto_awesome</span> Redeem Hat
-            </button>
-        `;
-        settingsPage.appendChild(hatGroup);
-    }
-
     // --- ระบบฟีดแบค (ปุ่มลอย & ส่งเข้า Discord Webhook พร้อมรูปภาพ) ---
     const fabBtn = document.getElementById('floating-feedback-btn');
     const feedbackModal = document.getElementById('feedback-modal');
