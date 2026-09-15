@@ -838,6 +838,28 @@ const clanContentContainer = document.getElementById('clan-content-container');
 // 4. GLOBAL FUNCTIONS
 // **********************************************
 
+async function fetchDonateUsername() {
+    const userId = '51cf1a2b-ca4c-4e64-a87b-7ffc0303a1d6';
+    const usernameEl = document.getElementById('donate-ingame-username');
+    if (!usernameEl) return;
+
+    try {
+        // ใช้ fetchData ที่ระบบมีอยู่แล้วดึงข้อมูลจาก API
+        const data = await fetchData(`/players/${userId}`);
+        
+        // ตรวจสอบว่ามีข้อมูลและไม่มี Error
+        if (data && !data.error && data.username) {
+            usernameEl.innerText = data.username;
+        } else {
+            // สำรองชื่อไว้เผื่อ API ดึงไม่ได้หรือจำกัด Rate Limit
+            usernameEl.innerText = 'Moo_Ping'; 
+        }
+    } catch (e) {
+        console.error('Error fetching donate username:', e);
+        usernameEl.innerText = 'Moo_Ping';
+    }
+}
+
 window.goToPlayerSearch = (username) => {
     const input = document.getElementById('username-input');
     if(input) {
