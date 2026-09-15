@@ -69,7 +69,7 @@
             <section id="dashboard" class="page-content">
                 <h2 data-i18n="head_dashboard">ภาพรวม API</h2>
                 
-                <!-- ย้ายปุ่มรับหมวก API (Redeem Hat) มาไว้หน้าแรก -->
+                <!-- กล่องรับหมวก API -->
                 <div style="background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px;">
                     <div>
                         <h3 style="margin: 0 0 5px 0; color: #a855f7; display: flex; align-items: center; gap: 8px;">
@@ -120,6 +120,9 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- ข่าวสารจากเซิร์ฟเวอร์ -->
+                <div id="global-announcements-container"></div>
             </section>
             
             <section id="player-search" class="page-content">
@@ -181,8 +184,7 @@
                     <p data-i18n="donate_desc" style="color: #64748b; line-height: 1.6; max-width: 600px; margin: 0 auto;">หากคุณใช้งานแล้วชื่นชอบ สามารถช่วยสมทบทุนค่าเซิร์ฟเวอร์หรือเลี้ยงกาแฟผู้พัฒนาได้นะครับ เพื่อให้ระบบเปิดใช้งานได้ในระยะยาว</p>
                     
                     <div style="margin: 25px auto; max-width: 300px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
-                        <!-- เปลี่ยนรูป QR Code ตรงนี้ได้เลยครับ -->
-                        <img src="ReceiveMoney_QR_2026-02-20_1...png" alt="Donate QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="ReceiveMoney_QR_2026-02-20_140228.png" alt="Donate QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                         
                         <strong style="display: block; margin-top: 15px; color: #1e293b; font-size: 1.1rem;" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</strong>
                         <div style="color: #f97316; font-size: 0.95rem; font-weight: bold; margin-top: 5px;" data-i18n="donate_truemoney">โอนผ่านทรูมันนี่วอลเล็ท</div>
@@ -203,7 +205,7 @@
             <section id="settings" class="page-content">
                 <h2 data-i18n="head_settings">การตั้งค่า</h2>
                 
-                <!-- ย้ายคู่มือสอนหา API Key มาไว้บนสุด -->
+                <!-- คู่มือสอนหา API Key -->
                 <div style="margin-bottom: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
                     <h3 style="margin-top: 0; color: #3b82f6; display: flex; align-items: center; gap: 8px;">
                         <span class="material-icons">help_outline</span> วิธีหา API Key (How to get API Key)
@@ -226,7 +228,7 @@
                         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
                             <h4 style="margin: 0 0 10px 0; color: #1e293b;">📌 ขั้นตอนที่ 2</h4>
                             <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; min-height: 40px;">
-                                เลื่อนลงมาหา Wolves public API แล้วกดปุ่ม <strong>API key</strong> เพื่อคัดลอก
+                                เลื่อนลงมาล่างสุดที่หัวข้อ Advanced (ขั้นสูง) แล้วกดปุ่ม <strong>API key</strong> เพื่อคัดลอก
                             </p>
                             <img src="api-key.png" alt="API Key Settings" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
                         </div>
@@ -241,7 +243,6 @@
                     </div>
                 </div>
 
-                <!-- กล่องใส่ API Key (เลื่อนลงมาอยู่ตรงกลาง) -->
                 <div class="settings-group">
                     <h3><span class="material-icons" style="vertical-align: middle;">vpn_key</span> Wolvesville API Key</h3>
                     <p data-i18n="settings_api_desc">กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
@@ -261,7 +262,6 @@
                     <button id="save-locale-btn" data-i18n="btn_save_lang">บันทึกภาษา / Save Language</button>
                     <p id="api-locale-status" style="margin-top: 15px; font-weight: bold; color: var(--success); display: none;" data-i18n="msg_lang_saved">✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)</p>
                 </div>
-
             </section>
 
             <footer style="margin-top: 50px; padding: 20px 10px 0 10px; text-align: center; font-size: 0.9rem; color: #64748b; border-top: 1px dashed #cbd5e1; width: 100%;">
