@@ -1,11 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
-const { kv } = require('@vercel/kv'); // Vercel KV ฐานข้อมูลหลัก
+const { Redis } = require('@upstash/redis'); // แทนที่ @vercel/kv ที่เลิกใช้แล้ว
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Redis.fromEnv() อ่าน UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
+// ซึ่ง Vercel ใส่ให้อัตโนมัติเมื่อคุณเชื่อมต่อ "Upstash for Redis" จาก Marketplace
+const kv = Redis.fromEnv();
 
 const WOLVESVILLE_BASE_URL = 'https://api.wolvesville.com';
 
@@ -16,7 +19,7 @@ const proxyHandler = async (req, res) => {
     const params = req.method === 'GET' ? req.query : req.body;
     const endpoint = params.endpoint;
     const apiKey = params.apiKey;
-    const targetMethod = params.method || 'GET'; 
+    const targetMethod = params.method || 'GET';
     const targetData = params.data || params.body;
 
     if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
@@ -35,8 +38,9 @@ const proxyHandler = async (req, res) => {
             fetchOptions.body = JSON.stringify(targetData);
         }
 
+        // fetch เป็น global ใน Node 18+ บน Vercel แล้ว ไม่ต้อง import node-fetch อีกต่อไป
         const response = await fetch(`${WOLVESVILLE_BASE_URL}${endpoint}`, fetchOptions);
-        
+
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             const data = await response.json();
@@ -110,7 +114,7 @@ app.get('/api/cron-buy-quest', async (req, res) => {
                     headers: { 'Authorization': `Bot ${data.apiKey}`, 'Accept': 'application/json' }
                 });
                 const activeData = await activeCheckRes.json();
-                
+
                 if (activeData && activeData.quest) {
                     results.push({ clanId, status: 'skipped', reason: 'Quest already active' });
                     continue;
@@ -118,8 +122,8 @@ app.get('/api/cron-buy-quest', async (req, res) => {
 
                 const buyRes = await fetch(`${WOLVESVILLE_BASE_URL}/clans/${clanId}/quests/claim`, {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': `Bot ${data.apiKey}`, 
+                    headers: {
+                        'Authorization': `Bot ${data.apiKey}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -147,20 +151,24 @@ app.get('/api/cron-buy-quest', async (req, res) => {
 
 
 // ==============================================
-// 3. ระบบนับสถิติ (STATS TRACKER - Vercel KV)
+// 3. ระบบนับสถิติ (STATS TRACKER - Upstash Redis)
 // ==============================================
 
-// ฟังก์ชันช่วยจัดการข้อมูลสถิติพื้นฐาน
+const METRICS = ['requests', 'visitors']; // รองรับทั้งสองแบบ ตามที่ dashboard เรียกจริง
+
 const getInitialStats = () => {
     const today = new Date();
-    return {
+    const base = {
         date_today: today.toISOString().split('T')[0],
         date_this_month: today.toISOString().substring(0, 7),
-        requests: { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 }
     };
+    for (const m of METRICS) {
+        base[m] = { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 };
+    }
+    return base;
 };
 
-// ตรวจสอบและรีเซ็ตวัน/เดือน/ปี
+// ตรวจสอบและรีเซ็ตวัน/เดือน/ปี (รีเซ็ตทุก metric พร้อมกัน)
 const checkAndResetStats = (stats) => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -168,20 +176,18 @@ const checkAndResetStats = (stats) => {
     const currentYear = today.getFullYear();
     let isUpdated = false;
 
-    // รีเซ็ตรายวัน
     if (stats.date_today !== todayStr) {
-        stats.requests.count_today = 0;
+        for (const m of METRICS) stats[m].count_today = 0;
         stats.date_today = todayStr;
         isUpdated = true;
     }
 
-    // รีเซ็ตรายเดือน และ รายปี
     if (stats.date_this_month !== monthStr) {
         const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
         if (currentYear !== recordedYear) {
-            stats.requests.count_year = 0;
+            for (const m of METRICS) stats[m].count_year = 0;
         }
-        stats.requests.count_month = 0;
+        for (const m of METRICS) stats[m].count_month = 0;
         stats.date_this_month = monthStr;
         isUpdated = true;
     }
@@ -193,15 +199,17 @@ const checkAndResetStats = (stats) => {
 app.get('/api/stats', async (req, res) => {
     try {
         let rawStats = await kv.get('api_stats');
-        
-        // ถ้ายังไม่มีข้อมูลในฐานข้อมูล ให้ตั้งค่าเริ่มต้น
+
         if (!rawStats) {
             rawStats = getInitialStats();
+        }
+        // เผื่อข้อมูลเก่าใน Redis ไม่มี key "visitors" (มาจากโครงสร้างเดิม)
+        for (const m of METRICS) {
+            if (!rawStats[m]) rawStats[m] = { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 };
         }
 
         const { stats, isUpdated } = checkAndResetStats(rawStats);
 
-        // เซฟกลับถ้ามีการอัปเดตวัน/เดือนใหม่
         if (isUpdated) {
             await kv.set('api_stats', stats);
         }
@@ -213,46 +221,58 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-// Endpoint 3.2: สั่งบวกตัวเลขสถิติ (ทำงานทุกครั้งที่หน้าเว็บส่ง Request)
+// Endpoint 3.2: สั่งบวกตัวเลขสถิติ — รองรับทั้ง requests และ visitors
 app.post('/api/stats/increment/:type', async (req, res) => {
-    const type = req.params.type; 
-    
-    // ตรวจจับว่าต้องเป็น 'requests' เท่านั้น (เพราะลบ visitors ทิ้งแล้ว)
-    if (type !== 'requests') {
-        return res.status(400).json({ error: 'Invalid stats type' });
+    const type = req.params.type;
+
+    if (!METRICS.includes(type)) {
+        return res.status(400).json({ error: 'Invalid stats type', allowed: METRICS });
     }
 
     try {
         let rawStats = await kv.get('api_stats');
-        
+
         if (!rawStats) {
             rawStats = getInitialStats();
+        }
+        for (const m of METRICS) {
+            if (!rawStats[m]) rawStats[m] = { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 };
         }
 
         const { stats } = checkAndResetStats(rawStats);
 
-        // สั่งบวกตัวเลขขึ้นทีละ 1
-        stats.requests.count_today += 1;
-        stats.requests.count_month += 1;
-        stats.requests.count_year += 1;
-        stats.requests.count_lifetime += 1;
-        
-        // เซฟกลับลง Database
+        stats[type].count_today += 1;
+        stats[type].count_month += 1;
+        stats[type].count_year += 1;
+        stats[type].count_lifetime += 1;
+
         await kv.set('api_stats', stats);
 
-        return res.status(200).json({ success: true, count: stats.requests.count_today });
+        return res.status(200).json({ success: true, type, count: stats[type].count_today });
     } catch (error) {
         console.error("[Stats] Increment Error:", error);
         return res.status(500).json({ error: 'Failed to increment stats' });
     }
 });
 
+// ==============================================
+// 4. ไอเทมทั้งหมดในเกม — endpoint นี้ยังไม่เคยมีอยู่จริง (คือสาเหตุ 404 เดิม)
+// เก็บ cache ไว้ใน Redis แล้วให้ job แยกต่างหากอัปเดตเป็นระยะ (ดูหมายเหตุด้านล่าง)
+// ==============================================
+app.get('/api/items/total', async (req, res) => {
+    const apiKey = req.query.apiKey;
+    if (!apiKey) return res.status(401).json({ error: 'API Key missing' });
 
-// ==============================================
-// 4. เริ่มเซิร์ฟเวอร์
-// ==============================================
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => console.log(`✅ Server running on PORT ${PORT}`));
-}
+    try {
+        const cached = await kv.get('items_cache:total');
+        if (cached !== null && cached !== undefined) {
+            return res.status(200).json({ total: cached, source: 'cache' });
+        }
+        return res.status(404).json({ error: 'No cached item total yet — needs a job to populate it, see notes' });
+    } catch (error) {
+        console.error('[Items] Fetch Error:', error);
+        return res.status(500).json({ error: 'Failed to fetch item total' });
+    }
+});
 
 module.exports = app;
