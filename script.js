@@ -2351,7 +2351,7 @@ function renderPlayerProfile(data) {
                     <span class="rose-stat"><span class="material-icons">volunteer_activism</span> ${data.sentRosesCount?.toLocaleString() || 0}</span>
                 </div>
 
-                <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
+                <div class="player-bio" style="white-space: pre-wrap;">"${formatMessage(data.personalMessage)}"</div>
 
                 <!-- รูปโปรไฟล์จริง: โชว์ขนาดตามจริงแต่ไม่ให้ล้นกรอบ -->
                 ${data.profileImageUrl ? `
