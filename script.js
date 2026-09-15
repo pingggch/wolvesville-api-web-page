@@ -1309,10 +1309,19 @@ function showMemberModal(data) {
     const fmt = (n) => (n || 0).toLocaleString();
     const safeUsername = escapeJsString(data.username);
 
+    // โค้ดดึงรูปโปรไฟล์จริง (ถ้ามี)
+    let realProfileHtml = '';
+    if (data.profileImageUrl) {
+        realProfileHtml = `<img src="${data.profileImageUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:50%; border:4px solid #eab308; object-fit:cover; box-shadow: var(--shadow-md);">`;
+    }
+
     const content = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-            <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; margin-bottom:10px; background: ${bgStyle}; object-fit:contain;">
-            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;" 
+            <div style="display:flex; gap:15px; align-items:center; justify-content:center; margin-bottom:10px;">
+                ${realProfileHtml}
+                <img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100px; height:100px; border-radius:25%; border:4px solid #e2e8f0; background: ${bgStyle}; object-fit:contain;">
+            </div>
+            <h2 style="margin:0; font-size:1.5rem; color:#1e293b; cursor:pointer; text-decoration:underline;"
                 onclick="document.querySelectorAll('.modal-overlay').forEach(el => el.remove()); window.goToPlayerSearch('${safeUsername}')"
                 title="Search Player">
                 ${data.username}
