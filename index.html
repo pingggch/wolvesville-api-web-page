@@ -48,6 +48,12 @@
                             <span class="nav-text" data-i18n="menu_quests">เควสแคลนทั้งหมด</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="donate">
+                            <span class="material-icons">favorite</span>
+                            <span class="nav-text" data-i18n="menu_donate">สนับสนุนผู้พัฒนา</span>
+                        </a>
+                    </li>
                     <li style="margin-top: auto;">
                         <a href="#" class="nav-link" data-page="settings">
                             <span class="material-icons">settings</span>
@@ -164,6 +170,33 @@
                         <span class="material-icons loading-spinner" style="font-size:50px; color:#cbd5e1;">sync</span>
                         <div style="margin-top:15px; font-size:1.1rem;" data-i18n="loading_quests">กำลังโหลดข้อมูลเควส...</div>
                     </div>
+                </div>
+            </section>
+
+            <section id="donate" class="page-content">
+                <h2 data-i18n="head_donate">สนับสนุนการพัฒนา</h2>
+                <div style="background: white; padding: 30px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 20px; text-align: center; box-shadow: var(--shadow-sm);">
+                    <span class="material-icons" style="font-size: 60px; color: #ec4899;">volunteer_activism</span>
+                    <h3 data-i18n="donate_title" style="margin: 15px 0 10px 0; color: #1e293b;">สนับสนุนค่าเซิร์ฟเวอร์และผู้พัฒนา</h3>
+                    <p data-i18n="donate_desc" style="color: #64748b; line-height: 1.6; max-width: 600px; margin: 0 auto;">หากคุณใช้งานแล้วชื่นชอบ สามารถช่วยสมทบทุนค่าเซิร์ฟเวอร์หรือเลี้ยงกาแฟผู้พัฒนาได้นะครับ เพื่อให้ระบบเปิดใช้งานได้ในระยะยาว</p>
+                    
+                    <div style="margin: 25px auto; max-width: 300px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
+                        <!-- เปลี่ยนรูป QR Code ตรงนี้ได้เลยครับ -->
+                        <img src="ReceiveMoney_QR_2026-02-20_1...png" alt="Donate QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        
+                        <strong style="display: block; margin-top: 15px; color: #1e293b; font-size: 1.1rem;" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</strong>
+                        <div style="color: #f97316; font-size: 0.95rem; font-weight: bold; margin-top: 5px;" data-i18n="donate_truemoney">โอนผ่านทรูมันนี่วอลเล็ท</div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
+                        <h4 data-i18n="donate_ingame" style="color: #8b5cf6; margin: 0 0 10px 0; font-size: 1.1rem;">ส่งของขวัญในเกม</h4>
+                        <p data-i18n="donate_ingame_desc" style="color: #64748b; font-size: 0.9rem;">สามารถแอดเพื่อนมาส่งของขวัญในเกมได้เช่นกันครับ</p>
+                        <div style="display: inline-block; background: #f3e8ff; color: #7e22ce; padding: 8px 20px; border-radius: 20px; font-weight: bold; font-family: monospace; font-size: 1.2rem; margin-top: 10px; border: 1px solid #d8b4fe;">
+                            IGN: <span id="donate-ingame-username">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 25px; color: #10b981; font-weight: bold; font-size: 1.1rem;" data-i18n="donate_thanks">ขอขอบคุณทุกการสนับสนุนครับ ❤️</div>
                 </div>
             </section>
 
