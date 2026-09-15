@@ -3,7 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const { kv } = require('@vercel/kv'); // นำเข้า Vercel KV สำหรับระบบตั้งเวลาซื้อเควส
+const { kv } = require('@vercel/kv'); // นำเข้า Vercel KV
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -13,23 +13,15 @@ const PORT = process.env.PORT || 4000;
 // ==========================================
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
 const GITHUB_REPO = process.env.GITHUB_REPO; 
-const GITHUB_STATS_PATH = 'stats.json';
 const GITHUB_ITEMS_CACHE_PATH = 'items_cache.json';
 
-// State ตัวแปรสำหรับเก็บ SHA เพื่อใช้ตอน Commit ทับไฟล์เดิม
-let currentStatsSha = null;
+// State ตัวแปรสำหรับเก็บ SHA เพื่อใช้ตอน Commit ทับไฟล์เดิม (เฉพาะ Items)
 let currentItemsCacheSha = null;
-let statsDirty = false;
-
-let cachedStats = null;
 let cachedItemsData = null;
 
-// 🌟 ส่วนสำคัญที่แก้: ตรวจสอบว่าเป็น Vercel หรือไม่ ถ้าใช่ให้เซฟลง /tmp 🌟
+// 🌟 ตรวจสอบว่าเป็น Vercel หรือไม่ ถ้าใช่ให้เซฟลง /tmp 🌟
 const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 const dataDir = isVercel ? '/tmp' : __dirname;
-
-const STATS_FILE = path.join(dataDir, 'stats.json');
-const TEMP_STATS_FILE = path.join(dataDir, 'stats.json.tmp');
 
 const ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json');
 const TEMP_ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json.tmp');
@@ -128,23 +120,15 @@ async function pushFileToGitHub(filePath, jsonData, currentSha) {
     }
 }
 
-setInterval(async () => {
-    if (statsDirty && cachedStats) {
-        statsDirty = false;
-        currentStatsSha = await pushFileToGitHub(GITHUB_STATS_PATH, cachedStats, currentStatsSha);
-    }
-}, 60000);
 
 // **********************************************
-// 2. STATS LOGIC (ปรับมาใช้ Vercel KV แทนไฟล์)
+// 2. STATS LOGIC (Vercel KV)
 // **********************************************
 
 app.get('/api/stats', async (req, res) => {
     try {
-        // ดึงสถิติจาก Database
         let stats = await kv.get('api_stats');
 
-        // ถ้าไม่มีข้อมูล ให้สร้างโครงสร้างเริ่มต้น
         if (!stats) {
             stats = {
                 date_today: new Date().toISOString().split('T')[0],
@@ -158,14 +142,12 @@ app.get('/api/stats', async (req, res) => {
         const thisMonth = today.toISOString().substring(0, 7);
         let updated = false;
 
-        // ตรวจสอบการขึ้นวันใหม่
         if (stats.date_today !== todayDate) {
             stats.requests.count_today = 0;
             stats.date_today = todayDate;
             updated = true;
         }
 
-        // ตรวจสอบการขึ้นเดือนใหม่ / ปีใหม่
         if (stats.date_this_month !== thisMonth) {
             const currentYear = today.getFullYear();
             const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
@@ -177,7 +159,6 @@ app.get('/api/stats', async (req, res) => {
             updated = true;
         }
 
-        // ถ้ามีการรีเซ็ตวัน/เดือน ให้เซฟกลับไปที่ DB ด้วย
         if (updated) {
             await kv.set('api_stats', stats);
         }
@@ -191,7 +172,6 @@ app.get('/api/stats', async (req, res) => {
 
 app.post('/api/stats/increment/:type', async (req, res) => {
     const type = req.params.type; 
-    // ตัด visitors ออกไปแล้ว ดังนั้นรับแค่ requests
     if (type !== 'requests') return res.status(400).json({ error: 'Invalid type' });
 
     try {
@@ -208,7 +188,6 @@ app.post('/api/stats/increment/:type', async (req, res) => {
         const todayDate = today.toISOString().split('T')[0];
         const thisMonth = today.toISOString().substring(0, 7);
 
-        // เช็คการเปลี่ยนวันก่อนบวกเลข
         if (stats.date_today !== todayDate) {
             stats.requests.count_today = 0;
             stats.date_today = todayDate;
@@ -222,13 +201,11 @@ app.post('/api/stats/increment/:type', async (req, res) => {
             stats.date_this_month = thisMonth;
         }
 
-        // บวกยอดสถิติ
         stats.requests.count_today++;
         stats.requests.count_month++;
         stats.requests.count_year++;
         stats.requests.count_lifetime++; 
         
-        // เซฟลง Database ถาวร
         await kv.set('api_stats', stats);
 
         return res.status(200).json({ success: true, newCount: stats.requests.count_today });
@@ -237,6 +214,7 @@ app.post('/api/stats/increment/:type', async (req, res) => {
         return res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // **********************************************
 // 3. ITEMS CACHE LOGIC
