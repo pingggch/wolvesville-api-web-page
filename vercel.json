@@ -1,11 +1,8 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" }
-  ],
-  "crons": [
     {
-      "path": "/api/cron-buy-quest",
-      "schedule": "*/5 * * * *"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     }
   ]
 }
