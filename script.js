@@ -2328,7 +2328,7 @@ function renderPlayerProfile(data) {
         <div class="profile-header-card" style="border-left: none;">
             <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: ${bgStyle}; box-shadow: inset -1px 0 3px rgba(0,0,0,0.1);"></div>
             <div class="profile-avatar-wrapper">
-                <img src="${data.equippedAvatar?.url || 'https://via.placeholder.com/150'}" class="profile-avatar-lg" style="background: ${bgStyle};">
+                <img src="${data.equippedAvatar?.url || (data.profileIconId ? `https://cdn-avatars.wolvesville.com/${data.profileIconId}` : 'https://via.placeholder.com/150')}" class="profile-avatar-lg" style="background: ${bgStyle};">
                 <div class="level-badge">${t('txt_level')} ${data.level}</div>
             </div>
             <div class="profile-main-info">
@@ -2341,7 +2341,14 @@ function renderPlayerProfile(data) {
                 </div>
 
                 <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:10px;">
+                
+                ${data.profileImageUrl ? `
+                <div style="margin-top: 15px; display: flex; justify-content: center;">
+                    <img src="${data.profileImageUrl}" style="width: 150px; height: 150px; border-radius: 16px; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: var(--shadow-sm);" referrerpolicy="no-referrer">
+                </div>
+                ` : ''}
+
+                <div style="font-size:0.85rem; color:#64748b; margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:10px;">
                     <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.id}</span> <br>
                     ${t('txt_joined')}: ${formatDateThai(data.creationTime)} | ${t('txt_last_online')}: ${formatDateThai(data.lastOnline)}
                 </div>
