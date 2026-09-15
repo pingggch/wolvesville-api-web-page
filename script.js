@@ -1994,26 +1994,50 @@ async function fetchTotalItemsCount(force = false) {
     return itemDataCache;
 }
 
+// ประกาศตัวแปรเก็บกราฟไว้นอกฟังก์ชัน
+let apiChartInstance = null;
+
 async function fetchAndDisplayStatsOnly() {
     try {
         const res = await fetch(`${localServerUrl}/api/stats`);
         if (res.ok) {
             const stats = await res.json();
             const req = stats.requests;
-            const vis = stats.visitors;
             
+            // อัปเดตตัวเลขการเรียกใช้ API ของวันนี้ (ส่วนกล่องเล็กด้านบน)
+            const requestsTodayOnly = document.getElementById('requests-today-only');
             if(requestsTodayOnly) requestsTodayOnly.textContent = req.count_today.toLocaleString();
-            if(requestsFullToday) requestsFullToday.textContent = req.count_today.toLocaleString();
-            if(requestsFullThisMonth) requestsFullThisMonth.textContent = req.count_month.toLocaleString();
-            if(requestsFullThisYear) requestsFullThisYear.textContent = req.count_year.toLocaleString();
-            if(requestsFullLifetime) requestsFullLifetime.textContent = (req.count_lifetime||0).toLocaleString();
 
-            if(visitorsFullToday) visitorsFullToday.textContent = vis.count_today.toLocaleString();
-            if(visitorsFullThisMonth) visitorsFullThisMonth.textContent = vis.count_month.toLocaleString();
-            if(visitorsFullThisYear) visitorsFullThisYear.textContent = vis.count_year.toLocaleString();
-            if(visitorsFullLifetime) visitorsFullLifetime.textContent = (vis.count_lifetime||0).toLocaleString();
+            // เตรียมข้อมูลสำหรับกราฟ
+            const labels = [t('time_today'), t('time_month'), t('time_year'), t('time_all')];
+            const apiData = [req.count_today, req.count_month, req.count_year, req.count_lifetime || 0];
+
+            // สร้างกราฟการเรียกใช้ API (API Usage Chart)
+            const ctxApi = document.getElementById('apiUsageChart');
+            if (ctxApi) {
+                if (apiChartInstance) apiChartInstance.destroy(); // ลบกราฟเก่าทิ้งก่อนวาดใหม่
+                apiChartInstance = new Chart(ctxApi, {
+                    type: 'bar', // เปลี่ยนเป็น 'line' ได้ถ้าอยากได้กราฟเส้น
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: t('stat_api_usage'), // ดึงคำแปลจากระบบ i18n
+                            data: apiData,
+                            backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                            borderColor: '#6366f1',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Error fetching stats:', e); }
 }
 
 function renderGlobalAnnouncements(data) {
