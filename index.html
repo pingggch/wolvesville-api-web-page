@@ -62,6 +62,20 @@
             
             <section id="dashboard" class="page-content">
                 <h2 data-i18n="head_dashboard">ภาพรวม API</h2>
+                
+                <!-- ย้ายปุ่มรับหมวก API (Redeem Hat) มาไว้หน้าแรก -->
+                <div style="background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px;">
+                    <div>
+                        <h3 style="margin: 0 0 5px 0; color: #a855f7; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-icons">checkroom</span> รับหมวก API (API Hat)
+                        </h3>
+                        <p style="margin: 0; color: #64748b; font-size: 0.9rem;">ไอเทมสุดพิเศษ (Exclusive) สำหรับเจ้าของบอท / Bot Owner Only</p>
+                    </div>
+                    <button onclick="window.redeemApiHat()" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <span class="material-icons" style="font-size: 18px;">auto_awesome</span> กดรับหมวก
+                    </button>
+                </div>
+
                 <div class="stats-grid stats-grid-row1">
                     <div class="stat-card api-today-card">
                         <span class="material-icons">trending_up</span>
@@ -156,6 +170,45 @@
             <section id="settings" class="page-content">
                 <h2 data-i18n="head_settings">การตั้งค่า</h2>
                 
+                <!-- ย้ายคู่มือสอนหา API Key มาไว้บนสุด -->
+                <div style="margin-bottom: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
+                    <h3 style="margin-top: 0; color: #3b82f6; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons">help_outline</span> วิธีหา API Key (How to get API Key)
+                    </h3>
+                    <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px;">
+                        สำหรับใครที่ยังไม่มี API Key สามารถเข้าไปก็อปปี้จากในเกมได้ง่ายๆ ตาม 2 ขั้นตอนด้านล่างนี้เลยครับ:
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <!-- Step 1 -->
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
+                            <h4 style="margin: 0 0 10px 0; color: #1e293b;">📌 ขั้นตอนที่ 1</h4>
+                            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; min-height: 40px;">
+                                เข้าเกม Wolvesville แล้วกดที่เมนู <strong>การตั้งค่า (ฟันเฟือง)</strong> ที่มุมขวาบน
+                            </p>
+                            <img src="settings-menu.png" alt="Settings Menu" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
+                            <h4 style="margin: 0 0 10px 0; color: #1e293b;">📌 ขั้นตอนที่ 2</h4>
+                            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; min-height: 40px;">
+                                เลื่อนลงมาล่างสุดที่หัวข้อ Advanced (ขั้นสูง) แล้วกดปุ่ม <strong>API key</strong> เพื่อคัดลอก
+                            </p>
+                            <img src="api-key.png" alt="API Key Settings" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+                        </div>
+                    </div>
+                    
+                    <!-- คำเตือนเรื่องความปลอดภัย -->
+                    <div style="margin-top: 20px; font-size: 0.85rem; color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 8px; border: 1px solid #fecaca; display: flex; align-items: flex-start; gap: 8px;">
+                        <span class="material-icons" style="font-size: 18px; margin-top: 2px;">gpp_bad</span>
+                        <div>
+                            <strong>คำเตือนความปลอดภัย:</strong> API Key เปรียบเสมือนรหัสผ่านสำหรับให้บอทอ่านข้อมูล ห้ามส่ง Key นี้ให้ผู้อื่นเด็ดขาด! (เว็บไซต์นี้ไม่มีการนำ Key ของคุณไปใช้งานอย่างอื่น และบันทึกข้อมูลไว้เฉพาะในเครื่องของคุณเท่านั้น)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- กล่องใส่ API Key (เลื่อนลงมาอยู่ตรงกลาง) -->
                 <div class="settings-group">
                     <h3><span class="material-icons" style="vertical-align: middle;">vpn_key</span> Wolvesville API Key</h3>
                     <p data-i18n="settings_api_desc">กรุณาใส่ API Key ของ Wolvesville Bot ที่นี่</p>
@@ -174,40 +227,6 @@
                     <br>
                     <button id="save-locale-btn" data-i18n="btn_save_lang">บันทึกภาษา / Save Language</button>
                     <p id="api-locale-status" style="margin-top: 15px; font-weight: bold; color: var(--success); display: none;" data-i18n="msg_lang_saved">✅ บันทึกภาษาเรียบร้อยแล้ว! (กำลังรีเฟรชข้อมูล...)</p>
-                </div>
-
-                <div style="margin-top: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
-                    <h3 style="margin-top: 0; color: #3b82f6; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-icons">help_outline</span> วิธีหา API Key (How to get API Key)
-                    </h3>
-                    <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px;">
-                        สำหรับใครที่ยังไม่มี API Key สามารถเข้าไปก็อปปี้จากในเกมได้ง่ายๆ ตาม 2 ขั้นตอนด้านล่างนี้เลยครับ:
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
-                            <h4 style="margin: 0 0 10px 0; color: #1e293b;">📌 ขั้นตอนที่ 1</h4>
-                            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; min-height: 40px;">
-                                เข้าเกม Wolvesville แล้วกดที่เมนู <strong>การตั้งค่า (ฟันเฟือง)</strong> ที่มุมขวาบน
-                            </p>
-                            <img src="settings-menu.png" alt="Settings Menu" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-                        </div>
-
-                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
-                            <h4 style="margin: 0 0 10px 0; color: #1e293b;">📌 ขั้นตอนที่ 2</h4>
-                            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; min-height: 40px;">
-                                เลื่อนลงมาล่างสุดที่หัวข้อ Advanced (ขั้นสูง) แล้วกดปุ่ม <strong>API key</strong> เพื่อคัดลอก
-                            </p>
-                            <img src="api-key.png" alt="API Key Settings" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; font-size: 0.85rem; color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 8px; border: 1px solid #fecaca; display: flex; align-items: flex-start; gap: 8px;">
-                        <span class="material-icons" style="font-size: 18px; margin-top: 2px;">gpp_bad</span>
-                        <div>
-                            <strong>คำเตือนความปลอดภัย:</strong> API Key เปรียบเสมือนรหัสผ่านสำหรับให้บอทอ่านข้อมูล ห้ามส่ง Key นี้ให้ผู้อื่นเด็ดขาด! (เว็บไซต์นี้ไม่มีการนำ Key ของคุณไปใช้งานอย่างอื่น และจะถูกบันทึกไว้ในเบราว์เซอร์ของคุณเท่านั้น)
-                        </div>
-                    </div>
                 </div>
 
             </section>
