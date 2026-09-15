@@ -2353,10 +2353,10 @@ function renderPlayerProfile(data) {
 
                 <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
 
-                <!-- รูปโปรไฟล์: ขยาย 100% ให้พอดีกับบล็อคข้อความแบบในเกม -->
+                <!-- รูปโปรไฟล์จริง: โชว์ขนาดตามจริงแต่ไม่ให้ล้นกรอบ -->
                 ${data.profileImageUrl ? `
-                <div style="margin-top: 15px; width: 100%; border-radius: 12px; overflow: hidden; background: #0f172a; box-shadow: var(--shadow-md);">
-                    <img src="${data.profileImageUrl}" style="width: 100%; height: auto; max-height: 400px; display: block; object-fit: contain;" referrerpolicy="no-referrer">
+                <div style="margin-top: 15px;">
+                    <img src="${data.profileImageUrl}" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: var(--shadow-sm); display: block;" referrerpolicy="no-referrer">
                 </div>
                 ` : ''}
 
