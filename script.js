@@ -2337,13 +2337,11 @@ function renderPlayerProfile(data) {
         <div class="profile-header-card" style="border-left: none;">
             <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: ${bgStyle}; box-shadow: inset -1px 0 3px rgba(0,0,0,0.1);"></div>
             
-            <!-- ซ้าย: อวตารตัวละคร -->
             <div class="profile-avatar-wrapper">
                 <img src="${data.equippedAvatar?.url || (data.profileIconId ? `https://cdn-avatars.wolvesville.com/${data.profileIconId}` : 'https://via.placeholder.com/150')}" class="profile-avatar-lg" style="background: ${bgStyle};">
                 <div class="level-badge">${t('txt_level')} ${data.level}</div>
             </div>
             
-            <!-- กลาง: ข้อมูลประวัติ (ดันรูปไปชิดขวา) -->
             <div class="profile-main-info">
                 <div class="player-name">${data.username} ${clanHtml}</div>
                 <div style="margin-bottom:10px;">${statusBadge}</div>
@@ -2355,20 +2353,20 @@ function renderPlayerProfile(data) {
 
                 <div class="player-bio">"${formatMessage(data.personalMessage)}"</div>
 
+                <!-- รูปโปรไฟล์: ขยาย 100% ให้พอดีกับบล็อคข้อความแบบในเกม -->
+                ${data.profileImageUrl ? `
+                <div style="margin-top: 15px; width: 100%; border-radius: 12px; overflow: hidden; background: #0f172a; box-shadow: var(--shadow-md);">
+                    <img src="${data.profileImageUrl}" style="width: 100%; height: auto; max-height: 400px; display: block; object-fit: contain;" referrerpolicy="no-referrer">
+                </div>
+                ` : ''}
+
                 <div style="font-size:0.85rem; color:#64748b; margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:10px;">
                     <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.id}</span> <br>
                     ${t('txt_joined')}: ${formatDateThai(data.creationTime)} | ${t('txt_last_online')}: ${formatDateThai(data.lastOnline)}
                 </div>
             </div>
-
-            <!-- ขวา: รูปโปรไฟล์จริง (ปรับให้เต็มบล็อคพอดี) -->
-            ${data.profileImageUrl ? `
-            <div style="flex-shrink: 0; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 260px; margin: 15px auto 0 auto;">
-                <img src="${data.profileImageUrl}" style="width: 100%; height: 180px; border-radius: 12px; border: 2px solid #e2e8f0; box-shadow: var(--shadow-md); object-fit: cover; object-position: center;" referrerpolicy="no-referrer">
-            </div>
-            ` : ''}
         </div>
-
+        
         <h3 class="stats-section-title"><span class="material-icons">analytics</span> ${t('txt_overview')}</h3>
         <div class="stats-grid-container">
             <div class="stat-box">
