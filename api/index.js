@@ -1,306 +1,83 @@
 const express = require('express');
-const fs = require('fs/promises');
-const path = require('path');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const { kv } = require('@vercel/kv'); // นำเข้า Vercel KV
+const { kv } = require('@vercel/kv'); // Vercel KV ฐานข้อมูลหลัก
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-
-// ==========================================
-// ⚙️ GITHUB CONFIGURATION (โหลดจาก .env)
-// ==========================================
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
-const GITHUB_REPO = process.env.GITHUB_REPO; 
-const GITHUB_ITEMS_CACHE_PATH = 'items_cache.json';
-
-// State ตัวแปรสำหรับเก็บ SHA เพื่อใช้ตอน Commit ทับไฟล์เดิม (เฉพาะ Items)
-let currentItemsCacheSha = null;
-let cachedItemsData = null;
-
-// 🌟 ตรวจสอบว่าเป็น Vercel หรือไม่ ถ้าใช่ให้เซฟลง /tmp 🌟
-const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
-const dataDir = isVercel ? '/tmp' : __dirname;
-
-const ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json');
-const TEMP_ITEMS_CACHE_FILE = path.join(dataDir, 'items_cache.json.tmp');
-
-const WOLVESVILLE_BASE_URL = 'https://api.wolvesville.com';
-const ITEM_ENDPOINTS = [
-    '/items/avatarItems', '/items/bodyPaints', '/items/profileIcons',
-    '/items/profileIconBorders', '/items/emojis', '/items/backgrounds',
-    '/items/loadingScreens', '/items/roleIcons', '/items/roseSkins', '/items/talismans'
-];
-
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
 
-// **********************************************
-// 1. GENERIC FILE UTILS & GITHUB SYNC
-// **********************************************
+const WOLVESVILLE_BASE_URL = 'https://api.wolvesville.com';
 
-async function saveJsonFile(filePath, tempPath, data) {
-    const jsonString = JSON.stringify(data, null, 2);
+// ==============================================
+// 1. ระบบ Proxy (ตัวกลางยิง API เข้าเกม)
+// ==============================================
+const proxyHandler = async (req, res) => {
+    const params = req.method === 'GET' ? req.query : req.body;
+    const endpoint = params.endpoint;
+    const apiKey = params.apiKey;
+    const targetMethod = params.method || 'GET'; 
+    const targetData = params.data || params.body;
+
+    if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
+    if (!apiKey) return res.status(401).json({ error: 'API Key missing' });
+
     try {
-        await fs.writeFile(tempPath, jsonString, 'utf-8');
-        await fs.rename(tempPath, filePath);
-    } catch (error) {
-        console.error(`ERROR: Failed to save file ${filePath}`, error);
-    }
-}
-
-async function loadJsonFile(filePath, defaultValue) {
-    try {
-        const data = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        try {
-             await saveJsonFile(filePath, filePath + '.tmp', defaultValue);
-        } catch (err) {}
-        return defaultValue;
-    }
-}
-
-async function fetchFileFromGitHub(filePath) {
-    if (!GITHUB_TOKEN || !GITHUB_REPO) return { data: null, sha: null };
-    try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`, {
+        const fetchOptions = {
+            method: targetMethod,
             headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
+                'Authorization': `Bot ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        });
-        if (res.ok) {
-            const data = await res.json();
-            const content = Buffer.from(data.content, 'base64').toString('utf-8');
-            return { data: JSON.parse(content), sha: data.sha };
-        }
-    } catch (e) {
-        console.error(`[GitHub] Fetch Error for ${filePath}:`, e.message);
-    }
-    return { data: null, sha: null };
-}
-
-async function pushFileToGitHub(filePath, jsonData, currentSha) {
-    if (!GITHUB_TOKEN || !GITHUB_REPO) return currentSha;
-    try {
-        const contentStr = JSON.stringify(jsonData, null, 2) + '\n';
-        const encodedContent = Buffer.from(contentStr).toString('base64');
-        
-        const bodyData = {
-            message: `Auto-update ${filePath} via Dashboard`,
-            content: encodedContent
         };
-        if (currentSha) bodyData.sha = currentSha;
+        if ((targetMethod === 'POST' || targetMethod === 'PUT') && targetData) {
+            fetchOptions.body = JSON.stringify(targetData);
+        }
 
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(bodyData)
-        });
+        const response = await fetch(`${WOLVESVILLE_BASE_URL}${endpoint}`, fetchOptions);
         
-        if (res.ok) {
-            const data = await res.json();
-            console.log(`[GitHub] ${filePath} synced successfully!`);
-            return data.content.sha;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            return res.status(response.ok ? 200 : response.status).json(data);
         } else {
-            console.error(`[GitHub] Push failed for ${filePath}. Fetching fresh SHA...`);
-            const latest = await fetchFileFromGitHub(filePath);
-            return latest.sha;
+            const text = await response.text();
+            return res.status(response.ok ? 200 : response.status).send(text);
         }
-    } catch (e) {
-        console.error(`[GitHub] Push Error for ${filePath}:`, e.message);
-        return currentSha;
-    }
-}
-
-
-// **********************************************
-// 2. STATS LOGIC (Vercel KV)
-// **********************************************
-
-app.get('/api/stats', async (req, res) => {
-    try {
-        let stats = await kv.get('api_stats');
-
-        if (!stats) {
-            stats = {
-                date_today: new Date().toISOString().split('T')[0],
-                date_this_month: new Date().toISOString().substring(0, 7),
-                requests: { count_today: 527, count_month: 1607, count_year: 13925, count_lifetime: 13925 }
-            };
-        }
-
-        const today = new Date();
-        const todayDate = today.toISOString().split('T')[0];
-        const thisMonth = today.toISOString().substring(0, 7);
-        let updated = false;
-
-        if (stats.date_today !== todayDate) {
-            stats.requests.count_today = 0;
-            stats.date_today = todayDate;
-            updated = true;
-        }
-
-        if (stats.date_this_month !== thisMonth) {
-            const currentYear = today.getFullYear();
-            const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
-            if (currentYear !== recordedYear) {
-                stats.requests.count_year = 0;
-            }
-            stats.requests.count_month = 0;
-            stats.date_this_month = thisMonth;
-            updated = true;
-        }
-
-        if (updated) {
-            await kv.set('api_stats', stats);
-        }
-
-        res.json(stats);
     } catch (error) {
-        console.error("KV Fetch Error:", error);
-        res.status(500).json({ error: "Failed to fetch stats" });
+        console.error('[Proxy] Error:', error.message);
+        res.status(500).json({ error: error.message });
     }
-});
+};
 
-app.post('/api/stats/increment/:type', async (req, res) => {
-    const type = req.params.type; 
-    if (type !== 'requests') return res.status(400).json({ error: 'Invalid type' });
-
-    try {
-        let stats = await kv.get('api_stats');
-        if (!stats) {
-            stats = {
-                date_today: new Date().toISOString().split('T')[0],
-                date_this_month: new Date().toISOString().substring(0, 7),
-                requests: { count_today: 527, count_month: 1607, count_year: 13925, count_lifetime: 13925 }
-            };
-        }
-
-        const today = new Date();
-        const todayDate = today.toISOString().split('T')[0];
-        const thisMonth = today.toISOString().substring(0, 7);
-
-        if (stats.date_today !== todayDate) {
-            stats.requests.count_today = 0;
-            stats.date_today = todayDate;
-        }
-        if (stats.date_this_month !== thisMonth) {
-            const currentYear = today.getFullYear();
-            const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
-            if (currentYear !== recordedYear) stats.requests.count_year = 0;
-            
-            stats.requests.count_month = 0;
-            stats.date_this_month = thisMonth;
-        }
-
-        stats.requests.count_today++;
-        stats.requests.count_month++;
-        stats.requests.count_year++;
-        stats.requests.count_lifetime++; 
-        
-        await kv.set('api_stats', stats);
-
-        return res.status(200).json({ success: true, newCount: stats.requests.count_today });
-    } catch (error) {
-        console.error("KV Increment Error:", error);
-        return res.status(500).json({ error: 'Server error' });
-    }
-});
+app.get('/api/wolvesville', proxyHandler);
+app.post('/api/wolvesville', proxyHandler);
 
 
-// **********************************************
-// 3. ITEMS CACHE LOGIC
-// **********************************************
-
-app.get('/api/items/total', async (req, res) => {
-    const apiKey = req.query.apiKey;
-    
-    if (!cachedItemsData) {
-        const ghData = await fetchFileFromGitHub(GITHUB_ITEMS_CACHE_PATH);
-        if (ghData.data) {
-            cachedItemsData = ghData.data;
-            currentItemsCacheSha = ghData.sha;
-        } else {
-            cachedItemsData = await loadJsonFile(ITEMS_CACHE_FILE, { timestamp: 0, count: 0 });
-        }
-    }
-
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const now = Date.now();
-
-    if (now - cachedItemsData.timestamp < ONE_DAY_MS && cachedItemsData.count > 0) {
-        return res.json({ count: cachedItemsData.count, fromCache: true });
-    }
-
-    if (!apiKey) {
-        if (cachedItemsData.count > 0) return res.json({ count: cachedItemsData.count, fromCache: true, stale: true });
-        return res.status(400).json({ error: 'API Key required to refresh cache' });
-    }
-
-    try {
-        const fetchPromises = ITEM_ENDPOINTS.map(endpoint => 
-            fetch(`${WOLVESVILLE_BASE_URL}${endpoint}`, {
-                headers: { 
-                    'Authorization': `Bot ${apiKey}`,
-                    'Content-Type': 'application/json'
-                }
-            }).then(r => r.ok ? r.json() : [])
-        );
-
-        const results = await Promise.all(fetchPromises);
-        
-        const uniqueIds = new Set();
-        results.forEach(items => {
-            if (Array.isArray(items)) {
-                items.forEach(item => { if(item.id) uniqueIds.add(item.id); });
-            }
-        });
-
-        const newCount = uniqueIds.size;
-
-        cachedItemsData = { timestamp: now, count: newCount };
-        await saveJsonFile(ITEMS_CACHE_FILE, TEMP_ITEMS_CACHE_FILE, cachedItemsData);
-        currentItemsCacheSha = await pushFileToGitHub(GITHUB_ITEMS_CACHE_PATH, cachedItemsData, currentItemsCacheSha);
-
-        return res.json({ count: newCount, fromCache: false });
-
-    } catch (error) {
-        return res.json({ count: cachedItemsData.count || 0, error: true });
-    }
-});
-
-// **********************************************
-// 4. AUTO QUEST BUYER (Vercel KV & Cron Job)
-// **********************************************
-
+// ==============================================
+// 2. ระบบ AUTO QUEST BUYER (Cron Job)
+// ==============================================
 app.post('/api/schedule-quest', async (req, res) => {
-    const { clanId, questId, questTitle, apiKey } = req.body;
+    const { clanId, questId, questTitle, apiKey, targetTime } = req.body;
     if (!clanId || !questId || !apiKey) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
         await kv.hset(`clan_auto_quest:${clanId}`, {
-            questId: questId,
-            questTitle: questTitle,
-            apiKey: apiKey,
+            questId,
+            questTitle,
+            apiKey,
+            targetTime: targetTime || 0,
             status: 'pending',
             timestamp: Date.now()
         });
         await kv.sadd('active_auto_quests_clans', clanId);
-
         return res.status(200).json({ success: true, message: 'Schedule saved' });
     } catch (error) {
         console.error('KV Save Error:', error);
-        return res.status(500).json({ error: 'Failed to save schedule to database' });
+        return res.status(500).json({ error: 'Failed to save schedule' });
     }
 });
 
@@ -317,13 +94,19 @@ app.get('/api/cron-buy-quest', async (req, res) => {
         }
 
         let results = [];
+        const now = Date.now();
 
         for (const clanId of activeClans) {
             const data = await kv.hgetall(`clan_auto_quest:${clanId}`);
             if (!data || data.status !== 'pending') continue;
 
+            if (data.targetTime && data.targetTime > now) {
+                results.push({ clanId, status: 'waiting', reason: 'Not yet time' });
+                continue;
+            }
+
             try {
-                const activeCheckRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/active`, {
+                const activeCheckRes = await fetch(`${WOLVESVILLE_BASE_URL}/clans/${clanId}/quests/active`, {
                     headers: { 'Authorization': `Bot ${data.apiKey}`, 'Accept': 'application/json' }
                 });
                 const activeData = await activeCheckRes.json();
@@ -333,7 +116,7 @@ app.get('/api/cron-buy-quest', async (req, res) => {
                     continue;
                 }
 
-                const buyRes = await fetch(`https://api.wolvesville.com/clans/${clanId}/quests/claim`, {
+                const buyRes = await fetch(`${WOLVESVILLE_BASE_URL}/clans/${clanId}/quests/claim`, {
                     method: 'POST',
                     headers: { 
                         'Authorization': `Bot ${data.apiKey}`, 
@@ -363,64 +146,113 @@ app.get('/api/cron-buy-quest', async (req, res) => {
 });
 
 
-// **********************************************
-// 5. PROXY & SERVER START
-// **********************************************
+// ==============================================
+// 3. ระบบนับสถิติ (STATS TRACKER - Vercel KV)
+// ==============================================
 
-const proxyHandler = async (req, res) => {
-    const params = req.method === 'GET' ? req.query : req.body;
-    const endpoint = params.endpoint;
-    const apiKey = params.apiKey;
-    const targetMethod = params.method || 'GET'; 
-    const targetData = params.data || params.body;
-
-    if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
-    if (!apiKey) return res.status(401).json({ error: 'API Key missing' });
-
-    const targetUrl = `${WOLVESVILLE_BASE_URL}${endpoint}`;
-
-    try {
-        const fetchOptions = {
-            method: targetMethod,
-            headers: {
-                'Authorization': `Bot ${apiKey}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        };
-        if ((targetMethod === 'POST' || targetMethod === 'PUT') && targetData) {
-            fetchOptions.body = JSON.stringify(targetData);
-        }
-
-        const response = await fetch(targetUrl, fetchOptions);
-        
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            const data = await response.json();
-            if (!response.ok) return res.status(response.status).json(data);
-            return res.status(200).json(data);
-        } else {
-            const text = await response.text();
-            if (!response.ok) return res.status(response.status).send(text);
-            return res.status(200).send(text);
-        }
-        
-    } catch (error) {
-        console.error('[Proxy] Error:', error.message);
-        res.status(500).json({ error: error.message });
-    }
+// ฟังก์ชันช่วยจัดการข้อมูลสถิติพื้นฐาน
+const getInitialStats = () => {
+    const today = new Date();
+    return {
+        date_today: today.toISOString().split('T')[0],
+        date_this_month: today.toISOString().substring(0, 7),
+        requests: { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 }
+    };
 };
 
-app.get('/api/wolvesville', proxyHandler);
-app.post('/api/wolvesville', proxyHandler);
+// ตรวจสอบและรีเซ็ตวัน/เดือน/ปี
+const checkAndResetStats = (stats) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const monthStr = today.toISOString().substring(0, 7);
+    const currentYear = today.getFullYear();
+    let isUpdated = false;
 
-// ส่งออก app แทนการสั่ง listen เพื่อให้เข้ากับระบบ Serverless ของ Vercel
+    // รีเซ็ตรายวัน
+    if (stats.date_today !== todayStr) {
+        stats.requests.count_today = 0;
+        stats.date_today = todayStr;
+        isUpdated = true;
+    }
+
+    // รีเซ็ตรายเดือน และ รายปี
+    if (stats.date_this_month !== monthStr) {
+        const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
+        if (currentYear !== recordedYear) {
+            stats.requests.count_year = 0;
+        }
+        stats.requests.count_month = 0;
+        stats.date_this_month = monthStr;
+        isUpdated = true;
+    }
+
+    return { stats, isUpdated };
+};
+
+// Endpoint 3.1: ดึงข้อมูลไปแสดงที่กราฟ
+app.get('/api/stats', async (req, res) => {
+    try {
+        let rawStats = await kv.get('api_stats');
+        
+        // ถ้ายังไม่มีข้อมูลในฐานข้อมูล ให้ตั้งค่าเริ่มต้น
+        if (!rawStats) {
+            rawStats = getInitialStats();
+        }
+
+        const { stats, isUpdated } = checkAndResetStats(rawStats);
+
+        // เซฟกลับถ้ามีการอัปเดตวัน/เดือนใหม่
+        if (isUpdated) {
+            await kv.set('api_stats', stats);
+        }
+
+        return res.status(200).json(stats);
+    } catch (error) {
+        console.error("[Stats] Fetch Error:", error);
+        return res.status(500).json({ error: "Failed to fetch stats" });
+    }
+});
+
+// Endpoint 3.2: สั่งบวกตัวเลขสถิติ (ทำงานทุกครั้งที่หน้าเว็บส่ง Request)
+app.post('/api/stats/increment/:type', async (req, res) => {
+    const type = req.params.type; 
+    
+    // ตรวจจับว่าต้องเป็น 'requests' เท่านั้น (เพราะลบ visitors ทิ้งแล้ว)
+    if (type !== 'requests') {
+        return res.status(400).json({ error: 'Invalid stats type' });
+    }
+
+    try {
+        let rawStats = await kv.get('api_stats');
+        
+        if (!rawStats) {
+            rawStats = getInitialStats();
+        }
+
+        const { stats } = checkAndResetStats(rawStats);
+
+        // สั่งบวกตัวเลขขึ้นทีละ 1
+        stats.requests.count_today += 1;
+        stats.requests.count_month += 1;
+        stats.requests.count_year += 1;
+        stats.requests.count_lifetime += 1;
+        
+        // เซฟกลับลง Database
+        await kv.set('api_stats', stats);
+
+        return res.status(200).json({ success: true, count: stats.requests.count_today });
+    } catch (error) {
+        console.error("[Stats] Increment Error:", error);
+        return res.status(500).json({ error: 'Failed to increment stats' });
+    }
+});
+
+
+// ==============================================
+// 4. เริ่มเซิร์ฟเวอร์
+// ==============================================
 if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`\n==============================================`);
-        console.log(`✅ Server is running on PORT ${PORT}`);
-        console.log(`==============================================\n`);
-    });
+    app.listen(PORT, () => console.log(`✅ Server running on PORT ${PORT}`));
 }
 
 module.exports = app;
