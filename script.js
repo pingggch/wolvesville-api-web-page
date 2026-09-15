@@ -517,6 +517,12 @@ const lottieScript = document.createElement('script');
 lottieScript.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
 document.head.appendChild(lottieScript);
 
+// ตัวแปรเก็บเวลาขยับเมาส์ล่าสุด
+let lastUserActivityTime = Date.now();
+['mousemove', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+    window.addEventListener(evt, () => lastUserActivityTime = Date.now());
+});
+
 // FIXED ICONS
 const EMBEDDED_ICONS = {
     GOLD: "https://static.wikia.nocookie.net/werewolf-online/images/6/6d/Coin.png/revision/latest/scale-to-width-down/20?cb=20190630074706",
@@ -2445,12 +2451,20 @@ function startClanPolling(clanId, isMyClan) {
     currentViewingClanId = clanId;
     isCurrentViewMyClan = isMyClan;
     isFirstRender = true;
-    bgTickCounter = 0; // Reset cache counter
+    bgTickCounter = 0;
     console.log(t('txt_auto_update'));
     
-    // ตั้งเวลา Polling ใหม่เป็น 3 วินาที (เพื่อลดภาระ API และลดการกระตุกของหน้าจอ)
     clanPollingInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
+            // เช็คว่าปล่อยจอนิ่ง (Idle) เกิน 3 นาที (180,000 ms) หรือไม่
+            const isIdle = (Date.now() - lastUserActivityTime) > 180000;
+            
+            // ถ้า Idle ให้ข้ามการยิง API ไปเลย ยกเว้นครบทุกๆ 20 รอบ (60 วินาที) ค่อยดึงทีนึง
+            if (isIdle && bgTickCounter % 20 !== 0) {
+                bgTickCounter++;
+                return; 
+            }
+
             currentClanRequestId++;
             fetchClanData(clanId, isMyClan, true, currentClanRequestId); 
         }
@@ -2471,7 +2485,7 @@ function stopClanPolling() {
     bgTickCounter = 0;
 }
 
-// 🌟 ปรับปรุงระบบ Fetch แบบ Real-time Optimization
+// 🌟 ปรับปรุงระบบ Fetch แบบ Real-time Optimization & Tiered Polling
 async function fetchClanData(clanId, isMyClan = false, isBackground = false, reqId = null) {
     const totalSteps = isMyClan ? 14 : 9; 
     let currentStep = 0;
@@ -2510,7 +2524,7 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
         await Promise.all([fetchAndCacheEmojis(), fetchAndCacheAvatarItems()]);
         if (reqId !== currentClanRequestId) return; 
 
-        // -- FULL FETCH LOOP (ดึงข้อมูลทั้งหมด) --
+        // -- FULL FETCH LOOP (ดึงข้อมูลทั้งหมดตอนโหลดครั้งแรก) --
         updateProgress('load_info');
         info = await fetchData(`/clans/${clanId}/info`);
         if (reqId !== currentClanRequestId) return; 
@@ -2594,92 +2608,78 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
         currentClanDataCache = {
             info: info,
             membersRaw: membersRaw,
+            quests: quests, 
+            chat: chat,     
+            logs: logs,     
             ledger: ledger,
             history: history,
             announcements: announcements,
             blockedMembers: blockedMembers,
-            availableQuests: availableQuests
+            availableQuests: availableQuests,
+            votesData: votesData 
         };
 
     } else {
-        // -- LIGHT FETCH LOOP (สำหรับ Background Real-time Optimization) --
+        // -- LIGHT FETCH LOOP (Tiered Polling Optimization) --
         bgTickCounter++;
         
-        // โหลดข้อมูลเก่าจาก Cache (ส่วนที่ไม่จำเป็นต้องอัปเดตบ่อย)
-        info = currentClanDataCache.info;
+        // แบ่งรอบความถี่การยิง API (Tick ละ 3 วินาที)
+        const isFastTick = (bgTickCounter % 2 === 0);  // แชท, ทองแคลน: ดึงทุก 6 วินาที
+        const isMedTick = (bgTickCounter % 5 === 0);   // เควสปัจจุบัน, Logs: ดึงทุก 15 วินาที
+        const isSlowTick = (bgTickCounter % 10 === 0); // รายชื่อ, Ledger, ร้านเควส, โหวต: ดึงทุก 30 วินาที
+
+        const fetchPromises = [];
+        let pChatIdx = -1, pInfoIdx = -1, pQuestIdx = -1, pLogIdx = -1;
+        let pLedgerIdx = -1, pMembersIdx = -1, pAvailIdx = -1, pVotesIdx = -1;
+
+        if (isFastTick || isMedTick || isSlowTick) {
+            if (isFastTick) {
+                pChatIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/chat`));
+                pInfoIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/info`));
+            }
+            if (isMedTick) {
+                pQuestIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/quests/active`));
+                pLogIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/logs`));
+            }
+            if (isSlowTick) {
+                pLedgerIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/ledger`));
+                pMembersIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/members`)); 
+                if (isMyClan) {
+                    pAvailIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/quests/available`)); 
+                    pVotesIdx = fetchPromises.length; fetchPromises.push(fetchData(`/clans/${clanId}/quests/votes`)); 
+                }
+            }
+        }
+
+        const res = fetchPromises.length > 0 ? await Promise.all(fetchPromises) : [];
+        if (reqId !== currentClanRequestId) return;
+        
+        // โหลดข้อมูลจากที่ดึงมาใหม่ หรือถ้าไม่ได้ดึงรอบนี้ ก็ดึงจาก Cache ของเดิม
+        chat = pChatIdx !== -1 && !res[pChatIdx].error ? res[pChatIdx] : currentClanDataCache.chat;
+        info = pInfoIdx !== -1 && !res[pInfoIdx].error ? res[pInfoIdx] : currentClanDataCache.info;
+        quests = pQuestIdx !== -1 && !res[pQuestIdx].error ? res[pQuestIdx] : currentClanDataCache.quests;
+        logs = pLogIdx !== -1 && !res[pLogIdx].error ? res[pLogIdx] : currentClanDataCache.logs;
+        ledger = pLedgerIdx !== -1 && !res[pLedgerIdx].error ? res[pLedgerIdx] : currentClanDataCache.ledger;
+        membersRaw = pMembersIdx !== -1 && !res[pMembersIdx].error ? res[pMembersIdx] : currentClanDataCache.membersRaw;
+        
+        if (isMyClan) {
+            availableQuests = pAvailIdx !== -1 && !res[pAvailIdx].error ? res[pAvailIdx] : currentClanDataCache.availableQuests;
+            votesData = pVotesIdx !== -1 && !res[pVotesIdx].error ? res[pVotesIdx] : currentClanDataCache.votesData;
+            if(votesData && !votesData.error) clanVotesCache = votesData;
+        } else {
+            availableQuests = { error: true };
+            votesData = { error: true };
+        }
+
+        // ส่วนที่นิ่งตลอดอยู่แล้ว
         history = currentClanDataCache.history;
         announcements = currentClanDataCache.announcements;
         blockedMembers = currentClanDataCache.blockedMembers;
-        
-        // ดึงเฉพาะสิ่งที่จำเป็นต้อง Real-time (ดึงพร้อมกันเพื่อความรวดเร็ว)
-        const fetchPromises = [
-            fetchData(`/clans/${clanId}/quests/active`),
-            fetchData(`/clans/${clanId}/chat`),
-            fetchData(`/clans/${clanId}/logs`),
-            fetchData(`/clans/${clanId}/ledger`), // 🌟 เพิ่ม Ledger เพื่อให้อัปเดตเงินบริจาคแบบ Real-time
-            fetchData(`/clans/${clanId}/info`) // 🌟 ดึงข้อมูลทอง/เพชรแคลนแบบเรียลไทม์
-        ];
-        
-        // อัปเดตรายชื่อสมาชิก, เควสที่เปิดขาย และยอดโหวต ทุกๆ 12 วินาที (4 tick x 3s)
-        const isMediumUpdateTick = (bgTickCounter % 4 === 0);
-        
-        let pMembersIdx = -1;
-        let pAvailIdx = -1;
-        let pVotesIdx = -1;
 
-        if (isMediumUpdateTick) {
-            pMembersIdx = fetchPromises.length;
-            fetchPromises.push(fetchData(`/clans/${clanId}/members`)); 
-            if (isMyClan) {
-                pAvailIdx = fetchPromises.length;
-                fetchPromises.push(fetchData(`/clans/${clanId}/quests/available`)); 
-                pVotesIdx = fetchPromises.length;
-                fetchPromises.push(fetchData(`/clans/${clanId}/quests/votes`)); 
-            }
-        } else if (isMyClan) {
-            // โหวตควรเช็คถี่กว่าเควสที่เปิดขายหน่อย (เผื่อมีการโหวต)
-            pVotesIdx = fetchPromises.length;
-            fetchPromises.push(fetchData(`/clans/${clanId}/quests/votes`)); 
-        }
-
-        const res = await Promise.all(fetchPromises);
-        if (reqId !== currentClanRequestId) return;
-        
-        quests = res[0];
-        chat = res[1];
-        logs = res[2];
-        ledger = res[3];
-        currentClanDataCache.ledger = ledger; // อัปเดต Cache ของ Ledger เผื่อไว้
-
-        // อัปเดตค่า info ล่าสุด (ทองและเพชร)
-        if (res[4] && !res[4].error) {
-            info = res[4];
-            currentClanDataCache.info = info;
-        }
-        
-        if (isMediumUpdateTick) {
-            membersRaw = res[pMembersIdx] && !res[pMembersIdx].error ? res[pMembersIdx] : currentClanDataCache.membersRaw;
-            currentClanDataCache.membersRaw = membersRaw; // Update Cache
-            
-            if (isMyClan) {
-                availableQuests = res[pAvailIdx] && !res[pAvailIdx].error ? res[pAvailIdx] : currentClanDataCache.availableQuests;
-                currentClanDataCache.availableQuests = availableQuests; // Update Cache
-                votesData = res[pVotesIdx];
-                if(votesData && !votesData.error) clanVotesCache = votesData;
-            } else {
-                availableQuests = { error: true };
-                votesData = { error: true };
-            }
-        } else {
-            membersRaw = currentClanDataCache.membersRaw;
-            availableQuests = currentClanDataCache.availableQuests;
-            if (isMyClan) {
-                votesData = res[pVotesIdx];
-                if(votesData && !votesData.error) clanVotesCache = votesData;
-            } else {
-                votesData = { error: true };
-            }
-        }
+        // อัปเดต Cache กลับไป
+        currentClanDataCache = {
+            info, membersRaw, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData
+        };
     }
 
     // -- Update Maps & Cache Data --
