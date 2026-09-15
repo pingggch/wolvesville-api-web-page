@@ -136,92 +136,106 @@ setInterval(async () => {
 }, 60000);
 
 // **********************************************
-// 2. STATS LOGIC
+// 2. STATS LOGIC (ปรับมาใช้ Vercel KV แทนไฟล์)
 // **********************************************
 
-async function loadStats() {
-    if (!cachedStats) {
-        const ghData = await fetchFileFromGitHub(GITHUB_STATS_PATH);
-        if (ghData.data) {
-            cachedStats = ghData.data;
-            currentStatsSha = ghData.sha;
-            await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats);
-        } else {
-            const initialStats = {
+app.get('/api/stats', async (req, res) => {
+    try {
+        // ดึงสถิติจาก Database
+        let stats = await kv.get('api_stats');
+
+        // ถ้าไม่มีข้อมูล ให้สร้างโครงสร้างเริ่มต้น
+        if (!stats) {
+            stats = {
                 date_today: new Date().toISOString().split('T')[0],
                 date_this_month: new Date().toISOString().substring(0, 7),
-                requests: { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 }, 
-                visitors: { count_today: 0, count_month: 0, count_year: 0, count_lifetime: 0 }  
+                requests: { count_today: 527, count_month: 1607, count_year: 13925, count_lifetime: 13925 }
             };
-            cachedStats = await loadJsonFile(STATS_FILE, initialStats);
         }
-    }
-    
-    if (cachedStats.requests.count_lifetime === undefined) cachedStats.requests.count_lifetime = cachedStats.requests.count_year || 0;
-    if (cachedStats.visitors.count_lifetime === undefined) cachedStats.visitors.count_lifetime = cachedStats.visitors.count_year || 0;
-    
-    return cachedStats;
-}
 
-function checkAndResetStats(stats) {
-    const today = new Date();
-    const todayDate = today.toISOString().split('T')[0];
-    const thisMonth = today.toISOString().substring(0, 7);
-    let updated = false;
+        const today = new Date();
+        const todayDate = today.toISOString().split('T')[0];
+        const thisMonth = today.toISOString().substring(0, 7);
+        let updated = false;
 
-    if (stats.date_today !== todayDate) {
-        stats.requests.count_today = 0;
-        stats.visitors.count_today = 0;
-        stats.date_today = todayDate;
-        updated = true;
-    }
-
-    if (stats.date_this_month !== thisMonth) {
-        const currentYear = today.getFullYear();
-        const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
-        if (currentYear !== recordedYear) {
-            stats.requests.count_year = 0;
-            stats.visitors.count_year = 0;
+        // ตรวจสอบการขึ้นวันใหม่
+        if (stats.date_today !== todayDate) {
+            stats.requests.count_today = 0;
+            stats.date_today = todayDate;
+            updated = true;
         }
-        stats.requests.count_month = 0;
-        stats.visitors.count_month = 0;
-        stats.date_this_month = thisMonth;
-        updated = true;
-    }
-    return { stats, updated };
-}
 
-app.get('/api/stats', async (req, res) => {
-    let stats = await loadStats();
-    const { stats: updatedStats, updated } = checkAndResetStats(stats);
-    if (updated) {
-        cachedStats = updatedStats;
-        await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats);
-        statsDirty = true;
+        // ตรวจสอบการขึ้นเดือนใหม่ / ปีใหม่
+        if (stats.date_this_month !== thisMonth) {
+            const currentYear = today.getFullYear();
+            const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
+            if (currentYear !== recordedYear) {
+                stats.requests.count_year = 0;
+            }
+            stats.requests.count_month = 0;
+            stats.date_this_month = thisMonth;
+            updated = true;
+        }
+
+        // ถ้ามีการรีเซ็ตวัน/เดือน ให้เซฟกลับไปที่ DB ด้วย
+        if (updated) {
+            await kv.set('api_stats', stats);
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error("KV Fetch Error:", error);
+        res.status(500).json({ error: "Failed to fetch stats" });
     }
-    res.json(cachedStats);
 });
 
 app.post('/api/stats/increment/:type', async (req, res) => {
     const type = req.params.type; 
-    if (type !== 'requests' && type !== 'visitors') return res.status(400).json({ error: 'Invalid type' });
+    // ตัด visitors ออกไปแล้ว ดังนั้นรับแค่ requests
+    if (type !== 'requests') return res.status(400).json({ error: 'Invalid type' });
 
-    let stats = await loadStats();
-    const { stats: updatedStats } = checkAndResetStats(stats);
-    cachedStats = updatedStats;
+    try {
+        let stats = await kv.get('api_stats');
+        if (!stats) {
+            stats = {
+                date_today: new Date().toISOString().split('T')[0],
+                date_this_month: new Date().toISOString().substring(0, 7),
+                requests: { count_today: 527, count_month: 1607, count_year: 13925, count_lifetime: 13925 }
+            };
+        }
 
-    if (cachedStats[type]) {
-        cachedStats[type].count_today++;
-        cachedStats[type].count_month++;
-        cachedStats[type].count_year++;
-        cachedStats[type].count_lifetime++; 
+        const today = new Date();
+        const todayDate = today.toISOString().split('T')[0];
+        const thisMonth = today.toISOString().substring(0, 7);
+
+        // เช็คการเปลี่ยนวันก่อนบวกเลข
+        if (stats.date_today !== todayDate) {
+            stats.requests.count_today = 0;
+            stats.date_today = todayDate;
+        }
+        if (stats.date_this_month !== thisMonth) {
+            const currentYear = today.getFullYear();
+            const recordedYear = stats.date_this_month ? parseInt(stats.date_this_month.substring(0, 4)) : currentYear;
+            if (currentYear !== recordedYear) stats.requests.count_year = 0;
+            
+            stats.requests.count_month = 0;
+            stats.date_this_month = thisMonth;
+        }
+
+        // บวกยอดสถิติ
+        stats.requests.count_today++;
+        stats.requests.count_month++;
+        stats.requests.count_year++;
+        stats.requests.count_lifetime++; 
         
-        await saveJsonFile(STATS_FILE, TEMP_STATS_FILE, cachedStats);
-        statsDirty = true;
+        // เซฟลง Database ถาวร
+        await kv.set('api_stats', stats);
 
-        return res.status(200).json({ success: true, newCount: cachedStats[type].count_today });
+        return res.status(200).json({ success: true, newCount: stats.requests.count_today });
+    } catch (error) {
+        console.error("KV Increment Error:", error);
+        return res.status(500).json({ error: 'Server error' });
     }
-    return res.status(500).json({ error: 'Server error' });
 });
 
 // **********************************************
