@@ -3948,6 +3948,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTranslations(); // เปลี่ยนภาษา UI ตอนโหลดหน้าแรก
     sendIncrementSignal('visitors');
     fetchAndDisplayData();
+    fetchDonateUsername();
 
     const k = localStorage.getItem('wolvesville_api_key');
     if(k) { apiKeyInput.value = k; if(apiKeyStatus) apiKeyStatus.innerHTML = '✅ OK'; }
