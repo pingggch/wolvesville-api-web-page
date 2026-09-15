@@ -183,11 +183,23 @@
                     <h3 data-i18n="donate_title" style="margin: 15px 0 10px 0; color: #1e293b;">สนับสนุนค่าเซิร์ฟเวอร์และผู้พัฒนา</h3>
                     <p data-i18n="donate_desc" style="color: #64748b; line-height: 1.6; max-width: 600px; margin: 0 auto;">หากคุณใช้งานแล้วชื่นชอบ สามารถช่วยสมทบทุนค่าเซิร์ฟเวอร์หรือเลี้ยงกาแฟผู้พัฒนาได้นะครับ เพื่อให้ระบบเปิดใช้งานได้ในระยะยาว</p>
                     
-                    <div style="margin: 25px auto; max-width: 300px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
-                        <img src="ReceiveMoney_QR_2026-02-20_140228.png" alt="Donate QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <!-- กล่องรวม QR Code 2 อัน -->
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 25px auto; max-width: 700px;">
                         
-                        <strong style="display: block; margin-top: 15px; color: #1e293b; font-size: 1.1rem;" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</strong>
-                        <div style="color: #f97316; font-size: 0.95rem; font-weight: bold; margin-top: 5px;" data-i18n="donate_truemoney">โอนผ่านทรูมันนี่วอลเล็ท</div>
+                        <!-- QR Code พร้อมเพย์ -->
+                        <div style="flex: 1; min-width: 250px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
+                            <img src="004999129535570_20250528_140858.jpg" alt="PromptPay QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <strong style="display: block; margin-top: 15px; color: #1e293b; font-size: 1.1rem;" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</strong>
+                            <div style="color: #0369a1; font-size: 0.95rem; font-weight: bold; margin-top: 5px;">โอนผ่านพร้อมเพย์ (PromptPay)</div>
+                        </div>
+
+                        <!-- QR Code ทรูมันนี่ -->
+                        <div style="flex: 1; min-width: 250px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
+                            <img src="ReceiveMoney_QR_2026-02-20_17.53.45.png" alt="TrueMoney QR" class="qr-code" style="width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <strong style="display: block; margin-top: 15px; color: #1e293b; font-size: 1.1rem;" data-i18n="donate_acc_name">ชื่อบัญชี: นายพีรภัทร เพชรจันทร์เพ็ญ</strong>
+                            <div style="color: #f97316; font-size: 0.95rem; font-weight: bold; margin-top: 5px;" data-i18n="donate_truemoney">โอนผ่านทรูมันนี่วอลเล็ท</div>
+                        </div>
+
                     </div>
                     
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
