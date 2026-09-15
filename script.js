@@ -2343,7 +2343,7 @@ function renderPlayerProfile(data) {
                 <div class="level-badge">${t('txt_level')} ${data.level}</div>
             </div>
             
-            <!-- กลาง: ข้อมูลประวัติ (flex: 1 จะขยายดันรูปจริงไปชิดขวา) -->
+            <!-- กลาง: ข้อมูลประวัติ (ดันรูปไปชิดขวา) -->
             <div class="profile-main-info">
                 <div class="player-name">${data.username} ${clanHtml}</div>
                 <div style="margin-bottom:10px;">${statusBadge}</div>
@@ -2361,10 +2361,10 @@ function renderPlayerProfile(data) {
                 </div>
             </div>
 
-            <!-- ขวา: รูปโปรไฟล์จริง (รักษาสัดส่วนด้วย object-fit: contain) -->
+            <!-- ขวา: รูปโปรไฟล์จริง (ปรับให้เต็มบล็อคพอดี) -->
             ${data.profileImageUrl ? `
-            <div style="flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
-                <img src="${data.profileImageUrl}" style="max-width: 180px; max-height: 200px; width: auto; height: auto; border-radius: 12px; border: 3px solid #f1f5f9; box-shadow: var(--shadow-sm); object-fit: contain; background: white;" referrerpolicy="no-referrer">
+            <div style="flex-shrink: 0; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 260px; margin: 15px auto 0 auto;">
+                <img src="${data.profileImageUrl}" style="width: 100%; height: 180px; border-radius: 12px; border: 2px solid #e2e8f0; box-shadow: var(--shadow-md); object-fit: cover; object-position: center;" referrerpolicy="no-referrer">
             </div>
             ` : ''}
         </div>
