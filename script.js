@@ -2342,28 +2342,34 @@ function renderPlayerProfile(data) {
                 <div class="level-badge">${t('txt_level')} ${data.level}</div>
             </div>
             
-            <div class="profile-main-info">
-                <div class="player-name">${data.username} ${clanHtml}</div>
-                <div style="margin-bottom:10px;">${statusBadge}</div>
+            <!-- ใช้ Flexbox แบ่งเนื้อหาออกเป็น 2 ฝั่ง -->
+            <div class="profile-main-info" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; width: 100%;">
                 
-                <div style="margin-bottom: 10px;">
-                    <span class="rose-stat"><span class="material-icons">favorite</span> ${data.receivedRosesCount?.toLocaleString() || 0}</span>
-                    <span class="rose-stat"><span class="material-icons">volunteer_activism</span> ${data.sentRosesCount?.toLocaleString() || 0}</span>
+                <!-- ฝั่งซ้าย: ข้อมูล -->
+                <div style="flex: 1 1 300px; min-width: 0;">
+                    <div class="player-name">${data.username} ${clanHtml}</div>
+                    <div style="margin-bottom:10px;">${statusBadge}</div>
+                    
+                    <div style="margin-bottom: 10px;">
+                        <span class="rose-stat"><span class="material-icons">favorite</span> ${data.receivedRosesCount?.toLocaleString() || 0}</span>
+                        <span class="rose-stat"><span class="material-icons">volunteer_activism</span> ${data.sentRosesCount?.toLocaleString() || 0}</span>
+                    </div>
+
+                    <div class="player-bio" style="white-space: pre-wrap;">"${formatMessage(data.personalMessage)}"</div>
+
+                    <div style="font-size:0.85rem; color:#64748b; margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:10px;">
+                        <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.id}</span> <br>
+                        ${t('txt_joined')}: ${formatDateThai(data.creationTime)} | ${t('txt_last_online')}: ${formatDateThai(data.lastOnline)}
+                    </div>
                 </div>
 
-                <div class="player-bio" style="white-space: pre-wrap;">"${formatMessage(data.personalMessage)}"</div>
-
-                <!-- รูปโปรไฟล์จริง: โชว์ขนาดตามจริงแต่ไม่ให้ล้นกรอบ -->
+                <!-- ฝั่งขวา: รูปจริง -->
                 ${data.profileImageUrl ? `
-                <div style="margin-top: 15px;">
+                <div style="flex: 0 1 auto; width: 100%; max-width: 320px; display: flex; justify-content: flex-end; align-items: flex-start;">
                     <img src="${data.profileImageUrl}" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: var(--shadow-sm); display: block;" referrerpolicy="no-referrer">
                 </div>
                 ` : ''}
-
-                <div style="font-size:0.85rem; color:#64748b; margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:10px;">
-                    <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${data.id}</span> <br>
-                    ${t('txt_joined')}: ${formatDateThai(data.creationTime)} | ${t('txt_last_online')}: ${formatDateThai(data.lastOnline)}
-                </div>
+                
             </div>
         </div>
         
