@@ -3510,8 +3510,11 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             }
 
             autoBuyBtn = `
-                <button disabled style="background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1; padding:6px 16px; border-radius:8px; cursor:not-allowed; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center;">
-                    <span class="material-icons" style="font-size:16px; margin-right:4px;">build</span> ปิดปรับปรุงชั่วคราว
+                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}', '${imgUrl}')" 
+                        style="background:#f8fafc; color:#3b82f6; border:1px dashed #93c5fd; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; transition:0.2s;"
+                        onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#3b82f6';" 
+                        onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#93c5fd';">
+                    <span class="material-icons" style="font-size:16px; margin-right:4px;">schedule</span> ${t('txt_auto_buy') || 'ตั้งเวลาซื้ออัตโนมัติ'}
                 </button>
             `;
 
