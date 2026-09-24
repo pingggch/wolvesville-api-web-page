@@ -1176,11 +1176,42 @@ window.openMonthlyFeeSettings = (clanId) => {
     document.body.appendChild(overlay);
 };
 
-window.cancelScheduledQuest = (clanId, index) => {
+window.cancelScheduledQuest = async (clanId, index) => {
     let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
-    scheduled.splice(index, 1);
-    localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
-    window.fetchClanData(clanId, true, true);
+    const questToCancel = scheduled[index];
+
+    if (!questToCancel) return;
+
+    // ถามยืนยันก่อนยกเลิก
+    const confirmed = await showCustomConfirm(
+        t('alert_warning'), 
+        `ต้องการยกเลิกคิวซื้อเควส <strong>${questToCancel.questTitle}</strong> ใช่หรือไม่?`, 
+        true
+    );
+    if (!confirmed) return;
+
+    try {
+        // 1. ส่งคำสั่งไปลบใน Vercel KV Database
+        const res = await fetch(`${localServerUrl}/api/cancel-schedule`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clanId: clanId, questId: questToCancel.questId })
+        });
+
+        if (res.ok) {
+            // 2. ถ้าเซิร์ฟเวอร์ลบสำเร็จ ค่อยลบออกจากหน้าจอ (localStorage)
+            scheduled.splice(index, 1);
+            localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
+            
+            showCustomAlert(t('alert_success'), '✅ ยกเลิกคิวสำเร็จ ระบบจะไม่ซื้อเควสนี้แล้ว');
+            window.fetchClanData(clanId, true, true);
+        } else {
+            const err = await res.json();
+            showCustomAlert(t('alert_error'), '❌ ' + (err.error || 'เกิดข้อผิดพลาดในการยกเลิก'));
+        }
+    } catch (e) {
+        showCustomAlert(t('alert_error'), '❌ ' + e.message);
+    }
 };
 
 window.toggleMemberClassType = (clanId, playerId, currentType) => {
