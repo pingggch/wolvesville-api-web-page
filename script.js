@@ -2945,30 +2945,39 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
     let scheduledHtml = '';
-    if (scheduled.length > 0) {
-        scheduledHtml = `
-            <div style="background:#f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0; color:#334155; display:flex; align-items:center; gap:5px;"><span class="material-icons" style="color:#8b5cf6;">schedule</span> เควสที่ตั้งเวลาไว้ (คิวอัตโนมัติ)</h4>
-                ${scheduled.map((sq, idx) => {
-                    const timeStr = sq.targetTime > 0 ? new Date(sq.targetTime).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') : 'ทันทีที่แคลนว่าง';
-                    const imgUrl = sq.questImageUrl || 'https://via.placeholder.com/40';
-                    return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px; background:white; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:5px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${imgUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" referrerpolicy="no-referrer">
-                                <div>
-                                    <strong style="color:var(--primary-color);">${sq.questTitle}</strong>
-                                    <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
-                                </div>
+if (scheduled.length > 0) {
+    scheduledHtml = `
+        <div style="background:#f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 10px 0; color:#334155; display:flex; align-items:center; gap:5px;">
+                <span class="material-icons" style="color:#8b5cf6;">schedule</span> เควสที่ตั้งเวลาไว้ (คิวอัตโนมัติ)
+            </h4>
+            ${scheduled.map((sq, idx) => {
+                const timeStr = sq.targetTime > 0 
+                    ? new Date(sq.targetTime).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
+                    : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
+                const imgUrl = sq.questImageUrl || 'https://via.placeholder.com/40';
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px; background:white; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:5px; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                            <img src="${imgUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover; flex-shrink:0;" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/40'">
+                            <div style="min-width:0;">
+                                <strong style="color:var(--primary-color); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sq.questTitle}</strong>
+                                <div style="font-size:0.75rem; color:#64748b;">ดำเนินการ: ${timeStr}</div>
                             </div>
-                            <button onclick="window.cancelScheduledQuest('${clanId}', ${idx})" style="background:#fee2e2; color:#dc2626; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">ยกเลิกรายการ (UI)</button>
                         </div>
-                    `;
-                }).join('')}
-                <div style="font-size:0.7rem; color:#ef4444; margin-top:5px;">* การยกเลิกใน UI จะลบการแสดงผลออกเท่านั้น หากคำสั่งไปถึง Vercel แล้ว อาจจะยังคงทำงานอยู่</div>
-            </div>
-        `;
-    }
+                        <button onclick="window.cancelScheduledQuest('${clanId}', ${idx})" 
+                                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px; white-space:nowrap; transition:0.2s; flex-shrink:0;"
+                                onmouseover="this.style.background='#fecaca';"
+                                onmouseout="this.style.background='#fee2e2';">
+                            <span class="material-icons" style="font-size:16px;">delete_outline</span>
+                            ยกเลิก
+                        </button>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
 
     let questsHtml = `<div style="text-align:center; color:#ccc; padding:20px;">${t('txt_no_active_quest')}</div>`;
     let hasActiveQuest = false;
