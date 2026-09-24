@@ -4248,7 +4248,8 @@ function renderGameModes(modes, container) {
                                 const rName = rData.name || rId.replace(/-/g, ' ').toUpperCase();
                                 const pTxt = opt.probability < 1 ? `(${(opt.probability*100).toFixed(0)}%)` : '';
 
-                                itemsHtml += `<img src="${imgUrl}" title="${rName} ${pTxt}" class="slot-img" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">`;
+                                // 🌟 แสดงทุกใบเหมือนเดิม เพิ่ม onclick เรียก showRoleModal 🌟
+                                itemsHtml += `<img src="${imgUrl}" title="${rName} ${pTxt} (คลิกเพื่อดูรายละเอียด)" class="slot-img" onclick="event.stopPropagation(); window.showRoleModal('${rId}')" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">`;
                             });
                         });
                         slotsHtml += `<div class="slot-box">${itemsHtml}</div>`;
