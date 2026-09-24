@@ -1179,7 +1179,6 @@ window.openMonthlyFeeSettings = (clanId) => {
 window.cancelScheduledQuest = async (clanId, index) => {
     let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
     const questToCancel = scheduled[index];
-
     if (!questToCancel) return;
 
     const confirmed = await showCustomConfirm(
@@ -1190,7 +1189,7 @@ window.cancelScheduledQuest = async (clanId, index) => {
     if (!confirmed) return;
 
     try {
-        // ✅ เปลี่ยน path + ส่ง endpoint ใน body
+        // ✅ ยิงผ่าน /api/wolvesville
         const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1202,15 +1201,23 @@ window.cancelScheduledQuest = async (clanId, index) => {
             })
         });
 
+        const text = await res.text();
+        console.log('[cancel-schedule] status:', res.status, 'response:', text);
+
         if (res.ok) {
+            // ลบออกจาก localStorage
             scheduled.splice(index, 1);
             localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
             
             showCustomAlert(t('alert_success'), '✅ ยกเลิกคิวสำเร็จ ระบบจะไม่ซื้อเควสนี้แล้ว');
             window.fetchClanData(clanId, true, true);
         } else {
-            const err = await res.json().catch(() => ({}));
-            showCustomAlert(t('alert_error'), '❌ ' + (err.error || 'เกิดข้อผิดพลาดในการยกเลิก'));
+            try {
+                const err = JSON.parse(text);
+                showCustomAlert(t('alert_error'), '❌ ' + (err.error || 'เกิดข้อผิดพลาดในการยกเลิก'));
+            } catch {
+                showCustomAlert(t('alert_error'), `❌ ${res.status}: ${text}`);
+            }
         }
     } catch (e) {
         showCustomAlert(t('alert_error'), '❌ ' + e.message);
@@ -1818,7 +1825,6 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 // --- ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
 window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
-    
     const targetTimeMs = await showSchedulePrompt(t('txt_auto_buy'), msg);
     if (targetTimeMs === null) return;
 
@@ -1826,7 +1832,7 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
     if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
 
     try {
-        // ✅ เปลี่ยน path + ส่ง endpoint ใน body
+        // ✅ ยิงผ่าน /api/wolvesville เสมอ (path นี้การันตีว่าทำงาน)
         const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1841,11 +1847,16 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
             })
         });
 
+        const text = await res.text();
+        console.log('[schedule-quest] status:', res.status, 'response:', text);
+
         if (res.ok) {
+            const data = JSON.parse(text);
             const timeStr = targetTimeMs > 0 
                 ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
                 : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
             
+            // เก็บใน localStorage เพื่อโชว์ใน UI
             let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
             scheduled.push({
                 questId: questId,
@@ -1856,16 +1867,19 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
             });
             localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
 
-            showCustomAlert(t('alert_success'), `✅ ${t('txt_auto_buy_success')}<br><br><span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span>`);
+            showCustomAlert(
+                t('alert_success'), 
+                `✅ ${t('txt_auto_buy_success')}<br><br>` +
+                `<span style="font-size:0.9rem; color:#64748b;">ระบบจะดำเนินการเมื่อ: <strong style="color:var(--primary-color);">${timeStr}</strong></span><br>` +
+                `<span style="font-size:0.75rem; color:#94a3b8;">คิวทั้งหมดในระบบ: ${data.total_in_queue || '-'} รายการ</span>`
+            );
             window.fetchClanData(clanId, true, true);
         } else {
-            const text = await res.text();
             try {
                 const err = JSON.parse(text);
                 showCustomAlert(t('alert_error'), '❌ ' + (err.error || err.message || t('unknown_err')));
-            } catch (parseError) {
-                console.error("Non-JSON Server Error:", text);
-                showCustomAlert(t('alert_error'), `❌ Server Error: ${res.status} (รอ Vercel อัปเดตโค้ดสักครู่)`);
+            } catch {
+                showCustomAlert(t('alert_error'), `❌ Server Error ${res.status}: ${text}`);
             }
         }
     } catch (e) {
