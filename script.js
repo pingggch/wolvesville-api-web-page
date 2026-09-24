@@ -3661,8 +3661,9 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     // 🌟 ระบบ Update หน้าต่างเฉพาะส่วนที่เปลี่ยนแปลงเพื่อลดการกระตุก (Background Update)
     if (isBackground && isFirstRender === false) {
-        // 🌟 1. ดักจับและจำสถานะ Scroll + กล่องที่ถูกกาง ไว้ก่อนที่มันจะอัปเดตใหม่
         const clanContent = document.getElementById('clan-content-container');
+        
+        // 1. ดักจับและจำสถานะ Scroll + กล่องที่ถูกกาง
         const scrollStates = [];
         const detailsStates = [];
         if (clanContent) {
@@ -3670,42 +3671,47 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             clanContent.querySelectorAll('details').forEach(el => detailsStates.push(el.hasAttribute('open')));
         }
 
-        // อัปเดตข้อมูลแคลนแบบ Real-time
+        // อัปเดตข้อมูลแคลนแบบ Real-time (ยอดเงิน/เพชร)
         const cWalletGold = document.getElementById('clan-wallet-gold');
         if (cWalletGold && info && info.gold !== undefined) cWalletGold.innerText = info.gold.toLocaleString();
         
         const cWalletGems = document.getElementById('clan-wallet-gems');
         if (cWalletGems && info && info.gems !== undefined) cWalletGems.innerText = info.gems.toLocaleString();
 
-        const cChat = document.getElementById('clan-chat-container');
-        if (cChat && cChat.innerHTML !== chatHtml) { const b = cChat.scrollHeight - cChat.scrollTop <= cChat.clientHeight + 100; cChat.innerHTML = chatHtml; if (b) cChat.scrollTop = cChat.scrollHeight; }
-        const cAnn = document.getElementById('clan-announcements-container'); if (cAnn && cAnn.innerHTML !== announceListContent) cAnn.innerHTML = announceListContent;
-        const cMem = document.getElementById('clan-members-list'); if (cMem && cMem.innerHTML !== membersHtml) cMem.innerHTML = membersHtml;
-        const cLog = document.getElementById('clan-logs-list'); if (cLog && cLog.innerHTML !== logsHtml) cLog.innerHTML = logsHtml;
-        
-        const cScheduled = document.getElementById('scheduled-quests-wrapper');
-        if (cScheduled && cScheduled.innerHTML !== scheduledHtml) cScheduled.innerHTML = scheduledHtml;
-        
-        const cActiveQuest = document.getElementById('active-quest-wrapper');
-        if (cActiveQuest && cActiveQuest.innerHTML !== questsHtml) cActiveQuest.innerHTML = questsHtml;
-        
-        const cFeeTracker = document.getElementById('fee-tracker-wrapper');
-        if (cFeeTracker && cFeeTracker.innerHTML !== feeTrackerHtml) cFeeTracker.innerHTML = feeTrackerHtml;
-        
-        const cXpTracker = document.getElementById('xp-tracker-wrapper');
-        if (cXpTracker && cXpTracker.innerHTML !== xpTrackerHtml) cXpTracker.innerHTML = xpTrackerHtml;
+        // 🌟 ฟังก์ชันอัปเดตแบบ "ฉลาด" (เปรียบเทียบจากโค้ดดิบ ถ้าข้อมูลไม่เปลี่ยน จะไม่กระตุกหน้าจอเลย!)
+        const updateIfChanged = (id, newHtml) => {
+            const el = document.getElementById(id);
+            if (el && el._rawHtml !== newHtml) {
+                const isChat = (id === 'clan-chat-container');
+                const isAtBottom = isChat ? (el.scrollHeight - el.scrollTop <= el.clientHeight + 100) : false;
+                
+                el.innerHTML = newHtml;
+                el._rawHtml = newHtml; // อัปเดตความจำ
+                
+                if (isChat && isAtBottom) el.scrollTop = el.scrollHeight;
+                return true;
+            }
+            return false;
+        };
 
-        const cMonthlyFee = document.getElementById('monthly-fee-wrapper');
-        if (cMonthlyFee && cMonthlyFee.innerHTML !== monthlyFeeTrackerHtml) cMonthlyFee.innerHTML = monthlyFeeTrackerHtml;
+        // ตรวจสอบและอัปเดตแต่ละกล่อง
+        updateIfChanged('clan-chat-container', chatHtml);
+        updateIfChanged('clan-announcements-container', announceListContent);
+        updateIfChanged('clan-members-list', membersHtml);
+        updateIfChanged('clan-logs-list', logsHtml);
+        updateIfChanged('scheduled-quests-wrapper', scheduledHtml);
+        updateIfChanged('active-quest-wrapper', questsHtml);
+        updateIfChanged('fee-tracker-wrapper', feeTrackerHtml);
+        updateIfChanged('xp-tracker-wrapper', xpTrackerHtml);
+        updateIfChanged('monthly-fee-wrapper', monthlyFeeTrackerHtml);
+        updateIfChanged('available-quests-wrapper', availableQuestsHtml);
+        updateIfChanged('clan-ledger-list', ledgerHtml);
+        updateIfChanged('clan-history-list', historyHtml);
 
-        const cAvailQuest = document.getElementById('available-quests-wrapper');
-        if (cAvailQuest && cAvailQuest.innerHTML !== availableQuestsHtml) cAvailQuest.innerHTML = availableQuestsHtml;
+        const cTimer = document.getElementById('quest-reset-timer'); 
+        if (cTimer) cTimer.outerHTML = getQuestResetTimeDisplay();
 
-        const cTimer = document.getElementById('quest-reset-timer'); if (cTimer) cTimer.outerHTML = getQuestResetTimeDisplay();
-        const cLedger = document.getElementById('clan-ledger-list'); if (cLedger && cLedger.innerHTML !== ledgerHtml) cLedger.innerHTML = ledgerHtml;
-        const cHist = document.getElementById('clan-history-list'); if (cHist && cHist.innerHTML !== historyHtml) cHist.innerHTML = historyHtml;
-
-        // 🌟 2. คืนค่า Scroll และการกางกล่องกลับไปให้เหมือนเดิมทันที!
+        // 2. คืนค่า Scroll และการกางกล่อง (เฉพาะกล่องที่มีการอัปเดตเท่านั้น)
         if (clanContent) {
             clanContent.querySelectorAll('details').forEach((el, i) => {
                 if (detailsStates[i]) el.setAttribute('open', '');
@@ -3723,118 +3729,24 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
     // -- การโหลดครั้งแรกเต็มจอ (Full Render) --
     isFirstRender = false;
     
-    const profileHeader = `
-        <div class="profile-header-card" style="border-left-color:#eab308;">
-            <div class="profile-avatar-wrapper" style="display:flex; justify-content:center; align-items:center; width:100px; height:100px; background:#fefce8; border-radius:50%; font-size:50px; border:4px solid #eab308;">
-                ${info.tag || '🛡️'}
-            </div>
-            <div class="profile-main-info">
-                <h2 class="player-name">[${info.tag}] ${info.name}</h2>
-                <div class="clan-wallet">
-                    <span class="currency-badge gold"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#d97706;">monetization_on</span> <span id="clan-wallet-gold">${info.gold?.toLocaleString() || 0}</span></span>
-                    <span class="currency-badge gems"><span class="material-icons" style="font-size:16px; margin-right:5px; color:#9333ea;">diamond</span> <span id="clan-wallet-gems">${info.gems?.toLocaleString() || 0}</span></span>
-                </div>
-                <div class="clan-bio">${linkify(info.description || '-')}</div>
-                <div style="margin-top:15px; font-size:0.85rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:10px;">
-                    <strong>ID:</strong> <span style="font-family:monospace; color:var(--primary-color);">${info.id}</span><br>
-                    Language: <strong>${info.language}</strong> | ${t('txt_members')}: <strong>${info.memberCount}</strong> | ${t('txt_clan_xp')}: <strong>${info.xp?.toLocaleString()}</strong> | ${t('txt_quest_hist')}: <strong>${info.questHistoryCount !== undefined ? info.questHistoryCount.toLocaleString() : 0}</strong> | ${t('txt_created')}: ${formatDateThai(info.creationTime)}
-                </div>
-            </div>
-        </div>
-    `;
-
-    let mainContent = `
-        ${announceSectionHtml}
-        <div class="stats-grid stats-grid-row2">
-            <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><span class="material-icons">flag</span> ${t('txt_active_quest')}</span>
-                    <button id="reload-quest-btn" onclick="window.reloadActiveQuest('${clanId}', ${canEdit})" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold; display:flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#1e293b';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';">
-                        <span class="material-icons" style="font-size:16px;">refresh</span> ${t('btn_reload')}
-                    </button>
-                </h3>
-                <div id="clan-quests-container">
-                    <div id="scheduled-quests-wrapper">${scheduledHtml}</div>
-                    <div id="active-quest-wrapper">${questsHtml}</div>
-                    <div id="fee-tracker-wrapper">${feeTrackerHtml}</div>
-                    <div id="xp-tracker-wrapper">${xpTrackerHtml}</div>
-                    <div id="monthly-fee-wrapper">${monthlyFeeTrackerHtml}</div>
-                    <div id="available-quests-wrapper">${availableQuestsHtml}</div>
-                </div>
-            </div>
-            <div>
-                <h3 class="stats-section-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
-                    <span><span class="material-icons">group</span> ${t('txt_members')} (${info.memberCount})</span>
-                    <div style="font-size:0.75rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        ${canEdit ? `
-                        <button onclick="window.openInactivityMonitor('${clanId}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; display:flex; align-items:center; box-shadow:0 2px 4px rgba(239, 68, 68, 0.2);">
-                            <span class="material-icons" style="font-size:14px; margin-right:4px;">person_search</span> ${t('txt_monitor_title')}
-                        </button>
-                        ` : ''}
-                        <div>
-                            Quest: 
-                            <button onclick="window.toggleAllQuestParticipation('${clanId}', true)" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">${t('txt_all_on')}</button>
-                            <button onclick="window.toggleAllQuestParticipation('${clanId}', false)" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; cursor:pointer;">${t('txt_all_off')}</button>
-                        </div>
-                    </div>
-                </h3>
-                <div id="clan-members-list" class="member-list" style="max-height:500px; overflow-y:auto; padding-right:5px;">
-                    ${membersHtml}
-                </div>
-            </div>
-        </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">chat</span> ${t('txt_clan_chat')}</div>
-                <div id="clan-chat-container" class="clan-scroll-area">${chatHtml}</div>
-                    <div style="display:flex; gap:10px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <input type="text" id="clan-chat-input" placeholder="${t('txt_ph_chat')}" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key==='Enter') window.sendClanChatMessage('${clanId}')">
-                    <button onclick="window.sendClanChatMessage('${clanId}')" style="background:var(--primary-color); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;"><span class="material-icons">send</span></button>
-                </div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history</span> ${t('txt_clan_logs')}</div>
-                <div id="clan-logs-list" class="clan-scroll-area">${logsHtml}</div>
-            </div>
-        </div>
-
-        <div class="stats-grid stats-grid-row2" style="margin-top:20px; align-items: start;">
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">account_balance_wallet</span> ${t('txt_clan_ledger')}</div>
-                <div id="clan-ledger-list" class="clan-scroll-area">${ledgerHtml}</div>
-            </div>
-            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px; font-size:1.1rem; display:flex; align-items:center;"><span class="material-icons" style="vertical-align:middle; margin-right:6px;">history_toggle_off</span> ${t('txt_quest_hist')}</div>
-                <div id="clan-history-list" class="clan-scroll-area">${historyHtml}</div>
-            </div>
-        </div>
-
-        ${canEdit ? `
-        <div style="margin-top:20px; background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-            <h3 class="stats-section-title" style="color:#ef4444;"><span class="material-icons">block</span> ${t('txt_blocklist_mgr')}</h3>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="manual-block-input" placeholder="${t('txt_ph_block')}" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                <button onclick="window.manualAddToBlocklist('${clanId}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">${t('txt_btn_block')}</button>
-            </div>
-            <div class="blocklist-grid">
-                ${blockedMembers.length > 0 && !blockedMembers.error 
-                    ? blockedMembers.map(m => `
-                        <div class="blocked-member-card">
-                            <div class="blocked-member-info">
-                                <img src="${m.equippedAvatar?.url || (m.profileIconId ? `https://cdn-avatars.wolvesville.com/${m.profileIconId}` : 'https://via.placeholder.com/40')}" class="blocked-avatar" onerror="this.src='https://via.placeholder.com/40'">
-                                <span class="blocked-name" onclick="event.stopPropagation(); window.goToPlayerSearch('${escapeJsString(m.username)}')" title="Profile">${m.username || 'Unknown'}</span>
-                            </div>
-                            <button class="btn-unblock-icon" onclick="window.unblockMember('${clanId}', '${m.id}')" title="${t('txt_unblock')}"><span class="material-icons" style="font-size:18px;">lock_open</span></button>
-                        </div>
-                      `).join('') 
-                    : `<div style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:20px;">${t('txt_no_blocks')}</div>`}
-            </div>
-        </div>
-        ` : ''}
-    `;
-
     clanContentContainer.innerHTML = profileHeader + mainContent;
+
+    // 🌟 3. ฝังความจำ (Raw HTML) ให้ทุกกล่องตอนโหลดครั้งแรกสุด
+    const setRawHtml = (id, htmlStr) => { const el = document.getElementById(id); if(el) el._rawHtml = htmlStr; };
+    
+    setRawHtml('clan-chat-container', chatHtml);
+    setRawHtml('clan-announcements-container', announceListContent);
+    setRawHtml('clan-members-list', membersHtml);
+    setRawHtml('clan-logs-list', logsHtml);
+    setRawHtml('scheduled-quests-wrapper', scheduledHtml);
+    setRawHtml('active-quest-wrapper', questsHtml);
+    setRawHtml('fee-tracker-wrapper', feeTrackerHtml);
+    setRawHtml('xp-tracker-wrapper', xpTrackerHtml);
+    setRawHtml('monthly-fee-wrapper', monthlyFeeTrackerHtml);
+    setRawHtml('available-quests-wrapper', availableQuestsHtml);
+    setRawHtml('clan-ledger-list', ledgerHtml);
+    setRawHtml('clan-history-list', historyHtml);
+
     const finalChatContainer = document.getElementById('clan-chat-container');
     if (finalChatContainer) finalChatContainer.scrollTop = finalChatContainer.scrollHeight;
 
