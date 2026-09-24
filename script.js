@@ -1831,17 +1831,38 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
     const apiKey = localStorage.getItem('wolvesville_api_key');
     if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
 
+    // ✅ ดึงชื่อแคลน (จาก cache ก่อน ถ้าไม่มีค่อยยิง API)
+    let clanName = 'Unknown Clan';
+    let clanTag = '';
+
+    if (currentClanDataCache?.info?.id === clanId) {
+        clanName = currentClanDataCache.info.name || clanName;
+        clanTag = currentClanDataCache.info.tag || '';
+    } else {
+        try {
+            const info = await fetchData(`/clans/${clanId}/info`, false, false);
+            if (info && !info.error) {
+                clanName = info.name || clanName;
+                clanTag = info.tag || '';
+            }
+        } catch (e) {
+            console.warn('[scheduleQuest] cannot fetch clan info:', e);
+        }
+    }
+
     try {
-        // ✅ ยิงผ่าน /api/wolvesville เสมอ (path นี้การันตีว่าทำงาน)
         const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 endpoint: '/api/schedule-quest',
                 method: 'POST',
-                clanId: clanId, 
+                clanId: clanId,
+                clanName: clanName,          // ✅ ส่งชื่อแคลน
+                clanTag: clanTag,            // ✅ ส่ง tag แคลน
                 questId: questId, 
                 questTitle: questTitle,
+                questImageUrl: questImageUrl, // ✅ ส่งรูปเควส
                 apiKey: apiKey,
                 targetTime: targetTimeMs 
             })
@@ -1854,9 +1875,8 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
             const data = JSON.parse(text);
             const timeStr = targetTimeMs > 0 
                 ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
-                : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
-            
-            // เก็บใน localStorage เพื่อโชว์ใน UI
+                : (getLocale() === 'en' ? 'ASAP' : 'ทันทีที่แคลนว่าง');
+
             let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
             scheduled.push({
                 questId: questId,
