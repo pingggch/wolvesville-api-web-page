@@ -1182,7 +1182,6 @@ window.cancelScheduledQuest = async (clanId, index) => {
 
     if (!questToCancel) return;
 
-    // ถามยืนยันก่อนยกเลิก
     const confirmed = await showCustomConfirm(
         t('alert_warning'), 
         `ต้องการยกเลิกคิวซื้อเควส <strong>${questToCancel.questTitle}</strong> ใช่หรือไม่?`, 
@@ -1191,22 +1190,26 @@ window.cancelScheduledQuest = async (clanId, index) => {
     if (!confirmed) return;
 
     try {
-        // 1. ส่งคำสั่งไปลบใน Vercel KV Database
-        const res = await fetch(`${localServerUrl}/api/cancel-schedule`, {
+        // ✅ เปลี่ยน path + ส่ง endpoint ใน body
+        const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clanId: clanId, questId: questToCancel.questId })
+            body: JSON.stringify({ 
+                endpoint: '/api/cancel-schedule',
+                method: 'POST',
+                clanId: clanId, 
+                questId: questToCancel.questId 
+            })
         });
 
         if (res.ok) {
-            // 2. ถ้าเซิร์ฟเวอร์ลบสำเร็จ ค่อยลบออกจากหน้าจอ (localStorage)
             scheduled.splice(index, 1);
             localStorage.setItem(`wolvesville_scheduled_${clanId}`, JSON.stringify(scheduled));
             
             showCustomAlert(t('alert_success'), '✅ ยกเลิกคิวสำเร็จ ระบบจะไม่ซื้อเควสนี้แล้ว');
             window.fetchClanData(clanId, true, true);
         } else {
-            const err = await res.json();
+            const err = await res.json().catch(() => ({}));
             showCustomAlert(t('alert_error'), '❌ ' + (err.error || 'เกิดข้อผิดพลาดในการยกเลิก'));
         }
     } catch (e) {
@@ -1816,18 +1819,20 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
     
-    // เรียกหน้าต่างเลือกเวลา
     const targetTimeMs = await showSchedulePrompt(t('txt_auto_buy'), msg);
-    if (targetTimeMs === null) return; // กดปุ่มยกเลิก
+    if (targetTimeMs === null) return;
 
     const apiKey = localStorage.getItem('wolvesville_api_key');
     if (!apiKey) return showCustomAlert(t('alert_warning'), t('no_api_key'));
 
     try {
-        const res = await fetch(`${localServerUrl}/api/schedule-quest`, {
+        // ✅ เปลี่ยน path + ส่ง endpoint ใน body
+        const res = await fetch(`${localServerUrl}/api/wolvesville`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
+                endpoint: '/api/schedule-quest',
+                method: 'POST',
                 clanId: clanId, 
                 questId: questId, 
                 questTitle: questTitle,
@@ -1841,7 +1846,6 @@ window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
                 ? new Date(targetTimeMs).toLocaleString(getLocale() === 'en' ? 'en-US' : 'th-TH') 
                 : (getLocale() === 'en' ? 'ASAP (When clan is ready)' : 'ทันทีที่แคลนว่าง');
             
-            // Save to localStorage for UI
             let scheduled = JSON.parse(localStorage.getItem(`wolvesville_scheduled_${clanId}`) || '[]');
             scheduled.push({
                 questId: questId,
@@ -1966,12 +1970,16 @@ function getQuestResetTimeDisplay() {
 }
 
 function sendIncrementSignal(type) {
-    if (type === 'visitors') return; // 🌟 ดักไว้เลย ไม่ให้ส่งค่า visitors ไป
+    if (type === 'visitors') return;
     
-    fetch(`${localServerUrl}/api/stats/increment`, {
+    fetch(`${localServerUrl}/api/wolvesville`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: type })
+        body: JSON.stringify({ 
+            endpoint: '/api/stats/increment',
+            method: 'POST',
+            type: type 
+        })
     }).catch(e => console.log('Stats error', e));
 }
 
@@ -2071,8 +2079,9 @@ let apiChartInstance = null;
 
 async function fetchAndDisplayStatsOnly() {
     try {
-        // ดึงข้อมูล 7 วันย้อนหลังจาก Vercel API
-        const res = await fetch(`${localServerUrl}/api/stats/history`);
+        const res = await fetch(
+            `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent('/api/stats/history')}`
+        );
         const statsData = await res.json();
         
         if (statsData.error) return;
