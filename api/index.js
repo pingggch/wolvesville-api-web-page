@@ -113,6 +113,41 @@ export default async function handler(req, res) {
         }
     }
 
+    // 🌟 ระบบที่ 5: API สำหรับส่งออกข้อมูลให้ Google Sheets
+    if (req.url && req.url.includes('/api/export-sheets') && req.method === 'GET') {
+        try {
+            // ตัวอย่าง: ดึงยอดใช้งาน API
+            const totalReq = await kv.get('stats_requests_total') || 0;
+            
+            const dailyStats = [];
+            // ดึงสถิติย้อนหลัง 7 วัน
+            for(let i = 0; i <= 6; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+                dailyStats.push({ date: dateStr, requests: count });
+            }
+
+            // ถ้าอยากดึงคิวเควสด้วย ก็รับ clanId ผ่าน Query ได้ (เช่น /api/export-sheets?clanId=1234)
+            const queryParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
+            const clanId = queryParams.get('clanId');
+            let questQueue = [];
+            if (clanId) {
+                questQueue = await kv.get(`quest_queue_${clanId}`) || [];
+            }
+
+            // ส่งข้อมูลกลับไปเป็นก้อน JSON
+            return res.status(200).json({
+                total_requests: totalReq,
+                daily_stats: dailyStats,
+                quest_queue: questQueue
+            });
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
+    }
+
     // -------------------------------------------------------------
     // 🌟 ระบบปกติ: ระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
     // -------------------------------------------------------------
