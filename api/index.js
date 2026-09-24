@@ -34,43 +34,31 @@ export default async function handler(req, res) {
 
     // ระบบที่ 1: ส่งออกข้อมูลให้ Google Sheets
     if (endpoint && endpoint.includes('/api/export-sheets')) {
-        try {
-            const totalReq = await kv.get('stats_requests_total') || 0;
-            const dailyStats = [];
+    try {
+        const totalReq = await kv.get('stats_requests_total') || 0;
+        const dailyStats = [];
 
-            for (let i = 0; i <= 6; i++) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-
-                const dateStr = d.toISOString().split('T')[0];
-                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
-
-                dailyStats.push({
-                    date: dateStr,
-                    requests: count
-                });
-            }
-
-            const clanId = params.clanId;
-
-            let questQueue = [];
-
-            if (clanId) {
-                questQueue = await kv.get(`quest_queue_${clanId}`) || [];
-            }
-
-            return res.status(200).json({
-                total_requests: totalReq,
-                daily_stats: dailyStats,
-                quest_queue: questQueue
-            });
-
-        } catch (e) {
-            return res.status(500).json({
-                error: e.message
-            });
+        for (let i = 0; i <= 6; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+            dailyStats.push({ date: dateStr, requests: count });
         }
+
+        // ✅ ใช้ global key เดียว ไม่ต้องมี clanId
+        const questQueue = await kv.get('quest_queue') || [];
+
+        return res.status(200).json({
+            total_requests: totalReq,
+            daily_stats: dailyStats,
+            quest_queue: questQueue
+        });
+
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
     }
+}
 
     // ระบบที่ 2: นับสถิติ (เฉพาะ Request)
     if (
@@ -138,198 +126,203 @@ export default async function handler(req, res) {
 
     // ระบบที่ 4: รับคำสั่งบันทึกคิวเควสอัตโนมัติ
     if (
-        endpoint &&
-        endpoint.includes('/api/schedule-quest') &&
-        targetMethod === 'POST'
-    ) {
-        if (!apiKey) {
-            return res.status(400).json({
-                error: 'ไม่พบ API Key สำหรับใช้ซื้อเควส'
-            });
+    endpoint &&
+    endpoint.includes('/api/schedule-quest') &&
+    targetMethod === 'POST'
+) {
+    if (!apiKey) {
+        return res.status(400).json({
+            error: 'ไม่พบ API Key สำหรับใช้ซื้อเควส'
+        });
+    }
+
+    try {
+        const clanId = specialData.clanId;
+        const questId = specialData.questId;
+        const questTitle = specialData.questTitle;
+        const targetTime = specialData.targetTime;
+
+        if (!clanId) {
+            return res.status(400).json({ error: 'ไม่พบ clanId' });
+        }
+        if (!questId) {
+            return res.status(400).json({ error: 'ไม่พบ questId' });
         }
 
-        try {
-            // ✅ แก้จาก targetData เป็น specialData
-            const clanId = specialData.clanId;
-            const questId = specialData.questId;
-            const questTitle = specialData.questTitle;
-            const targetTime = specialData.targetTime;
+        // ✅ Global key เดียว เก็บทุกแคลนรวมกัน
+        const dbKey = 'quest_queue';
 
-            if (!clanId) {
-                return res.status(400).json({
-                    error: 'ไม่พบ clanId'
-                });
-            }
+        let currentQueue = await kv.get(dbKey) || [];
 
-            if (!questId) {
-                return res.status(400).json({
-                    error: 'ไม่พบ questId'
-                });
-            }
+        const now = new Date();
 
-            const dbKey = `quest_queue_${clanId}`;
+        // เช็คก่อนว่ามีคิวซ้ำไหม (clanId + questId เดียวกัน)
+        const isDuplicate = currentQueue.some(
+            q => q.clanId === clanId && q.questId === questId
+        );
 
-            let currentQueue = await kv.get(dbKey) || [];
-
-            const now = new Date();
-
-            currentQueue.push({
-                clanId: clanId,
-                questId: questId,
-                questTitle: questTitle || 'Unknown Quest',
-                apiKey: apiKey,
-                targetTime: targetTime,
-                scheduledDate: now.toLocaleDateString('th-TH'),
-                scheduledTime: now.toLocaleTimeString('th-TH'),
-                timestamp: now.getTime(),
-                status: 'waiting'
-            });
-
-            // ✅ บันทึกลง KV
-            await kv.set(dbKey, currentQueue);
-
+        if (isDuplicate) {
             return res.status(200).json({
                 success: true,
-                message: 'บันทึกคิวสำเร็จ!'
-            });
-
-        } catch (error) {
-            console.error('[Schedule Quest] Error:', error.message);
-
-            return res.status(500).json({
-                error: error.message
+                message: 'เควสนี้อยู่ในคิวอยู่แล้ว'
             });
         }
+
+        currentQueue.push({
+            clanId: clanId,
+            questId: questId,
+            questTitle: questTitle || 'Unknown Quest',
+            apiKey: apiKey,              // ← เก็บ api key เจ้าของแคลนไว้ใช้ตอนซื้อ
+            targetTime: targetTime,
+            scheduledDate: now.toLocaleDateString('th-TH'),
+            scheduledTime: now.toLocaleTimeString('th-TH'),
+            timestamp: now.getTime(),
+            status: 'waiting'
+        });
+
+        await kv.set(dbKey, currentQueue);
+
+        return res.status(200).json({
+            success: true,
+            message: 'บันทึกคิวสำเร็จ!',
+            total_in_queue: currentQueue.length
+        });
+
+    } catch (error) {
+        console.error('[Schedule Quest] Error:', error.message);
+        return res.status(500).json({ error: error.message });
     }
+}
 
     // ระบบที่ 5: ยกเลิกคิวเควสอัตโนมัติ
     if (
-        endpoint &&
-        endpoint.includes('/api/cancel-schedule') &&
-        targetMethod === 'POST'
-    ) {
-        try {
-            // ✅ แก้จาก targetData เป็น specialData
-            const clanId = specialData.clanId;
-            const questId = specialData.questId;
+    endpoint &&
+    endpoint.includes('/api/cancel-schedule') &&
+    targetMethod === 'POST'
+) {
+    try {
+        const clanId = specialData.clanId;
+        const questId = specialData.questId;
 
-            if (!clanId) {
-                return res.status(400).json({
-                    error: 'ไม่พบ clanId'
-                });
-            }
-
-            if (!questId) {
-                return res.status(400).json({
-                    error: 'ไม่พบ questId'
-                });
-            }
-
-            const dbKey = `quest_queue_${clanId}`;
-
-            let currentQueue = await kv.get(dbKey) || [];
-
-            const newQueue = currentQueue.filter(
-                q => q.questId !== questId
-            );
-
-            // ✅ บันทึกคิวใหม่ลง KV
-            await kv.set(dbKey, newQueue);
-
-            return res.status(200).json({
-                success: true,
-                message: 'ยกเลิกคิวสำเร็จ'
-            });
-
-        } catch (error) {
-            console.error('[Cancel Schedule] Error:', error.message);
-
-            return res.status(500).json({
-                error: error.message
-            });
+        if (!clanId) {
+            return res.status(400).json({ error: 'ไม่พบ clanId' });
         }
+        if (!questId) {
+            return res.status(400).json({ error: 'ไม่พบ questId' });
+        }
+
+        const dbKey = 'quest_queue';
+        let currentQueue = await kv.get(dbKey) || [];
+
+        // ✅ filter ตาม clanId + questId (เพราะตอนนี้มีหลายแคลนในคิวเดียว)
+        const newQueue = currentQueue.filter(
+            q => !(q.clanId === clanId && q.questId === questId)
+        );
+
+        await kv.set(dbKey, newQueue);
+
+        return res.status(200).json({
+            success: true,
+            message: 'ยกเลิกคิวสำเร็จ',
+            removed: currentQueue.length - newQueue.length,
+            total_in_queue: newQueue.length
+        });
+
+    } catch (error) {
+        console.error('[Cancel Schedule] Error:', error.message);
+        return res.status(500).json({ error: error.message });
     }
+}
 
     // ระบบที่ 6: รัน Cronjob ตรวจสอบและซื้อเควสอัตโนมัติ (ประมวลผลคิว)
     if (
-        endpoint &&
-        endpoint.includes('/api/cron/process-queue') &&
-        targetMethod === 'GET'
-    ) {
-        try {
-            // ดึงรายชื่อกล่องเก็บคิวทั้งหมดใน DB
-            const keys = await kv.keys('quest_queue_*');
+    endpoint &&
+    endpoint.includes('/api/cron/process-queue') &&
+    targetMethod === 'GET'
+) {
+    try {
+        // ✅ อ่าน global key เดียว
+        const dbKey = 'quest_queue';
+        const queue = await kv.get(dbKey) || [];
 
-            const now = Date.now();
-            let processedCount = 0;
-
-            for (const key of keys) {
-                let queue = await kv.get(key) || [];
-
-                if (queue.length === 0) {
-                    continue;
-                }
-
-                // คัดกรองเอาเฉพาะเควสที่ถึงเวลาซื้อ
-                // targetTime <= ตอนนี้ หรือ 0 คือให้ซื้อทันที
-                const toProcess = queue.filter(
-                    q => q.targetTime === 0 || q.targetTime <= now
-                );
-
-                // คิวที่ยังไม่ถึงเวลา ให้เก็บไว้เหมือนเดิม
-                const remainingQueue = queue.filter(
-                    q => q.targetTime !== 0 && q.targetTime > now
-                );
-
-                let updatedQueue = [...remainingQueue];
-
-                for (const task of toProcess) {
-                    // ยิง API ไปที่เซิร์ฟเวอร์เกมเพื่อขอซื้อเควส
-                    const response = await fetch(
-                        `https://api.wolvesville.com/clans/${task.clanId}/quests/claim`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bot ${task.apiKey}`,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                questId: task.questId
-                            })
-                        }
-                    );
-
-                    if (response.ok) {
-                        processedCount++;
-
-                        // ถ้าซื้อสำเร็จแล้ว
-                        // ไม่ต้องเอาใส่กลับไปใน updatedQueue
-                    } else {
-                        // ถ้าซื้อไม่สำเร็จ
-                        // ให้ผลักกลับเข้าคิว เพื่อรอเช็คใหม่
-                        updatedQueue.push(task);
-                    }
-                }
-
-                // บันทึกคิวที่เหลือกลับลง Database
-                await kv.set(key, updatedQueue);
-            }
-
+        if (queue.length === 0) {
             return res.status(200).json({
                 success: true,
-                processed: processedCount,
-                message: 'Cron job ประมวลผลเสร็จสิ้น'
-            });
-
-        } catch (error) {
-            console.error('[Cron Process Queue] Error:', error.message);
-
-            return res.status(500).json({
-                error: error.message
+                processed: 0,
+                message: 'ไม่มีคิวที่ต้องประมวลผล'
             });
         }
+
+        const now = Date.now();
+        let processedCount = 0;
+        let failedCount = 0;
+
+        // แยก task ที่ถึงเวลาซื้อ กับที่ยังไม่ถึง
+        const toProcess = queue.filter(
+            q => q.targetTime === 0 || q.targetTime <= now
+        );
+        const remainingQueue = queue.filter(
+            q => q.targetTime !== 0 && q.targetTime > now
+        );
+
+        const updatedQueue = [...remainingQueue];
+
+        for (const task of toProcess) {
+            try {
+                // ✅ ใช้ task.apiKey (ของเจ้าของแคลนนั้น) + task.clanId
+                const response = await fetch(
+                    `https://api.wolvesville.com/clans/${task.clanId}/quests/claim`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bot ${task.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            questId: task.questId
+                        })
+                    }
+                );
+
+                if (response.ok) {
+                    processedCount++;
+                    console.log(
+                        `[Cron] ซื้อสำเร็จ: clan=${task.clanId} quest=${task.questId}`
+                    );
+                    // ไม่ต้อง push กลับ → เอาออกจากคิว
+                } else {
+                    // ถ้าซื้อไม่สำเร็จ → เก็บกลับเข้าคิวรอ retry
+                    const errText = await response.text();
+                    console.warn(
+                        `[Cron] ซื้อไม่สำเร็จ clan=${task.clanId} quest=${task.questId} status=${response.status}: ${errText}`
+                    );
+                    failedCount++;
+                    updatedQueue.push(task);
+                }
+            } catch (err) {
+                console.error(`[Cron] Error task:`, err.message);
+                failedCount++;
+                updatedQueue.push(task);
+            }
+        }
+
+        // บันทึกคิวที่เหลือกลับลง KV
+        await kv.set(dbKey, updatedQueue);
+
+        return res.status(200).json({
+            success: true,
+            processed: processedCount,
+            failed: failedCount,
+            remaining: updatedQueue.length,
+            message: 'Cron job ประมวลผลเสร็จสิ้น'
+        });
+
+    } catch (error) {
+        console.error('[Cron Process Queue] Error:', error.message);
+        return res.status(500).json({ error: error.message });
     }
+}
 
     // =========================================================
     // 🌟 โซนระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
