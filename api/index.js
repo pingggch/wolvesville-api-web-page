@@ -62,33 +62,160 @@ export default async function handler(req, res) {
     // 🌟 โซนระบบหลังบ้าน Vercel (ไม่เกี่ยวกับเซิร์ฟเวอร์เกม)
     // =========================================================
 
-    // ระบบที่ 1: ส่งออกข้อมูลให้ Google Sheets
+        // ระบบที่ 1: ส่งออกข้อมูลให้ Google Sheets
     if (endpoint && endpoint.includes('/api/export-sheets')) {
-    try {
-        const totalReq = await kv.get('stats_requests_total') || 0;
-        const dailyStats = [];
+        try {
+            const totalReq = await kv.get('stats_requests_total') || 0;
+            const now = new Date();
+            const thaiNow = new Date(now.getTime() + (7 * 60 * 60 * 1000));
 
-        for (let i = 0; i <= 6; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = getThaiDateStr(d);  // ✅ ใช้เวลาไทย
-            const count = await kv.get(`stats_requests_${dateStr}`) || 0;
-            dailyStats.push({ date: dateStr, requests: count });
+            const ranges = {};
+
+            // ---------- 60 นาทีล่าสุด ----------
+            {
+                const keys = [];
+                for (let i = 59; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const h = String(d.getUTCHours()).padStart(2, '0');
+                    const m = String(d.getUTCMinutes()).padStart(2, '0');
+                    keys.push({
+                        key: `stats_min_${dateStr}-${h}-${m}`,
+                        label: `${h}:${m}`
+                    });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+                ranges.minute = keys.map((k, i) => ({
+                    label: k.label,
+                    value: counts[i] || 0
+                }));
+            }
+
+            // ---------- 24 ชั่วโมงล่าสุด ----------
+            {
+                const keys = [];
+                for (let i = 23; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 60 * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const h = String(d.getUTCHours()).padStart(2, '0');
+                    keys.push({
+                        key: `stats_hour_${dateStr}-${h}`,
+                        label: `${h}:00`
+                    });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+                ranges.hour = keys.map((k, i) => ({
+                    label: k.label,
+                    value: counts[i] || 0
+                }));
+            }
+
+            // ---------- 7 วันล่าสุด ----------
+            {
+                const keys = [];
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const [_, month, day] = dateStr.split('-');
+                    keys.push({
+                        key: `stats_requests_${dateStr}`,
+                        label: `${day}/${month}`,
+                        date: dateStr
+                    });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+                ranges.day = keys.map((k, i) => ({
+                    label: k.label,
+                    date: k.date,
+                    value: counts[i] || 0
+                }));
+            }
+
+            // ---------- 30 วันล่าสุด ----------
+            {
+                const keys = [];
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const [_, month, day] = dateStr.split('-');
+                    keys.push({
+                        key: `stats_requests_${dateStr}`,
+                        label: `${day}/${month}`,
+                        date: dateStr
+                    });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+                ranges.month = keys.map((k, i) => ({
+                    label: k.label,
+                    date: k.date,
+                    value: counts[i] || 0
+                }));
+            }
+
+            // ---------- 12 เดือนล่าสุด ----------
+            {
+                const keys = [];
+                for (let i = 364; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    keys.push({ key: `stats_requests_${dateStr}`, dateStr });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+
+                const monthlyMap = {};
+                keys.forEach((k, i) => {
+                    const monthKey = k.dateStr.substring(0, 7);
+                    if (!monthlyMap[monthKey]) monthlyMap[monthKey] = 0;
+                    monthlyMap[monthKey] += (counts[i] || 0);
+                });
+
+                const sortedMonths = Object.keys(monthlyMap).sort();
+                ranges.year = sortedMonths.map(mk => {
+                    const [y, m] = mk.split('-');
+                    return {
+                        label: `${m}/${y.substring(2)}`,
+                        value: monthlyMap[mk]
+                    };
+                });
+            }
+
+            // ---------- ทั้งหมด (รายปี) ----------
+            {
+                const keys = [];
+                for (let i = 1095; i >= 0; i--) {
+                    const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                    const dateStr = d.toISOString().split('T')[0];
+                    keys.push({ key: `stats_requests_${dateStr}`, dateStr });
+                }
+                const counts = await Promise.all(keys.map(k => kv.get(k.key)));
+
+                const yearlyMap = {};
+                keys.forEach((k, i) => {
+                    const yearKey = k.dateStr.substring(0, 4);
+                    if (!yearlyMap[yearKey]) yearlyMap[yearKey] = 0;
+                    yearlyMap[yearKey] += (counts[i] || 0);
+                });
+
+                const sortedYears = Object.keys(yearlyMap).sort();
+                ranges.all = sortedYears.map(yk => ({
+                    label: yk,
+                    value: yearlyMap[yk]
+                }));
+            }
+
+            // คิวเควส
+            const questQueue = await kv.get('quest_queue') || [];
+
+            return res.status(200).json({
+                total_requests: totalReq,
+                ranges: ranges,
+                quest_queue: questQueue
+            });
+
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
         }
-
-        // ✅ ใช้ global key เดียว ไม่ต้องมี clanId
-        const questQueue = await kv.get('quest_queue') || [];
-
-        return res.status(200).json({
-            total_requests: totalReq,
-            daily_stats: dailyStats,
-            quest_queue: questQueue
-        });
-
-    } catch (e) {
-        return res.status(500).json({ error: e.message });
     }
-}
 
     // ระบบที่ 2: นับสถิติ (เฉพาะ Request)
     if (
