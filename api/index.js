@@ -20,6 +20,40 @@ export default async function handler(req, res) {
 
     // 3. ตรวจสอบว่ามีข้อมูลครบไหม
     if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
+    // 🌟 ระบบพิเศษ: ดึงไอเทมทั้งหมดเพื่อนับจำนวน (ทำงานแทน Cronjob) 🌟
+    if (endpoint === '/items/total') {
+        const itemEndpoints = [
+            '/items/avatarItems', '/items/bodyPaints', '/items/profileIcons',
+            '/items/profileIconBorders', '/items/emojis', '/items/backgrounds',
+            '/items/loadingScreens', '/items/roleIcons', '/items/roseSkins', '/items/talismans'
+        ];
+
+        try {
+            // สั่งยิง API พร้อมกัน 21 เส้นเพื่อความรวดเร็ว
+            const fetchPromises = itemEndpoints.map(ep => 
+                fetch(`https://api.wolvesville.com${ep}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bot ${apiKey}`, 'Accept': 'application/json' }
+                }).then(r => r.ok ? r.json() : [])
+            );
+
+            const results = await Promise.all(fetchPromises);
+            
+            // นำผลลัพธ์ที่เป็น Array มาบวกความยาวรวมกัน
+            let totalCount = 0;
+            results.forEach(arr => {
+                if (Array.isArray(arr)) totalCount += arr.length;
+            });
+
+            // 🌟 สั่งให้ Vercel จดจำตัวเลขนี้ไว้ 12 ชั่วโมง (43200 วินาที) จะได้ไม่กินโควต้า API บ่อยๆ
+            res.setHeader('Cache-Control', 's-maxage=43200, stale-while-revalidate');
+            return res.status(200).json({ count: totalCount });
+
+        } catch (error) {
+            console.error('[Proxy Items] Error:', error.message);
+            return res.status(500).json({ error: error.message });
+        }
+    }
     if (!apiKey) return res.status(401).json({ error: 'API Key missing' });
 
     try {
