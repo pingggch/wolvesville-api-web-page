@@ -3853,8 +3853,24 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 }
 
 window.showRoleModal = (roleId) => {
-    const role = rolesCache.get(roleId);
-    if (!role) return showCustomAlert(t('alert_warning'), 'Role not found.');
+    let role = rolesCache.get(roleId);
+
+    // 🌟 ระบบพิเศษ: ดักจับบทบาท "สุ่ม" ชนิดใหม่ที่ยังไม่มีข้อมูลจาก API ของเกม 🌟
+    if (!role) {
+        if (roleId.startsWith('random-')) {
+            const formattedName = roleId.replace(/-/g, ' ').toUpperCase();
+            role = {
+                id: roleId,
+                name: formattedName,
+                team: 'RANDOM',
+                aura: 'UNKNOWN',
+                description: `การ์ดนี้จะทำหน้าที่สุ่มบทบาทในหมวดหมู่ <strong>${formattedName}</strong><br><br><span style="font-size:0.85rem; color:#64748b;">(ปล. บทบาทสุ่มชนิดนี้ยังไม่มีคำอธิบายและรูปภาพแบบเต็มในฐานข้อมูล API ของเกมครับ)</span>`,
+                image: { url: EMBEDDED_ICONS.UNKNOWN }
+            };
+        } else {
+            return showCustomAlert(t('alert_warning'), 'Role not found.');
+        }
+    }
 
     const imgUrl = role.image?.url || EMBEDDED_ICONS.UNKNOWN;
     const isEn = getLocale() === 'en';
