@@ -4025,7 +4025,33 @@ function renderWikiGrid(quests) {
         `;
     }).join('');
 
-    container.innerHTML = html;
+    // 🌟 1. จดจำตำแหน่ง Scroll ปัจจุบัน
+    const scrollStates = {};
+    if (container) {
+        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list, details').forEach((el, i) => {
+            scrollStates[i] = {
+                top: el.scrollTop,
+                isOpen: el.hasAttribute('open') // จำสถานะการกางเมนูด้วย
+            };
+        });
+    }
+
+    // 🌟 2. อัปเดตข้อมูลแคลนที่ดึงมาใหม่ลงไป
+    if (container) {
+        container.innerHTML = html; 
+    }
+
+    // 🌟 3. คืนค่าตำแหน่ง Scroll และสถานะการกางกลับไปให้เหมือนเดิมเป๊ะๆ
+    if (container) {
+        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list, details').forEach((el, i) => {
+            if (scrollStates[i]) {
+                el.scrollTop = scrollStates[i].top;
+                if (scrollStates[i].isOpen && el.tagName.toLowerCase() === 'details') {
+                    el.setAttribute('open', '');
+                }
+            }
+        });
+    }
 }
 
 // Initialize on Load
