@@ -118,6 +118,57 @@ export default async function handler(req, res) {
         }
     }
 
+    // ระบบที่ 6: รัน Cronjob ตรวจสอบและซื้อเควสอัตโนมัติ (ประมวลผลคิว)
+    if (endpoint && endpoint.includes('/api/cron/process-queue') && targetMethod === 'GET') {
+        try {
+            // ดึงรายชื่อกล่องเก็บคิวทั้งหมดใน DB
+            const keys = await kv.keys('quest_queue_*');
+            const now = Date.now();
+            let processedCount = 0;
+
+            for (const key of keys) {
+                let queue = await kv.get(key) || [];
+                if (queue.length === 0) continue; // ถ้าคิวว่างให้ข้ามไป
+
+                // คัดกรองเอาเฉพาะเควสที่ถึงเวลาซื้อ (targetTime <= ตอนนี้ หรือ 0 คือให้ซื้อทันที)
+                const toProcess = queue.filter(q => q.targetTime === 0 || q.targetTime <= now);
+                // คิวที่ยังไม่ถึงเวลา ให้เก็บไว้เหมือนเดิม
+                const remainingQueue = queue.filter(q => q.targetTime !== 0 && q.targetTime > now);
+
+                let updatedQueue = [...remainingQueue];
+
+                for (const task of toProcess) {
+                    // ยิง API ไปที่เซิร์ฟเวอร์เกมเพื่อขอซื้อเควส
+                    const response = await fetch(`https://api.wolvesville.com/clans/${task.clanId}/quests/claim`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bot ${task.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ questId: task.questId })
+                    });
+
+                    if (response.ok) {
+                        processedCount++;
+                        // ถ้าซื้อสำเร็จแล้ว ไม่ต้องเอาใส่กลับไปใน updatedQueue อีก
+                    } else {
+                        // ถ้าซื้อไม่สำเร็จ (เช่น แคลนกำลังทำเควสอื่นอยู่ หรือเงินไม่พอ)
+                        // ให้ผลักกลับเข้าคิว เพื่อรอเช็คใหม่ในรอบถัดไป
+                        updatedQueue.push(task);
+                    }
+                }
+                
+                // บันทึกคิวที่เหลือหรือที่ต้องรอรอบหน้า กลับลงไปใน Database
+                await kv.set(key, updatedQueue);
+            }
+
+            return res.status(200).json({ success: true, processed: processedCount, message: 'Cron job ประมวลผลเสร็จสิ้น' });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     // =========================================================
     // 🌟 โซนระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
     // =========================================================
