@@ -90,6 +90,29 @@ export default async function handler(req, res) {
         }
     }
 
+    // 🌟 ระบบที่ 4: ยกเลิกคิวเควสอัตโนมัติ
+    if (req.url && req.url.includes('/api/cancel-schedule') && req.method === 'POST') {
+        const { clanId, questId } = req.body;
+
+        try {
+            const dbKey = `quest_queue_${clanId}`;
+            let currentQueue = await kv.get(dbKey) || [];
+
+            // กรองเอาเควสที่ตรงกับ questId ที่ต้องการยกเลิกออกไป
+            const newQueue = currentQueue.filter(q => q.questId !== questId);
+
+            // เซฟคิวใหม่ที่ลบแล้วกลับลง Database
+            await kv.set(dbKey, newQueue);
+
+            return res.status(200).json({ 
+                success: true, 
+                message: 'ยกเลิกคิวสำเร็จ'
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     // -------------------------------------------------------------
     // 🌟 ระบบปกติ: ระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
     // -------------------------------------------------------------
