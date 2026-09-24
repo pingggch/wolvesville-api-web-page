@@ -2110,54 +2110,63 @@ async function fetchTotalItemsCount(force = false) {
 
 // ประกาศตัวแปรเก็บกราฟไว้นอกฟังก์ชัน (ถ้ายังไม่มี)
 let apiChartInstance = null;
+let currentStatsRange = 'day';
 
-async function fetchAndDisplayStatsOnly() {
+async function fetchAndDisplayStatsOnly(range) {
+    if (range) currentStatsRange = range;
+    const rangeParam = currentStatsRange;
+
     try {
         const res = await fetch(
-            `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent('/api/stats/history')}`
+            `${localServerUrl}/api/wolvesville?endpoint=${encodeURIComponent('/api/stats/range')}&range=${rangeParam}`
         );
         const statsData = await res.json();
-        
+
         if (statsData.error) return;
 
-        // อัปเดตตัวเลขแสดงผลยอดวันนี้
         const reqTodayEl = document.getElementById('requests-today-only');
         if (reqTodayEl) {
-            const todayCount = statsData.data[statsData.data.length - 1] || 0;
-            reqTodayEl.innerHTML = `<span style="font-size: 1rem; color: var(--primary-color); font-weight: bold;"><span class="material-icons" style="font-size: 16px; vertical-align: middle;">api</span> ${todayCount.toLocaleString()} ครั้ง</span>`;
+            const lastVal = statsData.data[statsData.data.length - 1] || 0;
+            reqTodayEl.innerHTML = `<span style="font-size: 1rem; color: var(--primary-color); font-weight: bold;">
+                <span class="material-icons" style="font-size: 16px; vertical-align: middle;">api</span> 
+                ${lastVal.toLocaleString()} ครั้ง
+            </span>`;
         }
 
-        // วาดกราฟเส้น (Line Chart)
         const ctxApi = document.getElementById('apiUsageChart');
         if (ctxApi) {
             ctxApi.style.display = 'block';
-            
-            // ลบข้อความ "ปิดปรับปรุง" (ถ้ามีค้างอยู่)
+
             const maintMsg = document.getElementById('api-maint-msg');
-            if (maintMsg) maintMsg.remove(); 
+            if (maintMsg) maintMsg.remove();
 
-            // ทำลายกราฟเก่าทิ้งก่อนวาดใหม่ (ป้องกันกราฟซ้อนทับกันเวลาสลับหน้า)
-            if (apiChartInstance) {
-                apiChartInstance.destroy(); 
-            }
+            if (apiChartInstance) apiChartInstance.destroy();
 
-            // เริ่มวาดกราฟเส้น
+            const labelMap = {
+                minute: 'ปริมาณ Request (ครั้ง/นาที)',
+                hour: 'ปริมาณ Request (ครั้ง/ชั่วโมง)',
+                day: 'ปริมาณ Request (ครั้ง/วัน)',
+                month: 'ปริมาณ Request (ครั้ง/วัน)',
+                year: 'ปริมาณ Request (ครั้ง/เดือน)',
+                all: 'ปริมาณ Request (ครั้ง/ปี)'
+            };
+
             apiChartInstance = new Chart(ctxApi, {
-                type: 'line', // 🌟 เปลี่ยนจาก bar เป็น line
+                type: 'line',
                 data: {
-                    labels: statsData.labels, // ['18/09', '19/09', ...]
+                    labels: statsData.labels,
                     datasets: [{
-                        label: 'ปริมาณ Request (ครั้ง)',
-                        data: statsData.data, // [15, 30, 100, ...]
-                        borderColor: '#3b82f6', // สีเส้นกราฟ
-                        backgroundColor: 'rgba(59, 130, 246, 0.15)', // สีพื้นหลังใต้กราฟ
+                        label: labelMap[rangeParam] || 'Requests',
+                        data: statsData.data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
                         borderWidth: 2,
-                        fill: true, // เทสีใต้กราฟ
-                        tension: 0.4, // 🌟 ทำให้เส้นกราฟโค้งสมูท ไม่แข็งเป็นมุมแหลม
+                        fill: true,
+                        tension: 0.4,
                         pointBackgroundColor: '#1d4ed8',
                         pointBorderColor: '#fff',
                         pointBorderWidth: 2,
-                        pointRadius: 4,
+                        pointRadius: rangeParam === 'minute' ? 0 : 4,
                         pointHoverRadius: 6
                     }]
                 },
@@ -2175,25 +2184,28 @@ async function fetchAndDisplayStatsOnly() {
                         }
                     },
                     scales: {
-                        y: { 
-                            beginAtZero: true, 
+                        y: {
+                            beginAtZero: true,
                             grid: { color: '#f1f5f9', borderDash: [5, 5] },
                             ticks: { font: { family: 'Kanit' }, color: '#64748b' }
                         },
-                        x: { 
+                        x: {
                             grid: { display: false },
-                            ticks: { font: { family: 'Kanit' }, color: '#64748b' }
+                            ticks: {
+                                font: { family: 'Kanit' },
+                                color: '#64748b',
+                                maxRotation: rangeParam === 'minute' ? 0 : 45,
+                                autoSkip: true,
+                                maxTicksLimit: rangeParam === 'minute' ? 6 : 12
+                            }
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    }
+                    interaction: { intersect: false, mode: 'index' }
                 }
             });
         }
-    } catch (e) { 
-        console.error('Error fetching and rendering chart:', e); 
+    } catch (e) {
+        console.error('Error fetching and rendering chart:', e);
     }
 }
 
@@ -4243,6 +4255,13 @@ document.addEventListener('DOMContentLoaded', () => {
     sendIncrementSignal('visitors');
     fetchAndDisplayData();
     fetchDonateUsername();
+
+    const statsRangeSelect = document.getElementById('stats-range-select');
+    if (statsRangeSelect) {
+        statsRangeSelect.addEventListener('change', (e) => {
+            fetchAndDisplayStatsOnly(e.target.value);
+        });
+    }
 
     const k = localStorage.getItem('wolvesville_api_key');
     if(k) { apiKeyInput.value = k; if(apiKeyStatus) apiKeyStatus.innerHTML = '✅ OK'; }
