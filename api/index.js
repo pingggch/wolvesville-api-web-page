@@ -11,11 +11,44 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    // 🌟 ระบบที่ 1: นับสถิติ (เฉพาะ Request)
-    if (req.url && req.url.includes('/api/stats/increment') && req.method === 'POST') {
-        const { type } = req.body; 
+    // ดึงตัวแปรที่ส่งมา ไม่ว่าจะส่งแบบ query หรือ body
+    const params = req.method === 'GET' ? req.query : req.body;
+    // ดึงค่า endpoint ถ้าส่งมาแบบ proxy (เช่น ?endpoint=/api/...)
+    const endpoint = params.endpoint || req.url; 
+    const apiKey = params.apiKey;
+    const targetMethod = params.method || req.method || 'GET';
+    const targetData = params.data || params.body;
+
+    // =========================================================
+    // 🌟 โซนระบบหลังบ้าน Vercel (ไม่เกี่ยวกับเซิร์ฟเวอร์เกม)
+    // =========================================================
+
+    // ระบบที่ 1: ส่งออกข้อมูลให้ Google Sheets
+    if (endpoint && endpoint.includes('/api/export-sheets')) {
         try {
-            if (type === 'requests') {
+            const totalReq = await kv.get('stats_requests_total') || 0;
+            const dailyStats = [];
+            for(let i = 0; i <= 6; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+                dailyStats.push({ date: dateStr, requests: count });
+            }
+            const clanId = params.clanId; 
+            let questQueue = [];
+            if (clanId) questQueue = await kv.get(`quest_queue_${clanId}`) || [];
+
+            return res.status(200).json({ total_requests: totalReq, daily_stats: dailyStats, quest_queue: questQueue });
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
+    }
+
+    // ระบบที่ 2: นับสถิติ (เฉพาะ Request)
+    if (endpoint && endpoint.includes('/api/stats/increment') && targetMethod === 'POST') {
+        try {
+            if (targetData && targetData.type === 'requests') {
                 const today = new Date().toISOString().split('T')[0];
                 await kv.incr(`stats_requests_total`); 
                 await kv.incr(`stats_requests_${today}`); 
@@ -26,24 +59,20 @@ export default async function handler(req, res) {
         }
     }
 
-    // 🌟 ระบบที่ 2: ดึงประวัติสถิติ 7 วัน สำหรับวาดกราฟ
-    if (req.url && req.url.includes('/api/stats/history') && req.method === 'GET') {
+    // ระบบที่ 3: ดึงประวัติสถิติ 7 วัน สำหรับวาดกราฟ
+    if (endpoint && endpoint.includes('/api/stats/history') && targetMethod === 'GET') {
         try {
             const stats = [];
             const labels = [];
-            
             for(let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
                 const dateStr = d.toISOString().split('T')[0]; 
-                
                 const count = await kv.get(`stats_requests_${dateStr}`) || 0;
                 stats.push(count);
-                
                 const [year, month, day] = dateStr.split('-');
                 labels.push(`${day}/${month}`); 
             }
-            
             const total = await kv.get('stats_requests_total') || 0;
             return res.status(200).json({ labels, data: stats, total });
         } catch (e) {
@@ -51,129 +80,58 @@ export default async function handler(req, res) {
         }
     }
 
-    // 🌟 ระบบที่ 3: รับคำสั่งบันทึกคิวเควสอัตโนมัติ
-    if (req.url && req.url.includes('/api/schedule-quest') && req.method === 'POST') {
-        const { clanId, questId, questTitle, apiKey, targetTime } = req.body;
-
-        if (!apiKey) {
-            return res.status(400).json({ error: 'ไม่พบ API Key สำหรับใช้ซื้อเควส' });
-        }
-
+    // ระบบที่ 4: รับคำสั่งบันทึกคิวเควสอัตโนมัติ
+    if (endpoint && endpoint.includes('/api/schedule-quest') && targetMethod === 'POST') {
+        if (!apiKey) return res.status(400).json({ error: 'ไม่พบ API Key สำหรับใช้ซื้อเควส' });
         try {
-            const dbKey = `quest_queue_${clanId}`;
+            const dbKey = `quest_queue_${targetData.clanId}`;
             let currentQueue = await kv.get(dbKey) || [];
-
             const now = new Date();
-            const dateStr = now.toLocaleDateString('th-TH'); 
-            const timeStr = now.toLocaleTimeString('th-TH'); 
-
             currentQueue.push({
-                clanId: clanId,
-                questId: questId,
-                questTitle: questTitle || 'Unknown Quest',
+                clanId: targetData.clanId,
+                questId: targetData.questId,
+                questTitle: targetData.questTitle || 'Unknown Quest',
                 apiKey: apiKey,
-                targetTime: targetTime,
-                scheduledDate: dateStr,
-                scheduledTime: timeStr,
+                targetTime: targetData.targetTime,
+                scheduledDate: now.toLocaleDateString('th-TH'),
+                scheduledTime: now.toLocaleTimeString('th-TH'),
                 timestamp: now.getTime(),
                 status: 'waiting'
             });
-
             await kv.set(dbKey, currentQueue);
-
-            return res.status(200).json({ 
-                success: true, 
-                message: 'บันทึกคิวสำเร็จ!'
-            });
+            return res.status(200).json({ success: true, message: 'บันทึกคิวสำเร็จ!' });
         } catch (error) {
             return res.status(500).json({ error: error.message });
         }
     }
 
-    // 🌟 ระบบที่ 4: ยกเลิกคิวเควสอัตโนมัติ
-    if (req.url && req.url.includes('/api/cancel-schedule') && req.method === 'POST') {
-        const { clanId, questId } = req.body;
-
+    // ระบบที่ 5: ยกเลิกคิวเควสอัตโนมัติ
+    if (endpoint && endpoint.includes('/api/cancel-schedule') && targetMethod === 'POST') {
         try {
-            const dbKey = `quest_queue_${clanId}`;
+            const dbKey = `quest_queue_${targetData.clanId}`;
             let currentQueue = await kv.get(dbKey) || [];
-
-            // กรองเอาเควสที่ตรงกับ questId ที่ต้องการยกเลิกออกไป
-            const newQueue = currentQueue.filter(q => q.questId !== questId);
-
-            // เซฟคิวใหม่ที่ลบแล้วกลับลง Database
+            const newQueue = currentQueue.filter(q => q.questId !== targetData.questId);
             await kv.set(dbKey, newQueue);
-
-            return res.status(200).json({ 
-                success: true, 
-                message: 'ยกเลิกคิวสำเร็จ'
-            });
+            return res.status(200).json({ success: true, message: 'ยกเลิกคิวสำเร็จ' });
         } catch (error) {
             return res.status(500).json({ error: error.message });
         }
     }
 
-    // 🌟 ระบบที่ 5: API สำหรับส่งออกข้อมูลให้ Google Sheets
-    if (req.url && req.url.includes('/api/export-sheets') && req.method === 'GET') {
-        try {
-            // ตัวอย่าง: ดึงยอดใช้งาน API
-            const totalReq = await kv.get('stats_requests_total') || 0;
-            
-            const dailyStats = [];
-            // ดึงสถิติย้อนหลัง 7 วัน
-            for(let i = 0; i <= 6; i++) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = d.toISOString().split('T')[0];
-                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
-                dailyStats.push({ date: dateStr, requests: count });
-            }
-
-            // ถ้าอยากดึงคิวเควสด้วย ก็รับ clanId ผ่าน Query ได้ (เช่น /api/export-sheets?clanId=1234)
-            const queryParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
-            const clanId = queryParams.get('clanId');
-            let questQueue = [];
-            if (clanId) {
-                questQueue = await kv.get(`quest_queue_${clanId}`) || [];
-            }
-
-            // ส่งข้อมูลกลับไปเป็นก้อน JSON
-            return res.status(200).json({
-                total_requests: totalReq,
-                daily_stats: dailyStats,
-                quest_queue: questQueue
-            });
-        } catch (e) {
-            return res.status(500).json({ error: e.message });
-        }
-    }
-
-    // -------------------------------------------------------------
-    // 🌟 ระบบปกติ: ระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
-    // -------------------------------------------------------------
-    const params = req.method === 'GET' ? req.query : req.body;
-    
-    // ถ้าไม่ได้ส่งพารามิเตอร์ของระบบ Proxy มา ให้ถือว่าเป็น Invalid Request
-    if (!params) {
-        return res.status(400).json({ error: 'Invalid Request' });
-    }
-
-    const endpoint = params.endpoint;
-    const apiKey = params.apiKey;
-    const targetMethod = params.method || req.method || 'GET';
-    const targetData = params.data || params.body;
+    // =========================================================
+    // 🌟 โซนระบบ Proxy ดึงข้อมูลเกม (Wolvesville API)
+    // =========================================================
 
     if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
     if (!apiKey) return res.status(401).json({ error: 'API Key missing' }); 
 
     // ระบบพิเศษ: ดึงไอเทมทั้งหมดเพื่อนับจำนวน (ทำงานแทน Cronjob) 
-    if (endpoint && endpoint.startsWith('/items/total')) {
+    if (endpoint.startsWith('/items/total')) {
         const itemEndpoints = [
             '/items/avatarItems', '/items/backgrounds', '/items/badges', '/items/bodyPaints',
             '/items/emojis', '/items/loadingScreens', '/items/profileIconBorders', '/items/profileIcons',
             '/items/roleIcons', '/items/roses', '/items/roseSkins', '/items/talismans'
         ];
-
         try {
             let totalCount = 0;
             for (const ep of itemEndpoints) {
@@ -181,7 +139,6 @@ export default async function handler(req, res) {
                     method: 'GET',
                     headers: { 'Authorization': `Bot ${apiKey}`, 'Accept': 'application/json' }
                 });
-
                 if (response.ok) {
                     const arr = await response.json();
                     if (Array.isArray(arr)) totalCount += arr.length;
