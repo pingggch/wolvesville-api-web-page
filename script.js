@@ -1485,6 +1485,15 @@ window.sendClanAnnouncement = async (clanId) => {
     }
 };
 
+window.tagPlayerInChat = (username) => {
+    const input = document.getElementById('clan-chat-input');
+    if (input) {
+        // ถ้ามีข้อความอยู่แล้ว ให้เว้นวรรคก่อน แล้วใส่ @ชื่อ
+        input.value += (input.value.length > 0 && !input.value.endsWith(' ') ? ' ' : '') + '@' + username + ' ';
+        input.focus(); // โฟกัสที่ช่องแชทให้พร้อมพิมพ์ต่อทันที
+    }
+};
+
 window.sendClanChatMessage = async (clanId) => {
     const input = document.getElementById('clan-chat-input');
     if (!input) return;
@@ -3510,7 +3519,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     let chatHtml = '<div style="padding:15px; color:#ccc;">-</div>';
     if (!chat.error && Array.isArray(chat)) {
-        chatHtml = chat.reverse().map(msg => {
+        // ใช้ [...chat] เพื่อก็อปปี้ Array ก่อน reverse ป้องกันบัคแชทสลับไปมา
+        chatHtml = [...chat].reverse().map(msg => {
             const isBot = !!msg.playerBotId;
             const username = isBot ? `[BOT] ${msg.playerBotOwnerUsername}` : (msg.player?.username || memberMap[msg.playerId] || 'Unknown');
             const botStyle = isBot ? 'background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px;' : '';
@@ -3526,11 +3536,14 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const nameStyle = isBot ? `color:var(--primary-color); ${botStyle}` : `color:var(--primary-color); ${botStyle}; cursor:pointer; text-decoration:underline;`;
             const clickAttr = isBot ? '' : `onclick="window.goToPlayerSearch('${safeUsername}')"`;
 
+            // ปุ่ม Tag ผู้เล่น (@)
+            const tagBtn = `<span class="material-icons" style="font-size:14px; cursor:pointer; color:#8b5cf6; margin-right:4px; vertical-align:middle; transition:0.2s;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#8b5cf6'" onclick="window.tagPlayerInChat('${isBot ? msg.playerBotOwnerUsername : safeUsername}')" title="แท็กผู้เล่นนี้">alternate_email</span>`;
+
             return `
-            <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                <strong style="${nameStyle}" ${clickAttr}>${username}</strong>: 
-                <span style="color:${msg.isSystem?'#64748b':'#334155'}">${content}</span>
-                <div style="font-size:0.7rem; color:#94a3b8;">${formatDateThai(msg.creationTime || msg.date)}</div>
+            <div style="margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px; line-height:1.4;">
+                ${tagBtn}<strong style="${nameStyle}" ${clickAttr}>${username}</strong>: 
+                <span style="color:${msg.isSystem?'#64748b':'#334155'}; word-break:break-word;">${content}</span>
+                <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">${formatDateThai(msg.creationTime || msg.date)}</div>
             </div>
         `}).join('');
     }
