@@ -1996,20 +1996,15 @@ async function fetchTotalItemsCount(force = false) {
     isFetchingItems = true;
 
     try {
-        // เติม ?_t=... ต่อท้ายเพื่อป้องกัน Browser จำแคชเก่า (Cache-Busting)
-        const timestamp = new Date().getTime();
+        // วิ่งไปหา /items/total ที่เราเพิ่งเขียนดักไว้ใน api/index.js
+        const res = await fetchData('/items/total', false, false);
         
-        // ดึงข้อมูลจากไฟล์ items_cache.json ในเครื่อง (โฟลเดอร์หลัก)
-        const response = await fetch(`/items_cache.json?_t=${timestamp}`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            itemDataCache = { count: data.count, error: false };
+        if (res && res.count !== undefined) {
+             itemDataCache = { count: res.count, error: false };
         } else {
-            itemDataCache = { count: '-', error: true };
+             itemDataCache = { count: '-', error: true };
         }
     } catch (e) {
-        console.error('Error fetching items_cache.json:', e);
         itemDataCache = { count: '-', error: true };
     }
     
