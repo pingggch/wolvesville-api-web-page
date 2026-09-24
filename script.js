@@ -1783,10 +1783,6 @@ window.claimClanQuest = async (clanId, questId, questTitle) => {
 
 // --- ฟังก์ชันส่งข้อมูลเพื่อตั้งเวลาซื้อเควสลงใน Database (ผ่าน Vercel API) ---
 window.scheduleQuest = async (clanId, questId, questTitle, questImageUrl) => {
-    // 🛠️ บล็อคฟังก์ชัน ปิดปรับปรุง
-    showCustomAlert('🛠️ ปิดปรับปรุงชั่วคราว', 'ระบบคิวซื้อเควสอัตโนมัติกำลังปิดปรับปรุงครับ');
-    return;
-
     const msg = `${t('txt_auto_buy_confirm')} <br><strong style="color:var(--primary-color);">${questTitle}</strong>`;
     
     // เรียกหน้าต่างเลือกเวลา
