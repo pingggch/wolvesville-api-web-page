@@ -4062,6 +4062,8 @@ function renderWikiGrid(quests) {
             });
         });
     }
+}
+
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     applyTranslations(); // เปลี่ยนภาษา UI ตอนโหลดหน้าแรก
