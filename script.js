@@ -4017,6 +4017,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(t==='dashboard') fetchAndDisplayData();
             else if(t==='role-wiki') initRoleWiki(); 
             else if(t==='quest-wiki') initQuestWiki(); 
+            else if(t==='game-modes') initGameModes(); // 🌟 เพิ่มบรรทัดนี้
             else if(t==='settings') {
                 const cur = localStorage.getItem('wolvesville_api_key');
                 if(cur) apiKeyInput.value = cur;
