@@ -117,9 +117,22 @@
                 
                 <div class="stats-grid stats-grid-row2"> 
                     <div class="stat-card full-usage-card api-usage-full-card">
-                        <div class="usage-header" style="margin-bottom: 10px;">
-                            <span class="material-icons">insights</span>
-                            <h3 data-i18n="stat_api_usage">ปริมาณการเรียกใช้ API</h3>
+                        <div class="usage-header" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="material-icons">insights</span>
+                                <h3 data-i18n="stat_api_usage" style="margin: 0;">ปริมาณการเรียกใช้ API</h3>
+                            </div>
+                            <select id="stats-range-select" 
+                                    style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.9rem; cursor: pointer; background: white; color: #1e293b; outline: none; transition: 0.2s;"
+                                    onfocus="this.style.borderColor='#3b82f6'" 
+                                    onblur="this.style.borderColor='#cbd5e1'">
+                                <option value="minute">60 นาที</option>
+                                <option value="hour">24 ชั่วโมง</option>
+                                <option value="day" selected>7 วัน</option>
+                                <option value="month">30 วัน</option>
+                                <option value="year">12 เดือน</option>
+                                <option value="all">ทั้งหมด</option>
+                            </select>
                         </div>
                         <div style="position: relative; height: 250px; width: 100%;">
                             <canvas id="apiUsageChart"></canvas>
