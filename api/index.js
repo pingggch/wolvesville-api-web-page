@@ -21,6 +21,15 @@ async function notifyGoogleSheets(reason = 'update') {
     }
 }
 
+// =========================================================
+// Helper: วันที่ตามเวลาไทย (UTC+7) — format YYYY-MM-DD
+// =========================================================
+function getThaiDateStr(date = new Date()) {
+    // บวก 7 ชั่วโมง (ICT) แล้วค่อยดึงวันที่จาก ISO
+    const thaiTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+    return thaiTime.toISOString().split('T')[0];
+}
+
 export default async function handler(req, res) {
     // 1. อนุญาตให้หน้าเว็บ (CORS) เรียกใช้งานได้
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -62,7 +71,7 @@ export default async function handler(req, res) {
         for (let i = 0; i <= 6; i++) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = getThaiDateStr(d);  // ✅ ใช้เวลาไทย
             const count = await kv.get(`stats_requests_${dateStr}`) || 0;
             dailyStats.push({ date: dateStr, requests: count });
         }
@@ -90,7 +99,7 @@ export default async function handler(req, res) {
         try {
             // ✅ แก้จาก targetData.type เป็น specialData.type
             if (specialData && specialData.type === 'requests') {
-                const today = new Date().toISOString().split('T')[0];
+                const today = getThaiDateStr();  // ✅ ใช้เวลาไทย
 
                 await kv.incr(`stats_requests_total`);
                 await kv.incr(`stats_requests_${today}`);
@@ -120,8 +129,7 @@ export default async function handler(req, res) {
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
-
-                const dateStr = d.toISOString().split('T')[0];
+                const dateStr = getThaiDateStr(d);  // ✅ ใช้เวลาไทย
                 const count = await kv.get(`stats_requests_${dateStr}`) || 0;
 
                 stats.push(count);
