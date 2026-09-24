@@ -1904,9 +1904,8 @@ function getQuestResetTimeDisplay() {
 }
 
 function sendIncrementSignal(type) {
-    fetch(`${localServerUrl}/api/stats/increment/${type}`, { method: 'POST' })
-        .then(res => { if (res.ok) fetchAndDisplayStatsOnly(); })
-        .catch(console.error);
+    // 🛠️ ปิดปรับปรุงชั่วคราว
+    console.log('Stats tracking is temporarily disabled for maintenance.');
 }
 
 // **********************************************
@@ -2008,42 +2007,28 @@ let apiChartInstance = null;
 
 async function fetchAndDisplayStatsOnly() {
     try {
-        const res = await fetch(`${localServerUrl}/api/stats`);
-        if (res.ok) {
-            const stats = await res.json();
-            const req = stats.requests;
+        // อัปเดตตัวเลขหน้าแดชบอร์ดเป็นปิดปรับปรุง
+        const requestsTodayOnly = document.getElementById('requests-today-only');
+        if (requestsTodayOnly) {
+            requestsTodayOnly.innerHTML = '<span style="font-size: 1rem; color: #f59e0b;"><span class="material-icons" style="font-size: 16px; vertical-align: middle;">build</span> ปิดปรับปรุง</span>';
+        }
+
+        // ซ่อนกราฟ แล้วแสดงข้อความแทน
+        const ctxApi = document.getElementById('apiUsageChart');
+        if (ctxApi) {
+            const parent = ctxApi.parentElement;
+            ctxApi.style.display = 'none';
             
-            // อัปเดตตัวเลขการเรียกใช้ API ของวันนี้ (ส่วนกล่องเล็กด้านบน)
-            const requestsTodayOnly = document.getElementById('requests-today-only');
-            if(requestsTodayOnly) requestsTodayOnly.textContent = req.count_today.toLocaleString();
-
-            // เตรียมข้อมูลสำหรับกราฟ
-            const labels = [t('time_today'), t('time_month'), t('time_year'), t('time_all')];
-            const apiData = [req.count_today, req.count_month, req.count_year, req.count_lifetime || 0];
-
-            // สร้างกราฟการเรียกใช้ API (API Usage Chart)
-            const ctxApi = document.getElementById('apiUsageChart');
-            if (ctxApi) {
-                if (apiChartInstance) apiChartInstance.destroy(); // ลบกราฟเก่าทิ้งก่อนวาดใหม่
-                apiChartInstance = new Chart(ctxApi, {
-                    type: 'bar', // เปลี่ยนเป็น 'line' ได้ถ้าอยากได้กราฟเส้น
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: t('stat_api_usage'), // ดึงคำแปลจากระบบ i18n
-                            data: apiData,
-                            backgroundColor: 'rgba(99, 102, 241, 0.7)',
-                            borderColor: '#6366f1',
-                            borderWidth: 1,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
+            let maintMsg = document.getElementById('api-maint-msg');
+            if (!maintMsg) {
+                maintMsg = document.createElement('div');
+                maintMsg.id = 'api-maint-msg';
+                maintMsg.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94a3b8; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+                        <span class="material-icons" style="font-size:40px; margin-bottom:10px; color:#cbd5e1;">build</span>
+                        <strong>ระบบสถิติปิดปรับปรุงชั่วคราว</strong>
+                    </div>`;
+                parent.appendChild(maintMsg);
             }
         }
     } catch (e) { console.error('Error fetching stats:', e); }
@@ -3405,9 +3390,8 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             }
 
             autoBuyBtn = `
-                <button onclick="event.stopPropagation(); window.scheduleQuest('${clanId}', '${q.id}', '${safeTitle}', '${q.promoImageUrl}')" 
-                        style="background:#8b5cf6; color:white; border:none; padding:6px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2);">
-                    <span class="material-icons" style="font-size:16px; margin-right:4px;">schedule</span> ${t('txt_auto_buy')}
+                <button disabled style="background:#f1f5f9; color:#94a3b8; border:1px dashed #cbd5e1; padding:6px 16px; border-radius:8px; cursor:not-allowed; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; margin-top:5px; width:100%; justify-content:center;">
+                    <span class="material-icons" style="font-size:16px; margin-right:4px;">build</span> ปิดปรับปรุงชั่วคราว
                 </button>
             `;
 
