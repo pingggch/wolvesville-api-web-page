@@ -141,22 +141,17 @@ export default async function handler(req, res) {
         const questId = specialData.questId;
         const questTitle = specialData.questTitle;
         const targetTime = specialData.targetTime;
+        // ✅ เพิ่ม 2 ตัวนี้
+        const clanName = specialData.clanName || 'Unknown Clan';
+        const clanTag = specialData.clanTag || '';
+        const questImageUrl = specialData.questImageUrl || '';
 
-        if (!clanId) {
-            return res.status(400).json({ error: 'ไม่พบ clanId' });
-        }
-        if (!questId) {
-            return res.status(400).json({ error: 'ไม่พบ questId' });
-        }
+        if (!clanId) return res.status(400).json({ error: 'ไม่พบ clanId' });
+        if (!questId) return res.status(400).json({ error: 'ไม่พบ questId' });
 
-        // ✅ Global key เดียว เก็บทุกแคลนรวมกัน
         const dbKey = 'quest_queue';
-
         let currentQueue = await kv.get(dbKey) || [];
 
-        const now = new Date();
-
-        // เช็คก่อนว่ามีคิวซ้ำไหม (clanId + questId เดียวกัน)
         const isDuplicate = currentQueue.some(
             q => q.clanId === clanId && q.questId === questId
         );
@@ -168,11 +163,16 @@ export default async function handler(req, res) {
             });
         }
 
+        const now = new Date();
+
         currentQueue.push({
             clanId: clanId,
+            clanName: clanName,        // ✅ เก็บชื่อแคลน
+            clanTag: clanTag,          // ✅ เก็บ tag แคลน
             questId: questId,
             questTitle: questTitle || 'Unknown Quest',
-            apiKey: apiKey,              // ← เก็บ api key เจ้าของแคลนไว้ใช้ตอนซื้อ
+            questImageUrl: questImageUrl, // ✅ เก็บรูปเควส
+            apiKey: apiKey,
             targetTime: targetTime,
             scheduledDate: now.toLocaleDateString('th-TH'),
             scheduledTime: now.toLocaleTimeString('th-TH'),
