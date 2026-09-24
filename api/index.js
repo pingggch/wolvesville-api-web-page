@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (!apiKey) return res.status(401).json({ error: 'API Key missing' }); // 🌟 เช็ค API Key ก่อนเสมอ
 
     // 🌟 ระบบพิเศษ: ดึงไอเทมทั้งหมดเพื่อนับจำนวน (ทำงานแทน Cronjob) 🌟
-    if (endpoint === '/items/total') {
+    if (endpoint && endpoint.startsWith('/items/total')) {
         // อัปเดต Endpoints ตามที่ระบุใหม่ 12 หัวข้อ
         const itemEndpoints = [
             '/items/avatarItems',
