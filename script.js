@@ -3661,7 +3661,16 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
 
     // 🌟 ระบบ Update หน้าต่างเฉพาะส่วนที่เปลี่ยนแปลงเพื่อลดการกระตุก (Background Update)
     if (isBackground && isFirstRender === false) {
-        // อัปเดตยอดเงินทองและเพชรของแคลนแบบ Real-time
+        // 🌟 1. ดักจับและจำสถานะ Scroll + กล่องที่ถูกกาง ไว้ก่อนที่มันจะอัปเดตใหม่
+        const clanContent = document.getElementById('clan-content-container');
+        const scrollStates = [];
+        const detailsStates = [];
+        if (clanContent) {
+            clanContent.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach(el => scrollStates.push(el.scrollTop));
+            clanContent.querySelectorAll('details').forEach(el => detailsStates.push(el.hasAttribute('open')));
+        }
+
+        // อัปเดตข้อมูลแคลนแบบ Real-time
         const cWalletGold = document.getElementById('clan-wallet-gold');
         if (cWalletGold && info && info.gold !== undefined) cWalletGold.innerText = info.gold.toLocaleString();
         
@@ -3695,6 +3704,19 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
         const cTimer = document.getElementById('quest-reset-timer'); if (cTimer) cTimer.outerHTML = getQuestResetTimeDisplay();
         const cLedger = document.getElementById('clan-ledger-list'); if (cLedger && cLedger.innerHTML !== ledgerHtml) cLedger.innerHTML = ledgerHtml;
         const cHist = document.getElementById('clan-history-list'); if (cHist && cHist.innerHTML !== historyHtml) cHist.innerHTML = historyHtml;
+
+        // 🌟 2. คืนค่า Scroll และการกางกล่องกลับไปให้เหมือนเดิมทันที!
+        if (clanContent) {
+            clanContent.querySelectorAll('details').forEach((el, i) => {
+                if (detailsStates[i]) el.setAttribute('open', '');
+            });
+            requestAnimationFrame(() => {
+                clanContent.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach((el, i) => {
+                    if (scrollStates[i] !== undefined) el.scrollTop = scrollStates[i];
+                });
+            });
+        }
+
         return; 
     }
 
@@ -4025,42 +4047,8 @@ function renderWikiGrid(quests) {
         `;
     }).join('');
 
-    // 🌟 1. จดจำสถานะแยกกันระหว่าง "การกางกล่อง" กับ "ตำแหน่ง Scroll"
-    const scrollStates = [];
-    const detailsStates = [];
-    if (container) {
-        // จำตำแหน่ง Scroll
-        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach((el) => {
-            scrollStates.push(el.scrollTop);
-        });
-        // จำการกางของกล่อง
-        container.querySelectorAll('details').forEach((el) => {
-            detailsStates.push(el.hasAttribute('open'));
-        });
-    }
-
-    // 🌟 2. อัปเดตข้อมูลแคลนที่ดึงมาใหม่ลงไป
     if (container) {
         container.innerHTML = html; 
-    }
-
-    // 🌟 3. คืนค่าให้ถูกต้องตามลำดับ (ต้องกางกล่องก่อน ค่อยเลื่อน)
-    if (container) {
-        // สเต็ป 3.1: กางกล่อง details ทั้งหมดที่เคยเปิดไว้
-        container.querySelectorAll('details').forEach((el, i) => {
-            if (detailsStates[i]) {
-                el.setAttribute('open', '');
-            }
-        });
-        
-        // สเต็ป 3.2: รอให้กล่องกางเสร็จแป๊บนึง แล้วค่อยคืนค่า Scroll
-        requestAnimationFrame(() => {
-            container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach((el, i) => {
-                if (scrollStates[i] !== undefined) {
-                    el.scrollTop = scrollStates[i];
-                }
-            });
-        });
     }
 }
 
