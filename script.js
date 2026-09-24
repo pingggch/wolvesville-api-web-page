@@ -217,7 +217,11 @@ const langDict = {
         load_avail_q: "กำลังตรวจสอบเควสที่ซื้อได้...",
         load_votes: "กำลังดึงข้อมูลการโหวต...",
         load_avatars: "กำลังโหลดรูปโปรไฟล์",
-        load_dash: "กำลังสร้างหน้าแดชบอร์ด..."
+        load_dash: "กำลังสร้างหน้าแดชบอร์ด...",
+
+        menu_modes: "โหมดเกมทั้งหมด",
+        head_modes: "ข้อมูลโหมดเกมและการจัดบทบาท",
+        loading_modes: "กำลังเตรียมข้อมูลโหมดเกม..."
     },
     en: {
         // Sidebar & Headers
@@ -434,7 +438,11 @@ const langDict = {
         load_avail_q: "Fetching available quests...",
         load_votes: "Fetching votes data...",
         load_avatars: "Loading avatars",
-        load_dash: "Rendering dashboard..."
+        load_dash: "Rendering dashboard...",
+
+        menu_modes: "Game Modes",
+        head_modes: "Game Modes & Role Rotations",
+        loading_modes: "Preparing game modes...",
     }
 };
 
