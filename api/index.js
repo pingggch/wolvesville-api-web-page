@@ -92,66 +92,176 @@ export default async function handler(req, res) {
 
     // ระบบที่ 2: นับสถิติ (เฉพาะ Request)
     if (
-        endpoint &&
-        endpoint.includes('/api/stats/increment') &&
-        targetMethod === 'POST'
-    ) {
-        try {
-            // ✅ แก้จาก targetData.type เป็น specialData.type
-            if (specialData && specialData.type === 'requests') {
-                const today = getThaiDateStr();  // ✅ ใช้เวลาไทย
+    endpoint &&
+    endpoint.includes('/api/stats/increment') &&
+    targetMethod === 'POST'
+) {
+    try {
+        if (specialData && specialData.type === 'requests') {
+            const now = new Date();
+            const thaiTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
 
-                await kv.incr(`stats_requests_total`);
-                await kv.incr(`stats_requests_${today}`);
-            }
+            const dateStr = thaiTime.toISOString().split('T')[0];             // 2026-09-25
+            const hourStr = String(thaiTime.getUTCHours()).padStart(2, '0');  // 03
+            const minStr  = String(thaiTime.getUTCMinutes()).padStart(2, '0'); // 41
 
-            return res.status(200).json({
-                success: true
-            });
+            // 1. ยอดรวม
+            await kv.incr('stats_requests_total');
 
-        } catch (e) {
-            return res.status(500).json({
-                error: e.message
-            });
+            // 2. รายวัน
+            await kv.incr(`stats_requests_${dateStr}`);
+
+            // 3. รายชั่วโมง
+            const hourKey = `stats_hour_${dateStr}-${hourStr}`;
+            await kv.incr(hourKey);
+            // TTL 8 วัน (ลบอัตโนมัติ)
+            await kv.expire(hourKey, 8 * 24 * 60 * 60);
+
+            // 4. Rolling 60 minutes (ใช้ INCR ต่อ key แล้วค่อยรวบ)
+            const minKey = `stats_min_${dateStr}-${hourStr}-${minStr}`;
+            await kv.incr(minKey);
+            await kv.expire(minKey, 2 * 60 * 60); // TTL 2 ชั่วโมง
         }
+
+        return res.status(200).json({ success: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
     }
+}
 
     // ระบบที่ 3: ดึงประวัติสถิติ 7 วัน สำหรับวาดกราฟ
-    if (
-        endpoint &&
-        endpoint.includes('/api/stats/history') &&
-        targetMethod === 'GET'
-    ) {
-        try {
-            const stats = [];
-            const labels = [];
+    // =========================================================
+// 📊 /api/stats/range?range=minute|hour|day|month|year|all
+// =========================================================
+if (
+    endpoint &&
+    endpoint.includes('/api/stats/range') &&
+    targetMethod === 'GET'
+) {
+    try {
+        const range = specialData.range || 'day';
+        const now = new Date();
+        const thaiNow = new Date(now.getTime() + (7 * 60 * 60 * 1000));
 
+        let labels = [];
+        let data = [];
+
+        // ---------- MINUTE: 60 นาทีล่าสุด ----------
+        if (range === 'minute') {
+            for (let i = 59; i >= 0; i--) {
+                const d = new Date(thaiNow.getTime() - i * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+                const h = String(d.getUTCHours()).padStart(2, '0');
+                const m = String(d.getUTCMinutes()).padStart(2, '0');
+
+                const key = `stats_min_${dateStr}-${h}-${m}`;
+                const count = await kv.get(key) || 0;
+
+                labels.push(`${h}:${m}`);
+                data.push(count);
+            }
+        }
+
+        // ---------- HOUR: 24 ชั่วโมงล่าสุด ----------
+        else if (range === 'hour') {
+            for (let i = 23; i >= 0; i--) {
+                const d = new Date(thaiNow.getTime() - i * 60 * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+                const h = String(d.getUTCHours()).padStart(2, '0');
+
+                const key = `stats_hour_${dateStr}-${h}`;
+                const count = await kv.get(key) || 0;
+
+                labels.push(`${h}:00`);
+                data.push(count);
+            }
+        }
+
+        // ---------- DAY: 7 วันล่าสุด ----------
+        else if (range === 'day') {
             for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = getThaiDateStr(d);  // ✅ ใช้เวลาไทย
+                const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+
                 const count = await kv.get(`stats_requests_${dateStr}`) || 0;
-
-                stats.push(count);
-
-                const [year, month, day] = dateStr.split('-');
+                const [_, month, day] = dateStr.split('-');
                 labels.push(`${day}/${month}`);
+                data.push(count);
+            }
+        }
+
+        // ---------- MONTH: 30 วันล่าสุด ----------
+        else if (range === 'month') {
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+
+                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+                const [_, month, day] = dateStr.split('-');
+                labels.push(`${day}/${month}`);
+                data.push(count);
+            }
+        }
+
+        // ---------- YEAR: 12 เดือนล่าสุด (รวมจาก daily) ----------
+        else if (range === 'year') {
+            const monthlyMap = {};
+
+            // ย้อนหลัง 365 วัน
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+                const monthKey = dateStr.substring(0, 7); // YYYY-MM
+
+                if (!monthlyMap[monthKey]) monthlyMap[monthKey] = 0;
+                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+                monthlyMap[monthKey] += count;
             }
 
-            const total = await kv.get('stats_requests_total') || 0;
-
-            return res.status(200).json({
-                labels,
-                data: stats,
-                total
-            });
-
-        } catch (e) {
-            return res.status(500).json({
-                error: e.message
-            });
+            const sortedMonths = Object.keys(monthlyMap).sort();
+            for (const mk of sortedMonths) {
+                const [y, m] = mk.split('-');
+                labels.push(`${m}/${y.substring(2)}`);
+                data.push(monthlyMap[mk]);
+            }
         }
+
+        // ---------- ALL: ทุกปี ----------
+        else if (range === 'all') {
+            const yearlyMap = {};
+
+            // ย้อนหลัง 3 ปี (เพิ่มได้ถ้าต้องการ)
+            for (let i = 1095; i >= 0; i--) {
+                const d = new Date(thaiNow.getTime() - i * 24 * 60 * 60 * 1000);
+                const dateStr = d.toISOString().split('T')[0];
+                const yearKey = dateStr.substring(0, 4); // YYYY
+
+                if (!yearlyMap[yearKey]) yearlyMap[yearKey] = 0;
+                const count = await kv.get(`stats_requests_${dateStr}`) || 0;
+                yearlyMap[yearKey] += count;
+            }
+
+            const sortedYears = Object.keys(yearlyMap).sort();
+            for (const yk of sortedYears) {
+                labels.push(yk);
+                data.push(yearlyMap[yk]);
+            }
+        }
+
+        const total = await kv.get('stats_requests_total') || 0;
+
+        return res.status(200).json({
+            range,
+            labels,
+            data,
+            total
+        });
+
+    } catch (e) {
+        console.error('[Stats Range] Error:', e.message);
+        return res.status(500).json({ error: e.message });
     }
+}
 
     // ระบบที่ 4: รับคำสั่งบันทึกคิวเควสอัตโนมัติ
     if (
