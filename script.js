@@ -4222,10 +4222,8 @@ function renderGameModes(modes, container) {
     let html = '<div style="display:grid; gap:20px;">';
     
     modes.forEach(mode => {
-        // ทำความสะอาดชื่อโหมด
         const modeName = mode.gameModeName || mode.gameMode.replace(/-/g, ' ').toUpperCase();
         
-        // เลือกไอคอนตามที่ระบบส่งมา
         let iconHtml = '<span class="material-icons" style="color:var(--primary-color);">videogame_asset</span>';
         if (mode.fontAwesomeIcon === 'flask') iconHtml = '<span class="material-icons" style="color:#a855f7;">science</span>';
         if (mode.fontAwesomeIcon === 'user-secret') iconHtml = '<span class="material-icons" style="color:#ef4444;">domino_mask</span>';
@@ -4236,39 +4234,34 @@ function renderGameModes(modes, container) {
                 const prob = (rot.probability * 100).toFixed(0);
                 let slotsHtml = '';
 
-                // เช็คว่ามีข้อมูลบทบาทในแต่ละ rotation หรือไม่
                 if (rot.roleRotation && rot.roleRotation.roles) {
                     rot.roleRotation.roles.forEach(slot => {
                         let itemsHtml = '';
-                        
-                        // วนลูปหาความเป็นไปได้ของแต่ละช่อง (เช่น 50% หมอ / 50% บอดี้การ์ด)
                         slot.forEach(opt => {
                             let rolesToRender = [];
                             if (opt.role) rolesToRender.push(opt.role);
                             else if (opt.roles) rolesToRender = opt.roles;
 
                             rolesToRender.forEach(rId => {
-                                // 🌟 ดึงข้อมูลจาก rolesCache 🌟
                                 const rData = rolesCache.get(rId) || {};
                                 const imgUrl = rData.image?.url || EMBEDDED_ICONS.UNKNOWN;
                                 const rName = rData.name || rId.replace(/-/g, ' ').toUpperCase();
                                 const pTxt = opt.probability < 1 ? `(${(opt.probability*100).toFixed(0)}%)` : '';
 
-                                itemsHtml += `<img src="${imgUrl}" title="${rName} ${pTxt}" style="width:36px; height:36px; object-fit:contain; margin:3px; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.15)); cursor:help;" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">`;
+                                itemsHtml += `<img src="${imgUrl}" title="${rName} ${pTxt}" class="slot-img" onerror="this.src='${EMBEDDED_ICONS.UNKNOWN}'">`;
                             });
                         });
-
-                        slotsHtml += `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px; min-width:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">${itemsHtml}</div>`;
+                        slotsHtml += `<div class="slot-box">${itemsHtml}</div>`;
                     });
                 }
 
                 rotationsHtml += `
-                    <div style="margin-top:15px; background:#fff; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                        <div style="font-size:0.9rem; font-weight:bold; color:#475569; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
+                    <div class="rotation-card">
+                        <div class="rotation-header">
                             <span class="material-icons" style="font-size:18px; color:#f59e0b;">casino</span> รูปแบบที่ ${idx+1} 
-                            <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.75rem;">สุ่มเจอ ${prob}%</span>
+                            <span class="prob-badge">สุ่มเจอ ${prob}%</span>
                         </div>
-                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        <div class="rotation-slots">
                             ${slotsHtml}
                         </div>
                     </div>
@@ -4277,16 +4270,16 @@ function renderGameModes(modes, container) {
         }
 
         html += `
-            <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:var(--shadow-sm);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
-                    <h3 style="margin:0; color:#1e293b; display:flex; align-items:center; gap:8px; font-size:1.3rem;">
+            <div class="game-mode-card">
+                <div class="game-mode-header">
+                    <h3 class="game-mode-title">
                         ${iconHtml} ${modeName}
                     </h3>
-                    <span style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:bold;">
+                    <span class="req-badge">
                         ขั้นต่ำ ${mode.minWinRequirement} Win
                     </span>
                 </div>
-                ${mode.description ? `<div style="background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 15px; border-radius:0 8px 8px 0; margin-top:15px; font-size:0.9rem; color:#92400e; line-height:1.5; white-space:pre-wrap;">${mode.description}</div>` : ''}
+                ${mode.description ? `<div class="game-mode-desc">${mode.description}</div>` : ''}
                 ${rotationsHtml}
             </div>
         `;
