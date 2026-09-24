@@ -1,4 +1,45 @@
-// ไฟล์: api/index.js
+const { kv } = require('@vercel/kv');
+
+// สร้าง Route สำหรับรับคำสั่งเข้าคิว
+app.post('/api/schedule-quest', async (req, res) => {
+    // 1. รับค่า apiKey และ questTitle ที่ส่งมาจาก Frontend เพิ่มเติม
+    const { clanId, questId, questTitle, apiKey, targetTime } = req.body;
+
+    // เช็คป้องกันกรณีไม่มี API Key
+    if (!apiKey) {
+        return res.status(400).json({ error: 'ไม่พบ API Key สำหรับใช้ซื้อเควส' });
+    }
+
+    try {
+        const dbKey = `quest_queue_${clanId}`;
+        let currentQueue = await kv.get(dbKey) || [];
+
+        // 2. สร้างออบเจ็กต์วันที่และเวลา ณ ตอนที่กดยืนยันเข้าคิว
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('th-TH'); // วันที่ (เช่น 24/9/2569)
+        const timeStr = now.toLocaleTimeString('th-TH'); // เวลา (เช่น 11:31:43)
+
+        // 3. เพิ่มข้อมูลทั้งหมดลงไปใน Array
+        currentQueue.push({
+            clanId: clanId,
+            questId: questId,
+            questTitle: questTitle || 'Unknown Quest',
+            apiKey: apiKey, // 🔑 เก็บ API Key ไว้ใช้รันคำสั่งซื้อเบื้องหลัง
+            targetTime: targetTime,
+            scheduledDate: dateStr, // เก็บวันที่
+            scheduledTime: timeStr, // เก็บเวลา
+            timestamp: now.getTime(), // เก็บเป็นตัวเลข Milliseconds เผื่อใช้คำนวณ
+            status: 'waiting'
+        });
+
+        await kv.set(dbKey, currentQueue);
+
+        res.status(200).json({ success: true, message: 'บันทึกคิวสำเร็จ!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default async function handler(req, res) {
     // 1. อนุญาตให้หน้าเว็บ (CORS) เรียกใช้งานได้
     res.setHeader('Access-Control-Allow-Credentials', true);
