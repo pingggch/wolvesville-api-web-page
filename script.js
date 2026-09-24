@@ -4025,14 +4025,17 @@ function renderWikiGrid(quests) {
         `;
     }).join('');
 
-    // 🌟 1. จดจำตำแหน่ง Scroll ปัจจุบัน
-    const scrollStates = {};
+    // 🌟 1. จดจำสถานะแยกกันระหว่าง "การกางกล่อง" กับ "ตำแหน่ง Scroll"
+    const scrollStates = [];
+    const detailsStates = [];
     if (container) {
-        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list, details').forEach((el, i) => {
-            scrollStates[i] = {
-                top: el.scrollTop,
-                isOpen: el.hasAttribute('open') // จำสถานะการกางเมนูด้วย
-            };
+        // จำตำแหน่ง Scroll
+        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach((el) => {
+            scrollStates.push(el.scrollTop);
+        });
+        // จำการกางของกล่อง
+        container.querySelectorAll('details').forEach((el) => {
+            detailsStates.push(el.hasAttribute('open'));
         });
     }
 
@@ -4041,19 +4044,24 @@ function renderWikiGrid(quests) {
         container.innerHTML = html; 
     }
 
-    // 🌟 3. คืนค่าตำแหน่ง Scroll และสถานะการกางกลับไปให้เหมือนเดิมเป๊ะๆ
+    // 🌟 3. คืนค่าให้ถูกต้องตามลำดับ (ต้องกางกล่องก่อน ค่อยเลื่อน)
     if (container) {
-        container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list, details').forEach((el, i) => {
-            if (scrollStates[i]) {
-                el.scrollTop = scrollStates[i].top;
-                if (scrollStates[i].isOpen && el.tagName.toLowerCase() === 'details') {
-                    el.setAttribute('open', '');
-                }
+        // สเต็ป 3.1: กางกล่อง details ทั้งหมดที่เคยเปิดไว้
+        container.querySelectorAll('details').forEach((el, i) => {
+            if (detailsStates[i]) {
+                el.setAttribute('open', '');
             }
         });
+        
+        // สเต็ป 3.2: รอให้กล่องกางเสร็จแป๊บนึง แล้วค่อยคืนค่า Scroll
+        requestAnimationFrame(() => {
+            container.querySelectorAll('.clan-scroll-area, .ledger-list, .history-list').forEach((el, i) => {
+                if (scrollStates[i] !== undefined) {
+                    el.scrollTop = scrollStates[i];
+                }
+            });
+        });
     }
-}
-
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     applyTranslations(); // เปลี่ยนภาษา UI ตอนโหลดหน้าแรก
