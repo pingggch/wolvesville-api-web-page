@@ -1887,10 +1887,24 @@ function formatMessage(msg) {
 
 function linkify(text) {
     if (!text) return '';
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, function(url) {
-        return '<a href="' + url + '" target="_blank">' + url + '</a>';
-    });
+    
+    // 1. แปลง Discord Emojis แบบ Markdown: ![alt](url) หรือ [alt](url) ให้กลายเป็นแท็ก <img>
+    text = text.replace(/!?\[([^\]]*)\]\((https:\/\/cdn\.discordapp\.com\/emojis\/[^\)]+)\)/g, '<img src="$2" alt="$1" title="$1" style="height: 1.5em; vertical-align: middle; display: inline-block; margin: 0 2px;">');
+    
+    // 2. แปลง Markdown Links ปกติ: [ข้อความ](url)
+    text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--primary-color); text-decoration: underline;">$1</a>');
+    
+    // 3. แปลงข้อความตัวหนา: **ข้อความ**
+    text = text.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 4. แปลงข้อความขีดฆ่า: ~~ข้อความ~~
+    text = text.replace(/~~([\s\S]+?)~~/g, '<del style="color: #94a3b8;">$1</del>');
+    
+    // 5. แปลง URL ทั่วไปให้กดคลิกได้ (โดยป้องกันไม่ให้ไปซ้ำซ้อนกับ URL ที่อยู่ในแท็ก <img> หรือ <a> ด้านบน)
+    const urlRegex = /(?<!href="|src=")(https?:\/\/[^\s<]+)/g;
+    text = text.replace(urlRegex, '<a href="$1" target="_blank" style="color: var(--primary-color); text-decoration: underline;">$1</a>');
+
+    return text;
 }
 
 function formatDateThai(dateString) {
