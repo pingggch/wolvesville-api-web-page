@@ -2876,7 +2876,23 @@ async function fetchClanData(clanId, isMyClan = false, isBackground = false, req
     // เรียกใช้ setTimeout สั้นๆ เพื่อให้ Browser มีเวลา Render หน้าต่าง Loading
     setTimeout(() => {
         if (reqId !== currentClanRequestId) return; 
-        renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
+        // 🌟 FIX: ครอบด้วย try/catch เพื่อไม่ให้หน้าจอค้างที่ loading เงียบๆ
+        // ถ้ามี error เกิดขึ้นระหว่าง render จะโชว์ข้อความ error ให้เห็นแทน
+        try {
+            renderClanDashboard(info, members, quests, chat, logs, ledger, history, announcements, blockedMembers, availableQuests, votesData, clanId, isMyClan, isBackground, participatingMemberCount);
+        } catch (e) {
+            console.error('renderClanDashboard error:', e);
+            if (!isBackground) {
+                clanContentContainer.innerHTML = `
+                    <div style="text-align:center; color:#991b1b; background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:30px; margin-top:20px;">
+                        <span class="material-icons" style="font-size:50px; color:#ef4444;">error_outline</span>
+                        <h3 style="margin:10px 0;">⚠️ เกิดข้อผิดพลาดในการแสดงผลหน้าแคลน</h3>
+                        <p style="font-size:0.9rem; color:#b91c1c;">${e.message}</p>
+                        <button onclick="window.fetchClanData('${clanId}', ${isMyClan}, false)" style="margin-top:15px; background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">${t('btn_reload')}</button>
+                    </div>
+                `;
+            }
+        }
     }, 50); 
 }
 
@@ -3487,6 +3503,10 @@ function renderClanDashboard(info, members, quests, chat, logs, ledger, history,
             const currencyIcon = isGem ? 'diamond' : 'monetization_on';
             const currencyColor = isGem ? '#d8b4fe' : '#fcd34d';
             const buyCost = isGem ? 350 + (135 * participatingMemberCount) : 2000 + (400 * participatingMemberCount);
+            // 🌟 FIX: เพิ่มบรรทัดนี้ที่ขาดไป — เดิม imgUrl ไม่เคยถูกประกาศในสโคปนี้
+            // ทำให้เกิด ReferenceError: imgUrl is not defined ตอน build ปุ่ม "ตั้งเวลาซื้ออัตโนมัติ"
+            // ซึ่งจะทำให้ renderClanDashboard ทั้งฟังก์ชัน throw error แล้วหน้าจอค้างที่ loading ตลอดไป
+            const imgUrl = q.promoImageUrl || 'https://via.placeholder.com/40';
 
             let voteHtml = '';
             if (votesData && !votesData.error && votesData.votes && votesData.votes[q.id]) {
