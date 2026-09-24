@@ -202,7 +202,7 @@ export default async function handler(req, res) {
         });
 
         await kv.set(dbKey, currentQueue);
-        notifyGoogleSheets('schedule-quest'); // ← เพิ่ม
+        await notifyGoogleSheets('schedule-quest'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
@@ -242,7 +242,7 @@ export default async function handler(req, res) {
         );
 
         await kv.set(dbKey, newQueue);
-        notifyGoogleSheets('cancel-schedule'); // ← เพิ่ม
+        await notifyGoogleSheets('cancel-schedule'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
@@ -332,7 +332,7 @@ export default async function handler(req, res) {
 
         // บันทึกคิวที่เหลือกลับลง KV
         await kv.set(dbKey, updatedQueue);
-        notifyGoogleSheets('cron-processed'); // ← เพิ่ม
+        await notifyGoogleSheets('cron-processed'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
