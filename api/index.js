@@ -7,8 +7,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
     if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+        return res.status(200).end();
     }
 
     // 2. ดึงข้อมูลที่หน้าเว็บส่งมา
@@ -20,32 +19,46 @@ export default async function handler(req, res) {
 
     // 3. ตรวจสอบว่ามีข้อมูลครบไหม
     if (!endpoint) return res.status(400).json({ error: 'Endpoint required' });
+    if (!apiKey) return res.status(401).json({ error: 'API Key missing' }); // 🌟 เช็ค API Key ก่อนเสมอ
+
     // 🌟 ระบบพิเศษ: ดึงไอเทมทั้งหมดเพื่อนับจำนวน (ทำงานแทน Cronjob) 🌟
     if (endpoint === '/items/total') {
+        // อัปเดต Endpoints ตามที่ระบุใหม่ 12 หัวข้อ
         const itemEndpoints = [
-            '/items/avatarItems', '/items/bodyPaints', '/items/profileIcons',
-            '/items/profileIconBorders', '/items/emojis', '/items/backgrounds',
-            '/items/loadingScreens', '/items/roleIcons', '/items/roseSkins', '/items/talismans'
+            '/items/avatarItems',
+            '/items/backgrounds',
+            '/items/badges',
+            '/items/bodyPaints',
+            '/items/emojis',
+            '/items/loadingScreens',
+            '/items/profileIconBorders',
+            '/items/profileIcons',
+            '/items/roleIcons',
+            '/items/roses',
+            '/items/roseSkins',
+            '/items/talismans'
         ];
 
         try {
-            // สั่งยิง API พร้อมกัน 21 เส้นเพื่อความรวดเร็ว
-            const fetchPromises = itemEndpoints.map(ep => 
-                fetch(`https://api.wolvesville.com${ep}`, {
+            let totalCount = 0;
+
+            // ค่อยๆ ยิงทีละลิงก์ (Sequential) เพื่อไม่ให้เกม Wolvesville ตกใจและบล็อค (Rate Limit)
+            for (const ep of itemEndpoints) {
+                const response = await fetch(`https://api.wolvesville.com${ep}`, {
                     method: 'GET',
                     headers: { 'Authorization': `Bot ${apiKey}`, 'Accept': 'application/json' }
-                }).then(r => r.ok ? r.json() : [])
-            );
+                });
 
-            const results = await Promise.all(fetchPromises);
-            
-            // นำผลลัพธ์ที่เป็น Array มาบวกความยาวรวมกัน
-            let totalCount = 0;
-            results.forEach(arr => {
-                if (Array.isArray(arr)) totalCount += arr.length;
-            });
+                if (response.ok) {
+                    const arr = await response.json();
+                    if (Array.isArray(arr)) totalCount += arr.length;
+                } else if (response.status === 429) {
+                    // ถ้าเกมเริ่มบล็อค ให้หยุดพักหายใจ 0.5 วินาที แล้วลุยต่อ
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
 
-            // 🌟 สั่งให้ Vercel จดจำตัวเลขนี้ไว้ 12 ชั่วโมง (43200 วินาที) จะได้ไม่กินโควต้า API บ่อยๆ
+            // 🌟 สั่งให้ Vercel จดจำตัวเลขนี้ไว้ 12 ชั่วโมง (43200 วินาที)
             res.setHeader('Cache-Control', 's-maxage=43200, stale-while-revalidate');
             return res.status(200).json({ count: totalCount });
 
@@ -54,10 +67,9 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: error.message });
         }
     }
-    if (!apiKey) return res.status(401).json({ error: 'API Key missing' });
 
     try {
-        // 4. เตรียมยิง Request ไปหา Wolvesville
+        // 4. เตรียมยิง Request ทั่วไป ไปหา Wolvesville
         const fetchOptions = {
             method: targetMethod,
             headers: {
@@ -67,7 +79,6 @@ export default async function handler(req, res) {
             }
         };
 
-        // ถ้ามีการส่ง Data (พวก POST, PUT เช่น การกดโหวต, ซื้อเควส) ให้แนบไปด้วย
         if ((targetMethod === 'POST' || targetMethod === 'PUT') && targetData) {
             fetchOptions.body = typeof targetData === 'string' ? targetData : JSON.stringify(targetData);
         }
@@ -86,6 +97,6 @@ export default async function handler(req, res) {
         }
     } catch (error) {
         console.error('[Proxy] Error:', error.message);
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 }
