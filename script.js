@@ -1996,18 +1996,20 @@ async function fetchTotalItemsCount(force = false) {
     isFetchingItems = true;
 
     try {
-        const key = localStorage.getItem('wolvesville_api_key');
-        if (!key) throw new Error('No API Key');
-
-        const response = await fetch(`${localServerUrl}/api/items/total?apiKey=${encodeURIComponent(key)}`);
-        const data = await response.json();
-
-        if (data.error) {
-             itemDataCache = { count: '-', error: true };
+        // เติม ?_t=... ต่อท้ายเพื่อป้องกัน Browser จำแคชเก่า (Cache-Busting)
+        const timestamp = new Date().getTime();
+        
+        // ดึงข้อมูลจากไฟล์ items_cache.json ในเครื่อง (โฟลเดอร์หลัก)
+        const response = await fetch(`/items_cache.json?_t=${timestamp}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            itemDataCache = { count: data.count, error: false };
         } else {
-             itemDataCache = { count: data.count, error: false };
+            itemDataCache = { count: '-', error: true };
         }
     } catch (e) {
+        console.error('Error fetching items_cache.json:', e);
         itemDataCache = { count: '-', error: true };
     }
     
