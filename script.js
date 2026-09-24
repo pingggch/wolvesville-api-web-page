@@ -1935,8 +1935,13 @@ function getQuestResetTimeDisplay() {
 }
 
 function sendIncrementSignal(type) {
-    // 🛠️ ปิดปรับปรุงชั่วคราว
-    console.log('Stats tracking is temporarily disabled for maintenance.');
+    if (type === 'visitors') return; // 🌟 ดักไว้เลย ไม่ให้ส่งค่า visitors ไป
+    
+    fetch(`${localServerUrl}/api/stats/increment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: type })
+    }).catch(e => console.log('Stats error', e));
 }
 
 // **********************************************
@@ -2030,36 +2035,92 @@ async function fetchTotalItemsCount(force = false) {
     return itemDataCache;
 }
 
-// ประกาศตัวแปรเก็บกราฟไว้นอกฟังก์ชัน
+// ประกาศตัวแปรเก็บกราฟไว้นอกฟังก์ชัน (ถ้ายังไม่มี)
 let apiChartInstance = null;
 
 async function fetchAndDisplayStatsOnly() {
     try {
-        // อัปเดตตัวเลขหน้าแดชบอร์ดเป็นปิดปรับปรุง
-        const requestsTodayOnly = document.getElementById('requests-today-only');
-        if (requestsTodayOnly) {
-            requestsTodayOnly.innerHTML = '<span style="font-size: 1rem; color: #f59e0b;"><span class="material-icons" style="font-size: 16px; vertical-align: middle;">build</span> ปิดปรับปรุง</span>';
+        // ดึงข้อมูล 7 วันย้อนหลังจาก Vercel API
+        const res = await fetch(`${localServerUrl}/api/stats/history`);
+        const statsData = await res.json();
+        
+        if (statsData.error) return;
+
+        // อัปเดตตัวเลขแสดงผลยอดวันนี้
+        const reqTodayEl = document.getElementById('requests-today-only');
+        if (reqTodayEl) {
+            const todayCount = statsData.data[statsData.data.length - 1] || 0;
+            reqTodayEl.innerHTML = `<span style="font-size: 1rem; color: var(--primary-color); font-weight: bold;"><span class="material-icons" style="font-size: 16px; vertical-align: middle;">api</span> ${todayCount.toLocaleString()} ครั้ง</span>`;
         }
 
-        // ซ่อนกราฟ แล้วแสดงข้อความแทน
+        // วาดกราฟเส้น (Line Chart)
         const ctxApi = document.getElementById('apiUsageChart');
         if (ctxApi) {
-            const parent = ctxApi.parentElement;
-            ctxApi.style.display = 'none';
+            ctxApi.style.display = 'block';
             
-            let maintMsg = document.getElementById('api-maint-msg');
-            if (!maintMsg) {
-                maintMsg = document.createElement('div');
-                maintMsg.id = 'api-maint-msg';
-                maintMsg.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94a3b8; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
-                        <span class="material-icons" style="font-size:40px; margin-bottom:10px; color:#cbd5e1;">build</span>
-                        <strong>ระบบสถิติปิดปรับปรุงชั่วคราว</strong>
-                    </div>`;
-                parent.appendChild(maintMsg);
+            // ลบข้อความ "ปิดปรับปรุง" (ถ้ามีค้างอยู่)
+            const maintMsg = document.getElementById('api-maint-msg');
+            if (maintMsg) maintMsg.remove(); 
+
+            // ทำลายกราฟเก่าทิ้งก่อนวาดใหม่ (ป้องกันกราฟซ้อนทับกันเวลาสลับหน้า)
+            if (apiChartInstance) {
+                apiChartInstance.destroy(); 
             }
+
+            // เริ่มวาดกราฟเส้น
+            apiChartInstance = new Chart(ctxApi, {
+                type: 'line', // 🌟 เปลี่ยนจาก bar เป็น line
+                data: {
+                    labels: statsData.labels, // ['18/09', '19/09', ...]
+                    datasets: [{
+                        label: 'ปริมาณ Request (ครั้ง)',
+                        data: statsData.data, // [15, 30, 100, ...]
+                        borderColor: '#3b82f6', // สีเส้นกราฟ
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)', // สีพื้นหลังใต้กราฟ
+                        borderWidth: 2,
+                        fill: true, // เทสีใต้กราฟ
+                        tension: 0.4, // 🌟 ทำให้เส้นกราฟโค้งสมูท ไม่แข็งเป็นมุมแหลม
+                        pointBackgroundColor: '#1d4ed8',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { size: 13, family: 'Kanit' },
+                            bodyFont: { size: 14, family: 'Kanit', weight: 'bold' },
+                            padding: 10,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: '#f1f5f9', borderDash: [5, 5] },
+                            ticks: { font: { family: 'Kanit' }, color: '#64748b' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { family: 'Kanit' }, color: '#64748b' }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    }
+                }
+            });
         }
-    } catch (e) { console.error('Error fetching stats:', e); }
+    } catch (e) { 
+        console.error('Error fetching and rendering chart:', e); 
+    }
 }
 
 function renderGlobalAnnouncements(data) {
