@@ -1,5 +1,26 @@
 const { kv } = require('@vercel/kv');
 
+// helper วางไว้บนสุดของไฟล์
+async function notifyGoogleSheets(reason = 'update') {
+    const url = process.env.SHEETS_WEBHOOK_URL;
+    const secret = process.env.SHEETS_WEBHOOK_SECRET;
+    if (!url) return; // ยังไม่ได้ตั้ง ก็ข้ามไป
+
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                secret: secret || '',
+                reason: reason 
+            })
+        });
+        console.log('[Sheets] notified:', reason);
+    } catch (e) {
+        console.warn('[Sheets] notify failed:', e.message);
+    }
+}
+
 export default async function handler(req, res) {
     // 1. อนุญาตให้หน้าเว็บ (CORS) เรียกใช้งานได้
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -181,6 +202,7 @@ export default async function handler(req, res) {
         });
 
         await kv.set(dbKey, currentQueue);
+        notifyGoogleSheets('schedule-quest'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
@@ -220,6 +242,7 @@ export default async function handler(req, res) {
         );
 
         await kv.set(dbKey, newQueue);
+        notifyGoogleSheets('cancel-schedule'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
@@ -309,6 +332,7 @@ export default async function handler(req, res) {
 
         // บันทึกคิวที่เหลือกลับลง KV
         await kv.set(dbKey, updatedQueue);
+        notifyGoogleSheets('cron-processed'); // ← เพิ่ม
 
         return res.status(200).json({
             success: true,
