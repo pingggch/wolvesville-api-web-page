@@ -4221,9 +4221,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 // GAME MODES & ROLE ROTATIONS SYSTEM
 // ==========================================
+
+// 🌟 สร้างตัวแปรเก็บแคช (Cache) ไว้บนสุดของหมวดนี้
+let gameModesCache = null;
+
 async function initGameModes() {
     const container = document.getElementById('game-modes-container');
     if (!container) return;
+
+    // 🌟 เช็คก่อนเลยว่าเคยโหลดมาหรือยัง ถ้ามีแล้วก็ดึงของเก่ามาโชว์ทันที! (ไม่ต้องโหลดใหม่)
+    if (gameModesCache) {
+        return renderGameModes(gameModesCache, container);
+    }
 
     // ตรวจสอบว่าดึงข้อมูลรูปและชื่อบทบาทมาหรือยัง (ถ้ายัง ให้ดึงก่อน)
     if (rolesCache.size === 0) {
@@ -4241,6 +4250,8 @@ async function initGameModes() {
         }
         
         if (Array.isArray(res)) {
+            // 🌟 บันทึกข้อมูลที่เพิ่งโหลดมาเก็บไว้ในแคช!
+            gameModesCache = res; 
             renderGameModes(res, container);
         }
     } catch (e) {
